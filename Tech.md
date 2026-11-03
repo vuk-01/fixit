@@ -251,7 +251,7 @@ Podešavanja i rokovi:
 | `DEMO_PASSWORD` | samo `.env.local` (skripte iz `scripts/`) | šifra demo naloga iz `pnpm db:seed-demo` (`DB.md` §12.3); nije na Vercelu i nikad u repou |
 
 - Nijedna tajna nema prefiks `NEXT_PUBLIC_` (pravilo 3). Ključ za tile-ove u P0 ne postoji (OSM ga ne traži).
-- `lib/env.ts` provjerava serverske varijable zod-om; aplikacija pada odmah ako neka nedostaje, umjesto da pogriješi u toku.
+- `lib/env.ts` provjerava serverske varijable zod-om (`getServerEnv()`, pri prvoj upotrebi na serveru): ako neka nedostaje, zahtjev pada odmah sa imenom varijable, umjesto da pogriješi usred toka. Provjera nije pri importu, da testovi i build ne traže sve tajne.
 - `.env.example` (imena bez vrijednosti) je u repou; `.env.local` je u `.gitignore`. Na Vercelu iste varijable važe za Production, Preview i Development.
 
 ## 11. Komande
@@ -289,6 +289,7 @@ Baza, Supabase CLI 3.0.0 (migracije i `db push` radi samo Ivana; `AGENTS.md`):
 - Koji su testovi obavezni piše u `AGENTS.md`. Resend i Anthropic SDK su u testovima uvijek mockovani (`vi.mock`); testovi nikad ne zovu pravi model, Resend ni Nominatim.
 - `server-only` se mockuje za sve testove: `vi.mock('server-only', () => ({}))` u fajlu iz `setupFiles` u `vitest.config.mts` (tiket 22 Q6). Bez toga paket baca grešku čim test uveze serverski modul, npr. `lib/email/send.ts` (test 1). Test 3 provjerava čistu funkciju `lib/email/letter-template.ts`, istu koju koriste server i seed.
 - `async` Server Components Vitest ne podržava; provjeravaju se ručno na telefonu.
+- RLS test (AGENTS.md, test 4) je `lib/supabase/rls.test.ts`. Jedini ide na mrežu, pa jedini sam čita `.env.local` (`process.loadEnvFile`) i preskače se kad fajla nema. Pravi jednu anonimnu sesiju po pokretanju i odjavljuje je.
 
 ## Hosting i mejl
 

@@ -1,19 +1,11 @@
-import { Button } from "@/components/ui/button"
+import { APP_DESCRIPTION, APP_NAME } from "@/lib/constants"
 
+// Placeholder until the public map (#7).
 export default function Page() {
   return (
-    <div className="flex min-h-svh p-6">
-      <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
-        <div>
-          <h1 className="font-medium">Project ready!</h1>
-          <p>You may now add components and start building.</p>
-          <p>We&apos;ve already added the button component for you.</p>
-          <Button className="mt-2">Button</Button>
-        </div>
-        <div className="font-mono text-xs text-muted-foreground">
-          (Press <kbd>d</kbd> to toggle dark mode)
-        </div>
-      </div>
-    </div>
+    <main className="mx-auto flex min-h-svh max-w-md flex-col justify-center gap-2 p-4">
+      <h1 className="font-heading text-2xl font-semibold">{APP_NAME}</h1>
+      <p className="text-muted-foreground">{APP_DESCRIPTION}</p>
+    </main>
   )
 }
