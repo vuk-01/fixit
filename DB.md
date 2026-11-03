@@ -736,6 +736,7 @@ Iz tabela tiketa 14 („Tabela pravila za seed", „Institucije za seed"), bez i
 - **10 pravila** za Podgoricu (`pothole`, `sidewalk`, `traffic_sign`, `street_light`, `traffic_light`, `manhole`, `water_leak`, `illegal_dump`, `waste_container`, `greenery`), sa `source_type`, `source_url`, `source_title`, `source_excerpt` i `verified_at` iz tabele tiketa 14; `verified_by = 'nalaz 02'` dok ne prođe ponovna provjera, zatim ime osobe iz tima. Za rasvjetu i semafor upisati samo onaj URL sa kog je citat (14, „Za provjeru").
 - **Nijedno pravilo** za `graffiti` i `other` (`other` to i ne može, CHECK). Provjera poslije migracije: `select count(*) from jurisdiction_rules` = 10, i `resolve_jurisdiction('graffiti', <Podgorica>)` vraća `no_rule`.
 - Ne ulaze: Služba za građane, Uprava za saobraćaj, CEDIS, „Deponija" d.o.o. (tiket 14).
+- **Ponovna provjera (3. 11. 2026, migracija 10):** svih 8 adresa stoji nepromijenjeno na stranicama institucija na podgorica.me (`email_source_url`), a svi citati na izvorima pravila; PDF Programa „Puteva" 2026 je dostupan (citati na str. 2 i 10). Za rasvjetu i semafor citat je sa `https://www.komunalneusluge.me/`, pa je to jedini `source_url` tih pravila. Konačni nazivi institucija i tekstovi izvora su u migraciji 10.
 
 ### 12.3 Demo nalozi (`pnpm db:seed-demo`)
 
