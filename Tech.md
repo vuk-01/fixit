@@ -308,7 +308,7 @@ Baza, Supabase CLI 3.0.0 (migracije i `db push` radi samo Ivana; `AGENTS.md`):
 
 - Bez sopstvenog domena Resend šalje samo sa `onboarding@resend.dev` i **samo na mejl vlasnika Resend naloga** (nalaz 05). Zato je `TEST_INBOX` Ivanin lični mejl (izmjena odluke iz tiketa 08, 3. 11.), a Resend nalog je otvoren baš tim mejlom. Adresa se ne upisuje ni u jedan dokument ni u repo; postoji samo u `.env.local` i u Vercel env varijablama. U videu se zamućuje.
 - **Dopis instituciji:** `from: Fixit <onboarding@resend.dev>`, `reply-to:` `EMAIL_REPLY_TO`, što je isti mejl kao `TEST_INBOX`. Potpis dopisa (FR-11) navodi samo `https://fixit-b73a.vercel.app`, bez mejl adrese.
-- **Ivanin lični mejl se ne prikazuje nigdje** [Ivana, 4. 11.]: ni u UI-ju (stranice, zaglavlje, poruke o greškama, `/privatnost`), ni u tekstu dopisa ni drugog mejla koji aplikacija šalje. Postoji samo u env varijablama (`TEST_INBOX`, `EMAIL_REPLY_TO`) i kao `reply-to` zaglavlje dopisa, koji u testnom režimu ionako stiže samo u `TEST_INBOX`. Demo nalozi imaju njegove plus-adrese, pa ni mejl naloga se ne prikazuje u UI-ju (meni pokazuje ime).
+- **Ivanin lični mejl se ne prikazuje nigdje** [Ivana, 4. 11.]: ni u UI-ju (stranice, zaglavlje, poruke o greškama, `/privatnost`), ni u tekstu dopisa ni drugog mejla koji aplikacija šalje. Postoji samo u env varijablama (`TEST_INBOX`, `EMAIL_REPLY_TO`) i kao `reply-to` zaglavlje dopisa, koji u testnom režimu ionako stiže samo u `TEST_INBOX`. Demo nalozi imaju izmišljene adrese `<nalog>@fixit.test` (`DB.md` §12.3), nepovezane sa ovim mejlom; mejl naloga se ipak ne prikazuje u UI-ju (meni pokazuje ime).
 - **`EMAIL_MODE=test` ostaje podrazumijevan** i ne mijenja se. Jedino mjesto slanja je `lib/email/send.ts`, sa guard-om: sve osim tačno `live` = test, primalac i kopija idu na `TEST_INBOX`, a bez `TEST_INBOX` nema slanja. Resend uz to sam odbija svakog primaoca osim vlasnika naloga (403). To je dodatna brava, ne zamjena: guard i njegov test (AGENTS.md, test 1) ostaju, jer zaštita ne smije zavisiti od podešavanja Resend naloga.
 - Kvota besplatnog plana: 100 mejlova dnevno (UTC), 3.000 mjesečno; testovi ne troše kvotu, jer je Resend mockovan.
 - Nema Auth mejlova (vidi „Registracija"), pa nema ni Supabase SMTP-a ni drugog Resend ključa.
@@ -326,7 +326,7 @@ Baza, Supabase CLI 3.0.0 (migracije i `db push` radi samo Ivana; `AGENTS.md`):
 | Varijabla | Gdje | Vrijednost |
 |---|---|---|
 | `EMAIL_MODE` | server | `test` (podrazumijevano; `live` se ne koristi) |
-| `TEST_INBOX` | server | Ivanin lični mejl, mejl vlasnika Resend naloga (izmjena tiketa 08, 3. 11.); upisuje se samo u `.env.local` i Vercel env, nikad u repo. Demo nalozi koriste njegove plus-adrese (`DB.md` §12.3); pošto je `Confirm email` isključen, na njih ne stiže nijedan mejl. |
+| `TEST_INBOX` | server | Ivanin lični mejl, mejl vlasnika Resend naloga (izmjena tiketa 08, 3. 11.); upisuje se samo u `.env.local` i Vercel env, nikad u repo. Demo nalozi ga ne koriste (imaju adrese `<nalog>@fixit.test`, `DB.md` §12.3). |
 | `EMAIL_FROM` | server | `Fixit <onboarding@resend.dev>` |
 | `EMAIL_REPLY_TO` | server | isti mejl kao `TEST_INBOX` |
 | `RESEND_API_KEY` | server | Resend ključ samo za slanje |

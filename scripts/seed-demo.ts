@@ -64,8 +64,14 @@ function requireEnv(name: string): string {
   return value
 }
 
-// plus address of TEST_INBOX, so any stray Auth mail would reach the demo inbox
-function demoEmail(testInbox: string, handle: string): string {
+// Made-up addresses on the reserved .test domain (RFC 2606), not tied to anyone's mailbox;
+// Confirm email is off, so Supabase never mails them (DB.md §12.3).
+const demoEmail = (handle: string) => `${handle}@fixit.test`
+
+// Before 4. 11. 2026 demo accounts used plus addresses of TEST_INBOX; such an account is moved
+// to its new address (same user id, same password) instead of creating a second one.
+function legacyEmail(testInbox: string | undefined, handle: string): string | null {
+  if (!testInbox) return null
   const at = testInbox.lastIndexOf("@")
   return `${testInbox.slice(0, at)}+fixit-${handle}${testInbox.slice(at)}`.toLowerCase()
 }
@@ -73,7 +79,7 @@ function demoEmail(testInbox: string, handle: string): string {
 async function main() {
   const url = requireEnv("NEXT_PUBLIC_SUPABASE_URL")
   const serviceKey = requireEnv("SUPABASE_SERVICE_ROLE_KEY")
-  const testInbox = requireEnv("TEST_INBOX")
+  const testInbox = process.env.TEST_INBOX
   const password = requireEnv("DEMO_PASSWORD")
   if (password.length < 8) {
     console.error("DEMO_PASSWORD must have at least 8 characters")
@@ -102,9 +108,18 @@ async function main() {
   const summary: { handle: string; email: string; role: Role; result: string }[] = []
 
   for (const account of ACCOUNTS) {
-    const email = demoEmail(testInbox, account.handle)
+    const email = demoEmail(account.handle)
     let userId = existing.get(email)
     let result = "postoji, preskočen"
+
+    const legacy = legacyEmail(testInbox, account.handle)
+    const legacyId = legacy ? existing.get(legacy) : undefined
+    if (!userId && legacyId) {
+      const { error } = await supabase.auth.admin.updateUserById(legacyId, { email, email_confirm: true })
+      if (error) throw new Error(`${account.handle}: ${error.message}`)
+      userId = legacyId
+      result = "mejl promijenjen"
+    }
 
     if (!userId) {
       const { data, error } = await supabase.auth.admin.createUser({
