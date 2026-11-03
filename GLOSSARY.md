@@ -191,7 +191,7 @@ Tok na serveru koji sa fotografija prepoznaje vrstu problema i opis (AI), iz pra
 _Izbjegavaj_: bot, asistent
 
 **Demo prijava** (`is_demo`):
-Prijava koju je za demo napravio tim, sa izmišljenom istorijom i upisanim brojem podrški. U UI-ju nosi oznaku „Demo prijava" (na javnoj stranici i u oblačiću markera); fotografija je sa otvorenom licencom, a neke demo prijave su bez fotografije. Briše se jednom komandom tek poslije ocjenjivanja.
+Prijava koju je za demo napravio tim, sa izmišljenom istorijom i upisanim brojem podrški, ili prijava napravljena sa demo naloga (probe tima i prijava snimljena u videu). U UI-ju nosi oznaku „Demo prijava" (na javnoj stranici i u oblačiću markera); fotografija je sa otvorenom licencom, a neke demo prijave su bez fotografije. Briše se jednom komandom tek poslije ocjenjivanja.
 _Izbjegavaj_: lažna prijava, test prijava, primjer
 
 **Ručni tok**:

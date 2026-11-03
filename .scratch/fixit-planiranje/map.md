@@ -95,6 +95,14 @@ Napravljena: ponedjeljak, 2. 11. 2026.
   - **[Ivana]** Opis prijave je javan, uz sliku; „Demo prijava" je oznaka, a demo podaci se brišu poslije ocjenjivanja; provjera „van Podgorice" je odmah na „Potvrdi lokaciju".
   - **[Claude]** Panel je P0, moderacija na `/admin` je P1, tri rizika iz 18 su prihvaćena.
   - Popravljeno je oko 57 nedosljednosti u dokumentima.
+- [Mjerenje brzine i jezika modela na demo fotografijama](issues/20-mjerenje-modela.md): **[istraživanje]**
+  - Haiku 5.5: 12/12 tačno, medijan 2,7 s (najsporiji 5,7 s); ijekavica na latinici; injection prepoznat; trošak $0.0046.
+  - **[Claude]** Model ostaje Haiku 5.5.
+- [Nejasnoće iz nacrta tiketa za izradu](issues/22-nejasnoce-za-izradu.md):
+  - **[Ivana]** Demo nalozi i prijave se prave unaprijed i ostaju iste kroz probu, video i ocjenjivanje (bez brisanja u četvrtak); seed ima jedan način rada i dodaje samo ono što fali; datumi se računaju od 6. 11.
+  - **[Ivana]** Šablon dopisa je u `lib/email/letter-template.ts`; dugme za odjavu je P0; boje i ikone statusa su u UI.md.
+  - **[Claude]** Rezerva za testiranje na telefonu; Photon nije u P0.
+  - Otvoreno: probne prijave tima ostaju javne.
 - [Odakle dolaze fotografije za demo prijave](issues/21-demo-fotografije.md):
   - **[Ivana]** Fotografije sa otvorenom licencom (Wikimedia Commons): 8 fotografija, po 2 za 4 vrste; iste služe i za tiket 20.
   - **[Claude]** Vrste su `pothole`, `street_light`, `illegal_dump`, `manhole`; preuzimanje je dio izrade.

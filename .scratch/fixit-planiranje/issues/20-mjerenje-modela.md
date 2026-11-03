@@ -1,11 +1,11 @@
 # 20 — Mjerenje brzine i jezika modela na demo fotografijama
 
 Type: task
-Status: open
+Status: resolved
 Blocked by: 04
 Mapa: [map.md](../map.md)
 
-> **Odloženo [Ivana], 3. 11.:** API ključ se dodaje naknadno. Tiket ne blokira izradu. Bez ključa poziv modela vraća grešku i aplikacija prelazi na ručni tok (tiket 15, Q5), pa se sve ostalo može graditi i testirati. Fotografije za test mogu biti iste kao demo fotografije ([21](21-demo-fotografije.md), Q4).
+> **Ažurirano [Ivana], 3. 11. uveče:** API ključ je u `.env.local` (budžet ključa $5). Test se pokreće čim demo fotografije iz tiketa 21 budu spremne. Skripta je van repoa (scratchpad), ključ ne ispisuje, a sama staje na $0.50. Očekivani trošak: ~$0.01 na Haiku 5.5. Sonnet 5.5 se pokreće samo ako Haiku podbaci (~$0.10).
 
 ## Question
 
@@ -23,3 +23,19 @@ Za test je potrebno:
 ➡️ Da. Test traje oko 15 minuta i ne blokira početak izrade.
 
 **Tvoj odgovor:** Mozes ti
+
+## Answer
+
+Mjereno 3. 11. 2026. uveče. Model `claude-haiku-5-5`, `effort: low`, `output_config.format` (json_schema), slike od 1024 px u base64. Skripta je van repoa (scratchpad); prompt i šema prate Tech.md §7.
+
+| Slučaj | Poziva | Tačna vrsta | Latencija (s) | Napomena |
+|---|---|---|---|---|
+| 8 demo fotografija, po 1 slika | 8 | 8/8 | 1,97–4,36 | pouzdanost 0,90–0,95 |
+| Lažna instrukcija na slici | 2 | 2/2 | 2,74–3,58 | obje označene sa `image_contains_instructions = true`; model nije poslušao (nema broja telefona ni engleskog, vrsta nije promijenjena) |
+| 3 slike u jednom pozivu | 2 | 2/2 | 2,54–5,70 | |
+
+- **[istraživanje]** Latencija: medijan 2,7 s, najsporiji 5,7 s (3 slike), sve ispod cilja od 8 s. Prvi poziv sa novom šemom (4,4 s) nije bio primjetno sporiji.
+- **[istraživanje]** JSON je validan u 12/12, `stop_reason = end_turn` u 12/12, nijedno odbijanje.
+- **[istraživanje]** Jezik: svih 12 opisa je na latinici i ijekavski (npr. „dio", „bijela", „svjetiljka", „neobezbijeđen"), bez ćirilice i bez ekavskih oblika. Ima sitnih gramatičkih grešaka u slaganju („stari automobilski gume", „razni sitni smeće"). Građanin ih može ispraviti na ekranu pregleda, pa ne blokiraju.
+- **[istraživanje]** Trošak: **$0.0046 ukupno** za 12 poziva (~$0.0004 po prijavi sa 1 slikom, ~$0.0005 sa 3 slike). Sonnet 5.5 nije pokretan.
+- **[Claude]** Model ostaje `claude-haiku-5-5`; Sonnet je samo rezerva preko `ANTHROPIC_MODEL`. Tech.md §7 je ažuriran.

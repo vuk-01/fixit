@@ -27,7 +27,7 @@ Pravila:
 
 ### Next.js: bezbjednosno izdanje od 3. 11. 2026.
 
-- Next.js je za utorak 3. 11. 2026. najavio bezbjednosno izdanje (sedam ranjivosti srednje ozbiljnosti). Ujutru 3. 11. `latest` je još bio `16.4.4`.
+- Next.js je za utorak 3. 11. 2026. najavio bezbjednosno izdanje (sedam ranjivosti srednje ozbiljnosti). Ujutru 3. 11. `latest` je još bio `16.4.4`; zakrpa **16.4.5** je objavljena istog dana u 18:01 UTC.
 - Pinujemo **prvu zakrpljenu 16.4.x verziju iz tog izdanja**, ne 16.4.4. Kostur se smije napraviti na 16.4.4, ali prvi Vercel deploy ide tek sa zakrpom: `pnpm add --save-exact next@<zakrpa> eslint-config-next@<zakrpa>`, pa se broj upiše u tabelu ispod. Vercel je ranije blokirao nove deploy-e sa ranjivom verzijom Next.js-a.
 - Next 16: `middleware.ts` se sada zove **`proxy.ts`** (funkcija `proxy`, uvijek Node runtime).
 - Cache Components su uključeni u novim aplikacijama. Stranice koje čitaju Supabase sesiju su dinamičke i idu iza `<Suspense>`; odgovori koji postavljaju sesiju ne idu u keš.
@@ -36,7 +36,7 @@ Pravila:
 
 | Paket | Verzija | Za šta |
 |---|---|---|
-| `next` | **zakrpa 16.4.x od 3. 11.** (upisati broj) | okvir aplikacije |
+| `next` | **16.4.5** (bezbjednosna zakrpa, objavljena 3. 11. 2026. u 18:01 UTC; uz nju `eslint-config-next` 16.4.5) | okvir aplikacije |
 | `react`, `react-dom` | 19.3.1 | uz Next 16.4 |
 | `@supabase/supabase-js` | 2.118.0 | baza, auth, storage, realtime |
 | `@supabase/ssr` | 0.12.7 | klijenti sa kolačićima za App Router |
@@ -111,7 +111,8 @@ lib/
   geo/reverse.ts                    Nominatim
   geo/transliterate.ts              ćirilica → latinica
   email/send.ts                     JEDINO mjesto slanja mejla (guard za EMAIL_MODE)
-  email/report-letter.ts            šablon dopisa (FR-10, FR-11)
+  email/letter-template.ts          šablon dopisa (FR-10, FR-11) kao čista funkcija: bez `server-only`, bez aliasa `@/`, bez upita; koriste ga server, seed i testovi (tiket 22 Q6)
+  email/report-letter.ts            serverski dio dopisa: skuplja podatke prijave i zove `letter-template.ts`
   photos/compress.ts                kompresija na klijentu (canvas)
 proxy.ts                            osvježavanje Supabase sesije
 supabase/
@@ -129,7 +130,7 @@ vercel.json                         { "regions": ["fra1"] }
 Konvencije:
 - Alias `@/` pokazuje na korijen repoa.
 - Folderi u `app/` prate rute iz PRD §8 (crnogorski URL-ovi); identifikatori, fajlovi u `lib/` i komentari su na engleskom.
-- Serverski moduli (`lib/supabase/admin.ts`, `lib/env.ts`, `lib/agent/*`, `lib/geo/reverse.ts`, `lib/email/*`) počinju sa `import 'server-only'`.
+- Serverski moduli (`lib/supabase/admin.ts`, `lib/env.ts`, `lib/agent/*`, `lib/geo/reverse.ts`, `lib/email/*`) počinju sa `import 'server-only'`. Jedini izuzetak je `lib/email/letter-template.ts`: čista funkcija koja sve podatke (i naziv vrste) dobija kao parametre, nema tajni ni poziva mreže, i zato je smije uvesti i seed skripta, koju Node izvršava bez Next.js-a (sekcija 11). Paket `server-only` u običnom Node-u baca grešku.
 - Stranice su Server Components; `'use client'` imaju samo interaktivni listovi stabla (mapa, kamera, forme).
 - Testovi su uz fajl (`*.test.ts`).
 - Kratke mutacije: RPC iz klijenta preko supabase-js kad ga RLS dozvoljava (npr. podrška), a Server Action kad treba tajna ili servisni ključ (npr. slanje prijave). Šta ide kroz koji RPC određuje `DB.md`.
@@ -141,6 +142,7 @@ Konvencije:
 - `proxy.ts` pravi server klijent, poziva `supabase.auth.getClaims()` (osvježava token), upisuje kolačiće u request i response i vraća baš taj response. Matcher preskače statične fajlove i `_next`.
 - Na serveru se korisnik provjerava uvijek sa `getClaims()`, nikad sa `getSession()`.
 - Anonimna sesija ima ulogu `authenticated`. Server i RLS zato provjeravaju claim `is_anonymous`; pravljenje i slanje prijave traže `is_anonymous = false`.
+- **Odjava (P0, tiket 22 Q7):** „Odjavi se" u meniju zaglavlja, samo za nalog koji nije anoniman. Server Action poziva `supabase.auth.signOut()` serverskim klijentom (briše kolačiće sesije) i vodi na `/`. Tim i video koriste više naloga na istim uređajima, pa se nalog mijenja odjavom, ne brisanjem kolačića.
 - Admin klijent se koristi samo za ono što RLS ne pokriva, i uvijek tek nakon provjere korisnika (`getClaims()`): poziv serverskih RPC funkcija (`create_draft`, `record_classification`, `update_draft`, `begin_submission`, `start_dispatch`, `complete_dispatch`, `count_previous_reports`; `DB.md` §8), direktan upis samo u `agent_runs`, potpisani URL-ovi, čitanje fotografija za prilog dopisa, brisanje fajlova iz Storage-a i čitanje mejla prijavioca iz `auth.users` kad je dostavljanje podataka uključeno.
 
 ## 5. Fotografije
@@ -172,12 +174,12 @@ Agent nije pozadinski proces. To su dvije rute (Route Handler, Node runtime) koj
 - Koraci, redom. Svaki šalje događaj `step` (`started` / `done` / `failed`) i upisuje red u `agent_runs` (FR-13); tekst koraka je u `lib/constants.ts`:
   1. `jurisdiction`, „Određujem nadležnog…": provjera da je tačka u Podgorici (FR-4; van nje događaj `error` sa kodom `outside_area` i povratak na mapu), pa konačna adresa potvrđene tačke (sekcija 8), `update_draft` (lokacija, adresa, vrsta) i `resolve_jurisdiction` (RPC iz `DB.md`; bez pravila prijava ide u `routing`, FR-8);
   2. `duplicates`, „Provjeravam prijave u blizini…": otvorene, nesakrivene prijave iste vrste do 50 m (FR-9);
-  3. `letter`, „Pripremam prijavu…": dopis iz šablona `lib/email/report-letter.ts`, u kom AI daje samo opis (FR-10).
+  3. `letter`, „Pripremam prijavu…": dopis za pregled iz šablona (`lib/email/report-letter.ts` → `letter-template.ts`), u kom AI daje samo opis (FR-10). Prijava tada još nema broj, datum podnošenja ni broj ranijih prijava, pa na tim mjestima (naslov, „datum i vrijeme prijave", red „Ranije prijave…", nazivi priloga) piše „dodjeljuje se pri slanju" (tekst u `lib/constants.ts`; PRD FR-11, tiket 22 Q5). Konačni dopis sa pravim podacima pravi tek `sendReport` (korak 2 ispod).
 - Na kraju stiže događaj `result` sa svim podacima za ekran pregleda, ili `error` sa kodom (poruka za korisnika je u `lib/constants.ts`). U ovoj ruti nema poziva modela.
 
 **3. Slanje: Server Action `sendReport`** (`app/prijavi/actions.ts`, FR-11). `getClaims()`, pa admin klijentom niz iz `DB.md` §8.5:
 1. `begin_submission`: u bazi provjerava vlasništvo, status `draft`, lokaciju i da svaka fotografija postoji u Storage-u i da ju je otpremio baš prijavilac (`owner_id`, inače `photo_missing`); upisuje konačnu vrstu, opis i dostavljanje podataka; dodjeljuje kod; razrješava nadležnost. Bez pravila ili bez provjerenog mejla prijava prelazi u `routing`, mejl se ne šalje i niz se tu završava (tiket 10).
-2. `count_previous_reports` i šablon dopisa (`lib/email/report-letter.ts`).
+2. `count_previous_reports` i šablon dopisa (`lib/email/report-letter.ts` → `letter-template.ts`), sada sa kodom, datumom i vremenom podnošenja i brojem ranijih prijava.
 3. `start_dispatch` (dopis + pokušaj slanja; drugi istovremeni pokušaj dobija `dispatch_in_progress`).
 4. `lib/email/send.ts`, sa fotografijama u prilogu (čita ih admin klijent).
 5. `complete_dispatch`: tek nakon uspjeha status postaje `sent`; neuspjeh ostavlja nacrt sa kodom, a „Pokušaj ponovo" ponavlja cijeli niz.
@@ -208,12 +210,12 @@ Podešavanja i rokovi:
   - opisi vrsta za prompt dolaze iz `lib/constants.ts`.
 - **Serverska provjera izlaza:** dužina `title` i `description`; URL-ovi, mejl adrese i brojevi telefona u opisu se uklanjaju; ćirilica i česti ekavski oblici (`mesto`, `reka`, `cev`, `obaveštenje`, `bezbednost`) samo označavaju tekst za pregled i ne blokiraju tok.
 - Prvi poziv sa novom šemom je sporiji (gramatika se kompajlira i kešira 24 h). Prije snimanja videa napraviti jedan zagrijavajući poziv.
-- Cijena: na Haiku 5.5 oko $0.0004 po prijavi sa jednom slikom od 1024 px (nalaz 04). Latencija ≤ 8 s i kvalitet ijekavice **nisu izmjereni**; to radi tiket 20.
+- Cijena: na Haiku 5.5 oko $0.0004 po prijavi sa jednom slikom od 1024 px (nalaz 04). Tiket 20 (3. 11.) je izmjerio na 12 poziva: medijan 2,7 s, najsporiji 5,7 s (3 slike), 12/12 tačna vrsta i validan JSON, ijekavica na latinici bez ćirilice, lažna instrukcija na slici prepoznata i ignorisana; ~$0.0004 po prijavi. Haiku 5.5 ostaje model.
 
 ## 8. Mapa i adresa
 
 - **Biblioteka:** `leaflet` + `react-leaflet` (oko 46 KB gzip). Mapa je klijentska komponenta u `components/map/`, učitana sa `next/dynamic(() => import(…), { ssr: false })` iz druge klijentske komponente (u Server Component-i `ssr: false` nije dozvoljen). CSS: `import 'leaflet/dist/leaflet.css'`.
-- **Markeri:** `L.divIcon` sa bojom **i** ikonom statusa (statusi se ne razlikuju samo bojom, PRD §6). Tako se izbjegava i poznat problem sa putanjama podrazumijevane Leaflet ikone u bundleru.
+- **Markeri:** `L.divIcon` sa bojom **i** ikonom statusa (statusi se ne razlikuju samo bojom, PRD §6); boja (token iz preseta) i ikona za svaki status su u tabeli u `UI.md` („Status colours and icons"). Tako se izbjegava i poznat problem sa putanjama podrazumijevane Leaflet ikone u bundleru.
 - **Tile-ovi:** OSM standard, `https://tile.openstreetmap.org/{z}/{x}/{y}.png`, sa uvijek vidljivom atribucijom „© OpenStreetMap" (link na stranicu o autorskim pravima). URL i atribucija su u jednoj konstanti `MAP_TILES` u `lib/constants.ts`, da se provajder mijenja bez diranja komponenti.
   - OSM pravila: bez restriktivnog `Referrer-Policy` (npr. `no-referrer`), service worker ne kešira tile-ove i ništa se ne preuzima unaprijed.
   - Rezerva: CARTO Voyager/Positron raster (besplatan ključ, atribucija OSM + CARTO). Tek tada se uvodi `NEXT_PUBLIC_MAP_TILE_KEY`; taj ključ nije tajna.
@@ -227,7 +229,8 @@ Podešavanja i rokovi:
   - Najviše 1 zahtjev u sekundi (ruta `/api/geo/reverse` odbija češće zahtjeve istog korisnika); konačna adresa se čuva uz prijavu i za nju se Nominatim ne zove ponovo. Ako Nominatim počne da odbija zahtjeve, prvo se ukida adresa ispod pina, a konačna adresa ostaje (tiket 17).
   - Adresa = `road` + `house_number` + `city`/`town`/`village`, nikad `display_name`. Kad ulice nema: naselje + opština + koordinate.
   - `lib/geo/transliterate.ts` pretvara eventualnu ćirilicu u latinicu.
-  - Timeout 3 s. Ako Nominatim ne odgovori, prijava ide sa koordinatama, bez adrese, i tok se ne zaustavlja. Rezerva je Photon (`photon.komoot.io/reverse`) iza iste funkcije.
+  - Timeout 3 s. Ako Nominatim ne odgovori, prijava ide sa koordinatama, bez adrese, i tok se ne zaustavlja.
+  - **Photon nije u P0** (tiket 22 Q9). Rezerva `photon.komoot.io/reverse` iza iste funkcije pravi se tek ako Nominatim stvarno počne da odbija zahtjeve; do tada je `address_source` uvijek `nominatim`, a vrijednost `photon` u CHECK-u samo čeka tu rezervu.
   - Opština i nadležnost **nikad** iz geocodera (`county`), samo iz PostGIS-a (pravilo 1).
 
 ## 9. Realtime
@@ -263,10 +266,10 @@ Skripte u `package.json` (na njih se poziva `AGENTS.md`):
 | `pnpm lint` | `eslint .` |
 | `pnpm test` | `vitest run` |
 | `pnpm db:types` | `supabase gen types typescript --remote --schema public > lib/supabase/database.types.ts` |
-| `pnpm db:seed-demo` | `node --env-file=.env.local scripts/seed-demo.ts` (demo nalozi i prijave; `DB.md` §12.3–12.4) |
+| `pnpm db:seed-demo` | `node --env-file=.env.local scripts/seed-demo.ts` (demo nalozi i prijave; jedan način rada, bez opcija: dopunjava naloge koji nedostaju, a prijave pravi samo ako ih još nema; smije se pokrenuti više puta; `DB.md` §12, §12.3–12.4) |
 | `pnpm db:clear-demo` | `node --env-file=.env.local scripts/clear-demo.ts` (FR-25; uz `-- --accounts` briše i demo naloge; `DB.md` §12.5) |
 
-Skripte iz `scripts/` Node 24 izvršava kao TypeScript bez nove zavisnosti, ali samo ako ne koriste alias `@/` ni sintaksu koja nije samo tip (npr. `enum`); provjeriti pri prvom pokretanju.
+Skripte iz `scripts/` Node 24 izvršava kao TypeScript bez nove zavisnosti, ali samo ako ne koriste alias `@/` ni sintaksu koja nije samo tip (npr. `enum`); provjeriti pri prvom pokretanju. Isto važi za svaki fajl iz `lib/` koji skripta uvozi: seed uvozi `lib/email/letter-template.ts` (i nazive vrsta iz `lib/constants.ts`) relativnom putanjom sa nastavkom `.ts`, jer Node bez nastavka ne nalazi fajl, a ti fajlovi nemaju uvoz vrijednosti preko `@/` (`import type` je dozvoljen, Node ga briše). Ako `pnpm typecheck` odbije uvoz sa nastavkom `.ts`, u `tsconfig.json` se dodaje `allowImportingTsExtensions` (uz `noEmit`, koji Next.js već postavlja).
 
 Inicijalizacija (jednom, Ivana, utorak 3. 11.):
 1. `pnpm dlx shadcn@latest init --preset b2xaqzSRuK --template next` u korijenu repoa (pravi Next.js projekat sa presetom; `UI.md`).
@@ -284,6 +287,7 @@ Baza, Supabase CLI 3.0.0 (migracije i `db push` radi samo Ivana; `AGENTS.md`):
 
 - Vitest 5, `vitest.config.mts` sa `vite-tsconfig-paths`, podrazumijevano `environment: 'node'`.
 - Koji su testovi obavezni piše u `AGENTS.md`. Resend i Anthropic SDK su u testovima uvijek mockovani (`vi.mock`); testovi nikad ne zovu pravi model, Resend ni Nominatim.
+- `server-only` se mockuje za sve testove: `vi.mock('server-only', () => ({}))` u fajlu iz `setupFiles` u `vitest.config.mts` (tiket 22 Q6). Bez toga paket baca grešku čim test uveze serverski modul, npr. `lib/email/send.ts` (test 1). Test 3 provjerava čistu funkciju `lib/email/letter-template.ts`, istu koju koriste server i seed.
 - `async` Server Components Vitest ne podržava; provjeravaju se ručno na telefonu.
 
 ## Hosting i mejl
@@ -297,6 +301,7 @@ Baza, Supabase CLI 3.0.0 (migracije i `db push` radi samo Ivana; `AGENTS.md`):
 - **TryCloudflare se ne koristi.** Quick Tunnel daje privremenu `trycloudflare.com` adresu koja se mijenja pri svakom pokretanju i radi samo dok `cloudflared` radi na nečijem računaru. Cloudflare ga namjenjuje testiranju, bez garancije dostupnosti, i ne podržava Server-Sent Events, koje agent tok koristi. Izvor: [developers.cloudflare.com, Quick Tunnels](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/do-more-with-tunnels/trycloudflare/) (pristup 3. 11. 2026).
 - **AI agent nije pozadinski proces.** To je serverska funkcija (Route Handler, Node runtime) koju pokreće zahtjev građanina nakon slanja fotografije. Jedan prolaz traje oko 10 s (PRD: ≤ 8 s + ≤ 3 s), funkcija ima `maxDuration = 60`, a strop na Hobby planu je 300 s (nalaz 07). Ne treba stalno upaljen server, red čekanja ni worker.
 - Hobby nema timsku saradnju: Vercel projekat i env varijable vidi samo Ivana. Ostali članovi rade lokalno i preko push-a na GitHub (preview deploy).
+- **Provjera na telefonu bez preview-a** (tiket 22 Q8). Kamera i GPS na telefonu traže HTTPS. Prvog dana (stavka 1 tiketa za izradu) provjerava se da li Hobby pravi preview deploy za commit kolege. Ako ne pravi: kolege provjeravaju na računaru, na `http://localhost:3000`, gdje pregledač dozvoljava kameru i lokaciju (uz prikaz širine 360 px u alatima pregledača), a na telefonu se izmjena provjerava na produkcionom URL-u tek kad Ivana spoji PR u `main` i on se deploy-uje. TryCloudflare i dalje nije rezerva.
 
 ### Mejl (Resend)
 

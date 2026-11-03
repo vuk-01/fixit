@@ -707,6 +707,8 @@ Podaci su u dvije grupe, sa različitim životnim vijekom:
 
 `supabase/seed.sql` se ne koristi: lokalne baze nema, a referentni podaci su dio šeme koji mora postojati u svakoj bazi i mijenjati se samo novom migracijom (PRD: „izmjene pravila u P0 idu samo kroz migraciju"). Demo podaci traže `auth.admin.createUser` i otpremu fotografija u Storage, što SQL ne može (tiket 16).
 
+**Demo podaci postoje unaprijed i ne mijenjaju se do kraja ocjenjivanja** (tiket 22 Q1, Q4). `pnpm db:seed-demo` ima jedan način rada, bez dodatnih opcija, i smije se pokrenuti više puta: pravi demo naloge koji ne postoje (sekcija 12.3) i, ako `citizen-seed` još nema nijednu prijavu, demo prijave (sekcija 12.4). Prvo pokretanje je u utorak, odmah poslije migracije 10, pa se tim od prvog dana uloguje demo nalozima. Drugo pokretanje dolazi čim je dio skripte za prijave gotov; poslije njega se demo podaci ne brišu i ne prave ponovo ni prije probe, ni prije snimanja, ni prije ocjenjivanja. Na probi, u videu i na ocjenjivanju prikazuju se iste demo prijave.
+
 ### 12.1 Granica Podgorice
 
 - Samo Glavni grad Podgorica: `ME-16`, OSM relacija `2319360` (nalaz 01). Bez granice države i bez ostalih 24 opštine (18 Q4, brief). Tuzi (`ME-24`) i Zeta (`ME-25`) su van granice, pa se tamo prijave odbijaju (FR-4).
@@ -741,21 +743,25 @@ Skripta `scripts/seed-demo.ts` radi sa servisnim ključem iz `.env.local` i prav
 
 | Nalog | Uloga | Svrha |
 |---|---|---|
-| `citizen-video` | `citizen` | snimanje videa; nema nijednu demo prijavu, pa može podržati sve |
+| `citizen-video` | `citizen` | snimanje videa; nema nijednu demo prijavu iz seed-a, pa može podržati sve. Prijava koju napravi u videu je `is_demo` i nosi oznaku „Demo prijava" (tiket 22 Q3): i ona ide samo na `TEST_INBOX`, ne instituciji. |
 | `citizen-seed` | `citizen` | prijavilac svih demo prijava |
 | `dev-1`, `dev-2`, `dev-3` | `citizen` | razvoj i ručne probe (svako ima svoje dnevno ograničenje od 10) |
 | `official-saobracaj`, `official-komunalne-usluge`, `official-vik`, `official-cistoca`, `official-zelenilo` | `official` | panel za svaku instituciju koja je primalac nekog pravila (`official-zelenilo` nema demo prijavu i služi za probe) |
 | `admin` | `admin` | `/admin` |
 
-- Mejl adrese su plus-adrese sanduka `TEST_INBOX` (npr. `ime+fixit-dev-1@…`), pa bi i slučajni Auth mejl stigao timu (u P0 ih nema, jer je `Confirm email` isključen). Šifra je iz env varijable `DEMO_PASSWORD` (samo `.env.local`, nikad u repou).
+- Mejl adrese su plus-adrese mejla `TEST_INBOX` (npr. `ime+fixit-dev-1@…`; adresa se ne upisuje u repo, skripta je čita iz `.env.local`), pa bi i slučajni Auth mejl stigao Ivani (u P0 ih nema, jer je `Confirm email` isključen). Šifra je iz env varijable `DEMO_PASSWORD` (samo `.env.local`, nikad u repou).
 - Imena su izmišljena, ne imena članova tima ni stvarnih službenika.
-- **Sve što tim napravi tokom razvoja mora nastati sa ovih naloga**: `create_draft` kopira `profiles.is_demo` u `reports.is_demo`, pa `db:clear-demo` briše i probne prijave iz razvoja (tiket 12). Prijava napravljena sa običnog naloga ostaje javna.
+- **Sve što tim napravi tokom razvoja mora nastati sa ovih naloga**: `create_draft` kopira `profiles.is_demo` u `reports.is_demo`, pa `db:clear-demo` poslije ocjenjivanja briše i probne prijave iz razvoja (tiket 12). Prijava napravljena sa običnog naloga ostaje javna.
+- **Postojeći nalog se ne dira:** skripta za svaki nalog iz tabele prvo provjeri da li postoji (po mejlu); ako postoji, preskače ga, bez nove šifre i bez greške. Tako drugo pokretanje samo dodaje ono što nedostaje.
+- **Registracija ostaje otvorena:** novi nalog građanina se pravi na `/uloguj-se` (FR-1) i radi kao i ranije, ali se u videu ne prikazuje (tiket 22 Q4). Takav nalog nije demo nalog, pa njegova prijava nema oznaku „Demo prijava" i `db:clear-demo` je ne briše.
 
 ### 12.4 Demo prijave
 
-~10 prijava u Podgorici, sve `is_demo = true`, prijavilac `citizen-seed`, upisane direktno u konačnom stanju (servisni ključ, `INSERT`, pa trigger prelaza ne smeta). Za svaku skripta upisuje `reports` (sa unazad postavljenim `submitted_at`/`closed_at`), `report_private`, `report_details`, `report_photos` (+ fajl u Storage), `letters` i `dispatches` (`email_mode = 'test'`, `status = 'succeeded'`, bez stvarnog slanja; ne zove `lib/email/send.ts`) i `report_events` sa unazad postavljenim `created_at`. Kodovi idu iz `next_report_code()`, redom od najstarije prijave (FR-24).
+~10 prijava u Podgorici, sve `is_demo = true`, prijavilac `citizen-seed`, upisane direktno u konačnom stanju (servisni ključ, `INSERT`, pa trigger prelaza ne smeta). Za svaku skripta upisuje `reports` (sa unazad postavljenim `submitted_at`/`closed_at`), `report_private`, `report_details`, `report_photos` (+ fajl u Storage), `letters` i `dispatches` (`email_mode = 'test'`, `status = 'succeeded'`, bez stvarnog slanja; ne zove `lib/email/send.ts`) i `report_events` sa unazad postavljenim `created_at`. Kodovi idu iz `next_report_code()`, redom od najstarije prijave (FR-24). `letters.subject` i `letters.body_text` pravi isti šablon kao za prave prijave, `lib/email/letter-template.ts` (čista funkcija bez `server-only`, Tech.md §3; tiket 22 Q6), pa demo dopis izgleda kao pravi.
 
-Prijedlog skupa (raspored statusa i brojača za video; „dana" = dana prije snimanja):
+**Datumi se računaju od fiksnog dana snimanja** (tiket 22 Q2): „prije N dana" znači N kalendarskih dana prije petka **6. 11. 2026.** (`Europe/Podgorica`), konstanta u skripti, a ne prije trenutka pokretanja. Tako brojači u videu izgledaju tačno kao u tabeli, bez obzira kad je seed pokrenut. Vrijeme koje bi palo poslije trenutka pokretanja (red 6, „danas", kad se seed pokrene prije petka) skripta pomjera na nekoliko minuta prije pokretanja, uz isti redoslijed događaja, pa u bazi nema datuma iz budućnosti, a „Riješeno istog dana" ostaje tačno. Pokretanje od srijede 4. 11. ne mijenja nijedan drugi brojač iz tabele.
+
+Prijedlog skupa (raspored statusa i brojača za video; „dana" = dana prije 6. 11. 2026.):
 
 | # | Vrsta | Konačni status | Podneseno | Zatvoreno | Primalac | Podrške | Fotografija | Istorija (vremenska linija) |
 |---|---|---|---|---|---|---|---|---|
@@ -774,19 +780,19 @@ Skup je prilagođen tiketu 21 (8 fotografija, po 2 za 4 vrste): redovi 5–8 su 
 
 - **Podrške:** skripta upisuje `like_count` direktno, bez redova u `report_likes` (nema stotinu naloga ni anonimnih sesija). Zato za demo prijave važi `like_count ≥ broj redova u report_likes`; za sve ostale je jednako. Prava podrška na demo prijavi (npr. u videu) radi normalno i diže broj za 1.
 - **Poruke institucija u istoriji** su kratke i neutralne („Prijava je proslijeđena ekipi na terenu.", „Svjetiljka je zamijenjena."), bez rokova, obećanja i imena, jer se pripisuju stvarnim institucijama (pravilo 7: bez izmišljenih činjenica i rokova). Isto važi za opis demo prijave, koji je javan (tiket 19 Q4).
-- **Oznaka:** svaka prijava sa `is_demo = true` na `/p/[code]` i u oblačiću markera ima malu oznaku „Demo prijava" (shadcn `Badge`; tiket 19 Q5, FR-25). Vidi se i u videu.
-- **Lokacije:** stvarne tačke u Podgorici koje izabere tim, sa ispravnom adresom; dvije demo prijave iste vrste su međusobno udaljene više od 50 m, a **nijedna demo prijava vrste koja se snima uživo nije bliže od 50 m mjestu snimanja**, inače video dobija ekran duplikata.
+- **Oznaka:** svaka prijava sa `is_demo = true` na `/p/[code]` i u oblačiću markera ima malu oznaku „Demo prijava" (shadcn `Badge`; tiket 19 Q5, FR-25). Vidi se i u videu. Oznaku nosi i prijava koju `citizen-video` napravi u videu, kao i svaka prijava sa demo naloga (tiket 22 Q3).
+- **Lokacije:** stvarne tačke u Podgorici koje izabere tim, sa ispravnom adresom; dvije demo prijave iste vrste su međusobno udaljene više od 50 m, a **nijedna demo prijava vrste koja se snima uživo nije bliže od 50 m mjestu snimanja**, inače video dobija ekran duplikata. Pošto se prije snimanja ništa ne briše (tiket 22 Q4), isto važi za probne prijave: generalna proba se ne radi na mjestu snimanja za vrstu koja se snima.
 - **Fotografije (tiket 21):** 8 stvarnih fotografija sa otvorenom licencom sa Wikimedia Commons, po 2 za `pothole`, `street_light`, `illegal_dump` i `manhole`. Nisu snimljene u Podgorici, što pokriva oznaka „Demo prijava". Svaka fotografija pripada tačno jednoj demo prijavi (kolona „Fotografija") i prikazuje baš njenu vrstu. Bez prepoznatljivih lica i čitljivih tablica (tiket 11), smanjene na 1600 px JPEG bez EXIF-a (i GPS-a iz njega); čuvaju se u repou (`scripts/demo-photos/pothole-1.jpg` …), a skripta ih otprema pod novim `<uuid>.jpg` putanjama (`position = 1`, `has_personal_data = false`).
-- **Autori i licence:** `scripts/demo-photos/CREDITS.md` uz fotografije: za svaki fajl naslov i link Commons stranice, autor, licenca sa linkom, datum preuzimanja i izmjena („smanjeno na 1600 px, uklonjeni metapodaci"). Dozvoljeni su CC0, javno dobro, CC BY i CC BY-SA, sa prednošću za CC0 i javno dobro. Ako je ijedna fotografija CC BY ili CC BY-SA, ista lista stoji i u odjeljku „Demo fotografije" na `/privatnost`, jer licenca traži da atribucija bude dostupna i onome ko fotografiju vidi u aplikaciji, ne samo u repou (tiket 21).
+- **Autori i licence:** `scripts/demo-photos/CREDITS.md` uz fotografije: za svaki fajl naslov i link Commons stranice, autor, licenca sa linkom, datum preuzimanja i izmjena („smanjeno na 1600 px, uklonjeni metapodaci"). Dozvoljeni su CC0, javno dobro, CC BY i CC BY-SA, sa prednošću za CC0 i javno dobro. Ako je ijedna fotografija CC BY ili CC BY-SA (jeste: `street_light-2.jpg`, CC BY 4.0, autor „ŠJů, Wikimedia Commons", izmijenjena), ista lista stoji i u odjeljku „Demo fotografije" na `/privatnost`, jer licenca traži da atribucija bude dostupna i onome ko fotografiju vidi u aplikaciji, ne samo u repou (tiket 21).
 - **Demo prijave bez fotografije:** redovi 9 i 10 (`graffiti`, `other`) nemaju fotografiju (tiket 21). Fotografija druge vrste bila bi netačan prikaz, a ista fotografija u dvije prijave izgledala bi kao duplikat. To je jedini izuzetak od „1–3 fotografije" (FR-5) i važi samo za demo prijave, koje skripta upisuje direktno; za prave prijave `begin_submission` i dalje traži fotografiju. Na `/p/[code]` i u oblačiću markera umjesto fotografije stoji „Demo prijava nema fotografiju." (tekst u `lib/constants.ts`).
-- Skripta odbija da radi ako već postoji ijedna `is_demo` prijava („prvo pokrenite `pnpm db:clear-demo`"), da se demo ne udvostruči.
+- **Bez udvostručavanja:** skripta pravi demo prijave samo ako `citizen-seed` nema nijednu prijavu. Ako ih ima, preskače dio za prijave uz poruku da demo prijave već postoje, a naloge i dalje dopunjava. Probne prijave tima sa `dev-*` i `citizen-video` naloga (takođe `is_demo`) ne sprečavaju seed.
 
 ### 12.5 Brisanje demo podataka (`pnpm db:clear-demo`, FR-25)
 
-`scripts/clear-demo.ts`, servisni ključ. **Kada:** tek poslije ocjenjivanja, ne prije predaje, da žiri koji otvori link vidi mapu sa demo prijavama (tiket 19 Q5).
+`scripts/clear-demo.ts`, servisni ključ. **Kada:** tek poslije ocjenjivanja, ne prije predaje, da žiri koji otvori link vidi mapu sa demo prijavama (tiket 19 Q5). Ne pokreće se ni prije generalne probe ni prije snimanja (tiket 22 Q4).
 1. `select clear_demo_data()` → briše sve `is_demo` prijave (kaskadno sve uz njih) i `agent_runs` demo naloga, vraća putanje fotografija;
 2. `storage.from('report-photos').remove(paths)` u grupama;
-3. samo uz `--accounts`: briše i demo naloge (`auth.admin.deleteUser` za svaki `profiles.is_demo`). Bez toga nalozi ostaju za novo `db:seed-demo`.
+3. samo uz `--accounts` (opcija komande `db:clear-demo`, ne `db:seed-demo`): briše i demo naloge (`auth.admin.deleteUser` za svaki `profiles.is_demo`). Bez toga nalozi ostaju za novo `db:seed-demo`.
 
 Podrške demo naloga na pravim prijavama ostaju (namjerno bez FK, sekcija 4.3). Brojač kodova se ne vraća (sekcija 8.3).
 

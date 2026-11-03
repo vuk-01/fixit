@@ -36,3 +36,20 @@
   - citizen pages work at 360 px width (mobile-first); the panel is desktop-first but usable on a tablet;
   - touch targets at least 44 × 44 px; WCAG AA contrast; statuses are never shown by colour alone (colour + icon/text);
   - all user-facing text is Montenegrin, Latin script, ijekavian, and lives in `lib/constants.ts` or next to the component.
+## Status colours and icons (ticket 22 Q10)
+
+One mapping for every place a status is shown (map marker, public report page, panel). Colours are tokens from the preset (`--muted`, `--chart-1`…`--chart-4`, `--destructive` in `app/globals.css`, used as Tailwind classes such as `bg-chart-1`); icons come from the preset's icon library (lucide). Keep the mapping in one `Record<report_status, …>` next to the status labels, so a missing status breaks `pnpm typecheck`.
+
+| Status | Label (public) | Colour token | Icon |
+|---|---|---|---|
+| `routing` | Određuje se nadležni | `muted` | `CircleHelp` |
+| `sent` | Poslata | `chart-1` | `Send` |
+| `acknowledged` | Primljena | `chart-2` | `Eye` |
+| `in_progress` | U radu | `chart-3` | `Wrench` |
+| `resolved` | Riješena | `chart-4` | `CircleCheck` |
+| `not_competent` | Preusmjerava se (panel: „Nije naša nadležnost") | `muted` | `ArrowLeftRight` |
+| `rejected` | Odbijena | `destructive` | `CircleX` |
+
+- `draft` is never shown publicly and has no entry here.
+- A status is always shown as text as well, never by colour alone (PRD §6, accessibility); the icon is a second cue, not a replacement for the label.
+- The exact shades depend on the preset: check them (and WCAG AA contrast of the icon on the marker) once `init` has run. Do not hand-edit the theme variables to fix a shade; pick another existing token and update this table.

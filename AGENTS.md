@@ -39,12 +39,13 @@ Gradi troje ljudi; svako vodi jednu ili dvije Claude Code sesije. Ivana je vlasn
 - Grana iz svježeg `main`: `<ime>/<broj-tiketa>-<kratak-opis>` (npr. `marko/14-mapa-prijava`). Svaka sesija radi na svojoj grani, u svom `git worktree`.
 - Izmjene idu u `main` samo kroz PR, squash merge-om. PR opis: `Closes #<broj>`, šta je provjereno na telefonu, obrazloženje za nove zavisnosti.
 - Svaki push na granu pravi Vercel preview deploy; izmjenu provjeravaš na njemu, na telefonu.
+- Ako Vercel Hobby ne pravi preview za tvoj commit (provjerava se prvog dana): izmjenu provjeravaš na računaru, na `http://localhost:3000`, gdje pregledač dozvoljava kameru i lokaciju, u prikazu širine 360 px. Na telefonu se ona provjerava tek kad Ivana spoji PR u `main` i on se deploy-uje na produkcioni URL; to zapiši u PR opis. TryCloudflare nije rezerva (`Tech.md`, „Hosting").
 - Vercel projekat je na Ivaninom Hobby nalogu: dashboard, env varijable i logove vidi samo ona. `.env.local` dobijaš od nje.
 
 ### Baza (Supabase)
 
 - Svi rade na jednom zajedničkom Supabase projektu (razvoj = demo), bez lokalnog Supabase-a. Demo podaci (sa oznakom „Demo prijava") ostaju do kraja ocjenjivanja i brišu se tek poslije njega komandom iz FR-25, ne prije predaje.
-- Razvijaš i probaš samo sa demo nalozima iz `pnpm db:seed-demo` (`dev-1`…`dev-3`, službenici, `admin`; šifra je `DEMO_PASSWORD` iz `.env.local`). Njihove prijave su `is_demo`, pa ih `pnpm db:clear-demo` briše; prijava sa ličnog naloga ostaje javna na mapi.
+- Razvijaš i probaš samo sa demo nalozima iz `pnpm db:seed-demo` (`dev-1`…`dev-3`, službenici, `admin`; šifra je `DEMO_PASSWORD` iz `.env.local`). Njihove prijave su `is_demo` (oznaka „Demo prijava"), pa ih `pnpm db:clear-demo` briše poslije ocjenjivanja; prijava sa ličnog naloga ostaje javna na mapi. Demo podaci se ne brišu i ne prave ponovo prije probe ni snimanja; `pnpm db:seed-demo` smiješ pokrenuti ponovo, jer samo dopunjava ono što nedostaje (`DB.md` §12).
 - Migracije piše i na bazu primjenjuje samo Ivana. Kad ti treba izmjena šeme, RPC-a, RLS-a ili storage-a: opiši je u tiketu, dodijeli ga Ivani i nastavi tek kad su migracija i novi tipovi u `main`.
 - Ivanin redoslijed: `supabase migration new <naziv>` → `supabase db push --remote` → `supabase gen types typescript --remote --schema public > lib/supabase/database.types.ts` → PR samo sa migracijom i tipovima → merge odmah.
 - Supabase CLI je fiksiran na 3.0.0. U v3 komanda bez cilja gađa lokalnu bazu, pa za naš projekat uvijek dodaješ `--remote`; `--project-id`, `--project-ref` i `--linked` iz starijih uputstava zamjenjuje `--remote`.
@@ -55,7 +56,9 @@ PR koji dira jedno od ovih mjesta ima test za njega:
 
 1. `lib/email/send.ts`: u `EMAIL_MODE=test` (i za svaku vrijednost osim tačno `live`) i primalac i kopija (`cc`) idu na `TEST_INBOX`; bez `TEST_INBOX` nema slanja; Resend je mockovan.
 2. Nadležnost: lokacija van Podgorice se odbija; vrsta sa pravilom → nadležna institucija iz `jurisdiction_rules`; vrsta bez pravila → prijava bez nadležnog, za administratora.
-3. Dopis iz šablona: sva polja iz FR-11; ime, prezime i mejl građanina samo kad je dostavljanje podataka uključeno.
+3. Dopis iz šablona (`lib/email/letter-template.ts`, čista funkcija koju dijele server i seed): sva polja iz FR-11; ime, prezime i mejl građanina samo kad je dostavljanje podataka uključeno; u pregledu prije slanja „dodjeljuje se pri slanju" umjesto broja prijave, datuma i broja ranijih prijava.
+
+`server-only` je u Vitest-u mockovan za sve testove (`Tech.md` §12), pa test smije uvesti serverski modul kao `lib/email/send.ts`.
 4. RLS: anonimni klijent i anonimna sesija (`is_anonymous = true`) ne mogu upisati u `reports`, pročitati `report_private` niti pozvati serversku funkciju (npr. `create_draft`). Ovi testovi idu na zajednički projekat i samo pokušavaju zabranjene operacije.
 
 Sve ostalo se provjerava ručno na telefonu; E2E testova u P0 nema.
@@ -64,7 +67,7 @@ Sve ostalo se provjerava ručno na telefonu; E2E testova u P0 nema.
 
 Funkcija je gotova kad važi svaka stavka:
 
-- radi na Vercel preview-u na telefonu širine 360 px;
+- radi na Vercel preview-u na telefonu širine 360 px (bez preview-a: na `localhost`-u u širini 360 px, pa na telefonu poslije merge-a; vidi „Tiketi, grane, PR");
 - sav tekst za korisnika je na crnogorskom, latinicom, ijekavski, u `lib/constants.ts` ili uz komponentu, sa nazivima iz `GLOSSARY.md`;
 - `pnpm typecheck`, `pnpm lint` i `pnpm test` prolaze;
 - nova tabela ima RLS i tipovi su regenerisani nakon migracije;
