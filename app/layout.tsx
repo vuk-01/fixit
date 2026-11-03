@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next"
 import { DM_Sans, Geist_Mono, Outfit } from "next/font/google"
 
 import "./globals.css"
+import { SiteHeader } from "@/components/site-header"
 import { ThemeProvider } from "@/components/theme-provider"
 import { APP_DESCRIPTION, APP_NAME } from "@/lib/constants"
 import { cn } from "@/lib/utils"
@@ -39,7 +40,10 @@ export default function RootLayout({
       className={cn("antialiased", fontMono.variable, "font-sans", dmSans.variable, outfitHeading.variable)}
     >
       <body className="min-h-svh bg-background text-foreground">
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <SiteHeader />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   )

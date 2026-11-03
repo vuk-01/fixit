@@ -113,7 +113,7 @@ Prioriteti: **P0** = mora raditi na demou; **P1** = radimo ako P0 bude gotov do 
   - **zahtjev za postupanje:** molba da institucija razmotri prijavu i preduzme mjere iz svoje nadležnosti;
   - **pogrešna nadležnost:** molba da institucija obavijesti Fixit ako prijava nije u njenoj nadležnosti, kako bi bila proslijeđena odgovarajućoj instituciji;
   - **podaci o prijaviocu:** samo ako je građanin izabrao dostavljanje podataka, tekst „Prijavu je podnio korisnik platforme Fixit, koji je dao saglasnost da se njegovi podaci dostave instituciji: {ime i prezime}, {mejl adresa}.“;
-  - **potpis:** „S poštovanjem, Tim Fixit“, uz kontakt mejl (ista adresa kao `reply-to`) i sajt (produkcioni URL `https://fixit-b73a.vercel.app`, `NEXT_PUBLIC_SITE_URL`).
+  - **potpis:** „S poštovanjem, Tim Fixit“, uz sajt (produkcioni URL `https://fixit-b73a.vercel.app`, `NEXT_PUBLIC_SITE_URL`). Mejl adresa se u tekstu dopisa ne navodi; odgovor stiže timu preko `reply-to` [Ivana, 4. 11.].
 
   Ako građanin izabere dostavljanje podataka, njegovo ime, prezime i mejl adresa automatski se uključuju u mejl, bez posebnog zahtjeva institucije. Ako to ne izabere, mejl ne sadrži njegove lične podatke. Nakon uspješnog slanja dopisa prijava prelazi u status `sent` (bez pravila nadležnosti u `routing`, bez mejla, FR-8). Građanin prijavu podnosi samo jednom; jedan dopis ide jednom primaocu i uspješno se šalje najviše jednom, a novi primalac (ručno raspoređivanje ili preusmjeravanje, FR-23) dobija novi dopis za istu prijavu. Ako slanje dopisa ne uspije, prijava ostaje nacrt (zadržava kod, FR-24) i građanin može pokušati ponovo.
 
@@ -253,7 +253,7 @@ Zaglavlje svih stranica: ulogovan nalog (ne anonimna sesija) ima meni sa „Odja
 | `/statistika` | Javna statistika po instituciji (P1). |
 | `/uloguj-se` | Registracija (obavezno ime, prezime, mejl i šifra) i ulogovanje mejlom i šifrom. Prima `next`, pa gost iz „Prijavi problem" poslije ulogovanja ide nazad na `/prijavi` (FR-1). |
 | `/auth/callback` | Povratak iz linka za potvrdu mejla. **Nije u P0:** `Confirm email` je isključen i Supabase ne šalje Auth mejlove (Tech.md, „Hosting i mejl"). |
-| `/privatnost` | Kratka stranica o privatnosti: koji se podaci prikupljaju, šta je javno, šta se i kad dostavlja instituciji, kako se traži uklanjanje fotografije ili prijave (kontakt mejl tima); odjeljak „Demo fotografije" sa autorima i licencama, jer je `street_light-2.jpg` pod CC BY 4.0 (autor „ŠJů, Wikimedia Commons", fotografija izmijenjena; `scripts/demo-photos/CREDITS.md`, tiket 21). |
+| `/privatnost` | Kratka stranica o privatnosti: koji se podaci prikupljaju, šta je javno, šta se i kad dostavlja instituciji, kako se traži uklanjanje fotografije ili prijave (rečenica da se tim kontaktira odgovorom na dopis, bez mejl adrese [Ivana, 4. 11.]); odjeljak „Demo fotografije" sa autorima i licencama, jer je `street_light-2.jpg` pod CC BY 4.0 (autor „ŠJů, Wikimedia Commons", fotografija izmijenjena; `scripts/demo-photos/CREDITS.md`, tiket 21). |
 
 ### Građanin
 | Ruta | Namjena |
@@ -303,7 +303,7 @@ Pravila snimanja: snima se ekran telefona u browseru (ne instalirana PWA), na Ve
 Nijedno ne blokira izradu P0; svako ima rezervu ili rok.
 
 - Ponovna provjera svih 8 mejl adresa institucija prije migracije 10 (`DB.md` §12.2). Pravila su odlučena (tiket 14, „Pravila nadležnosti" u §5.2); adresa koja se ne potvrdi ostaje prazna, pa ta vrsta ide u `routing`.
-- `TEST_INBOX` (ujedno `EMAIL_REPLY_TO`) je Ivanin lični mejl; upisan je samo u `.env.local` i Vercel env, nikad u repo (Tech.md, „Hosting i mejl").
+- `TEST_INBOX` (ujedno `EMAIL_REPLY_TO`) je Ivanin lični mejl; upisan je samo u `.env.local` i Vercel env, nikad u repo (Tech.md, „Hosting i mejl"); ne prikazuje se nigdje u aplikaciji ni u tekstu dopisa [Ivana, 4. 11.].
 - Da li Vercel Hobby pravi preview deploy za commit kolege (AGENTS.md, „Radni proces"): provjerava se prvog dana. Rezerva (tiket 22 Q8): kolege provjeravaju na računaru, na `localhost`-u, gdje pregledač dozvoljava kameru i lokaciju, a na telefonu tek kad Ivana spoji PR u `main` i on se deploy-uje (Tech.md, „Hosting").
 - Tekst stranice `/privatnost` (sadržaj iz §8): zadatak za izradu; Ivana ga pregleda prije predaje. Bez članova zakona i rokova (pravilo 7).
 - Mjerenje brzine i ijekavice modela (tiket 20): potvrđuje `claude-haiku-5-5` ili prebacuje na `claude-sonnet-5-5` promjenom `ANTHROPIC_MODEL`, bez izmjene koda.

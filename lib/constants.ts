@@ -236,3 +236,54 @@ export const LIKE_LABELS = {
 
 export const APP_NAME = "Fixit"
 export const APP_DESCRIPTION = "Prijave komunalnih problema u Podgorici"
+
+// header menu (PRD §8: "Odjavi se" for every signed-in account, never for an anonymous session)
+export const HEADER_TEXT = {
+  home: "Fixit, početna",
+  signIn: "Uloguj se",
+  signOut: "Odjavi se",
+} as const
+
+// ---------------------------------------------------------------------------------------------
+// Sign-in and sign-up (/uloguj-se, FR-1)
+// ---------------------------------------------------------------------------------------------
+
+export const PASSWORD_MIN_LENGTH = 6
+export const NAME_MAX_LENGTH = 50
+
+export const AUTH_TEXT = {
+  pageTitle: "Uloguj se",
+  signInTab: "Ulogovanje",
+  signUpTab: "Registracija",
+  signInTitle: "Ulogujte se",
+  signInDescription: "Mejlom i šifrom vašeg naloga.",
+  signUpTitle: "Napravite nalog",
+  signUpDescription: "Ime i prezime su obavezni i ne prikazuju se javno.",
+  firstName: "Ime",
+  lastName: "Prezime",
+  email: "Mejl",
+  password: "Šifra",
+  passwordHint: `Najmanje ${PASSWORD_MIN_LENGTH} znakova.`,
+  signInSubmit: "Uloguj se",
+  signUpSubmit: "Napravi nalog",
+  pending: "Sačekajte…",
+  // PRD §6 "Obavještenje", verbatim
+  privacyNotice:
+    "Javno se vide fotografija, vrsta i opis problema, lokacija, status i broj podrški. Vaše ime, mejl i nalog nijesu javni, kao ni to ko je podržao prijavu. Instituciji dostavljamo vaše ime i mejl samo ako to sami uključite pri slanju prijave.",
+  privacyLink: "Više o privatnosti",
+} as const
+
+export const AUTH_ERRORS = {
+  firstNameRequired: "Unesite ime.",
+  lastNameRequired: "Unesite prezime.",
+  nameTooLong: `Ime i prezime mogu imati najviše ${NAME_MAX_LENGTH} znakova.`,
+  emailInvalid: "Unesite ispravnu mejl adresu.",
+  passwordRequired: "Unesite šifru.",
+  passwordTooShort: `Šifra mora imati najmanje ${PASSWORD_MIN_LENGTH} znakova.`,
+  invalidCredentials: "Pogrešan mejl ili šifra.",
+  emailTaken: "Nalog sa ovim mejlom već postoji. Ulogujte se.",
+  weakPassword: "Šifra je preslaba. Izaberite dužu šifru.",
+  rateLimited: "Previše pokušaja. Pokušajte ponovo za nekoliko minuta.",
+  noSession: "Nalog je napravljen, ali ulogovanje nije uspjelo. Ulogujte se.",
+  unknown: "Ulogovanje trenutno nije moguće. Pokušajte ponovo.",
+} as const
