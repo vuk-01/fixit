@@ -36,23 +36,26 @@
   - citizen pages work at 360 px width (mobile-first); the panel is desktop-first but usable on a tablet;
   - touch targets at least 44 × 44 px; WCAG AA contrast; statuses are never shown by colour alone (colour + icon/text);
   - all user-facing text is Montenegrin, Latin script, ijekavian, and lives in `lib/constants.ts` or next to the component.
-## Status colours and icons (ticket 22 Q10)
+## Status colours and icons (ticket 22 Q10; colours changed by Ivana, 4. 11. 2026)
 
-One mapping for every place a status is shown (map marker, public report page, panel). Colours are tokens from the preset (`--muted`, `--chart-1`…`--chart-4`, `--destructive` in `app/globals.css`, used as Tailwind classes such as `bg-chart-1`); icons come from the preset's icon library (lucide). Keep the mapping in one `Record<report_status, …>` next to the status labels, so a missing status breaks `pnpm typecheck`.
+One mapping for every place a status is shown (map marker, public report page, panel). Icons come from the preset's icon library (lucide). Keep the mapping in one `Record<report_status, …>` next to the status labels (`STATUS_STYLE` in `lib/constants.ts`), so a missing status breaks `pnpm typecheck`.
 
-| Status | Label (public) | Colour token | Icon |
-|---|---|---|---|
-| `routing` | Određuje se nadležni | `muted` | `CircleHelp` |
-| `sent` | Poslata | `chart-1` | `Send` |
-| `acknowledged` | Primljena | `chart-2` | `Eye` |
-| `in_progress` | U radu | `chart-3` | `Wrench` |
-| `resolved` | Riješena | `chart-4` | `CircleCheck` |
-| `not_competent` | Preusmjerava se (panel: „Nije naša nadležnost") | `muted` | `ArrowLeftRight` |
-| `rejected` | Odbijena | `destructive` | `CircleX` |
+**Status colours are our own tokens, not the preset's chart palette** [Ivana, 4. 11.]: the preset's chart colours are all orange, so four statuses looked alike and „Riješena" looked like a warning. The tokens are `--status-*` in `app/globals.css` (same value in light and dark mode, because markers sit on the light map tiles), used as Tailwind classes such as `bg-status-sent`. `routing` and `not_competent` keep the preset's `muted`.
+
+| Status | Label (public) | Colour | Icon / text colour | Contrast | Icon |
+|---|---|---|---|---|---|
+| `routing` | Određuje se nadležni | `muted` (grey) | `foreground` | 17.7 (dark 14.3) | `CircleHelp` |
+| `sent` | Poslata | `status-sent`, blue `#1d4ed8` | white | 6.7 | `Send` |
+| `acknowledged` | Primljena | `status-acknowledged`, violet `#6d28d9` | white | 7.1 | `Eye` |
+| `in_progress` | U radu | `status-in-progress`, amber `#f59e0b` | black | 9.8 | `Wrench` |
+| `resolved` | Riješena | `status-resolved`, green `#15803d` | white | 5.0 | `CircleCheck` |
+| `not_competent` | Preusmjerava se (panel: „Nije naša nadležnost") | `muted` (grey) | `foreground` | 17.7 (dark 14.3) | `ArrowLeftRight` |
+| `rejected` | Odbijena | `status-rejected`, red `#b91c1c` | white | 6.5 | `CircleX` |
 
 - `draft` is never shown publicly and has no entry here.
 - A status is always shown as text as well, never by colour alone (PRD §6, accessibility); the icon is a second cue, not a replacement for the label.
-- The exact shades depend on the preset: check them (and WCAG AA contrast of the icon on the marker) once `init` has run. Do not hand-edit the theme variables to fix a shade; pick another existing token and update this table.
+- Every icon/text pair passes WCAG AA for text (≥ 4.5:1). Markers have a white border and a dark ring, so the grey and amber ones stay visible on the map tiles.
+- A new status colour is a new `--status-*` token plus a row here; do not reuse the chart palette for statuses.
 
 ## Layout direction: prototype v2 (Ivana, 3. 11. 2026)
 

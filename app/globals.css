@@ -28,6 +28,13 @@
     --chart-3: oklch(0.646 0.222 41.116);
     --chart-4: oklch(0.553 0.195 38.402);
     --chart-5: oklch(0.47 0.157 37.304);
+    /* report status colours (UI.md "Status colours and icons"; Ivana, 4. 11.): same in dark mode,
+       because markers sit on the light map tiles */
+    --status-sent: #1d4ed8;
+    --status-acknowledged: #6d28d9;
+    --status-in-progress: #f59e0b;
+    --status-resolved: #15803d;
+    --status-rejected: #b91c1c;
     --radius: 0.875rem;
     --sidebar: oklch(0.987 0.002 197.1);
     --sidebar-foreground: oklch(0.148 0.004 228.8);
@@ -63,6 +70,13 @@
     --chart-3: oklch(0.646 0.222 41.116);
     --chart-4: oklch(0.553 0.195 38.402);
     --chart-5: oklch(0.47 0.157 37.304);
+    /* report status colours (UI.md "Status colours and icons"; Ivana, 4. 11.): same in dark mode,
+       because markers sit on the light map tiles */
+    --status-sent: #1d4ed8;
+    --status-acknowledged: #6d28d9;
+    --status-in-progress: #f59e0b;
+    --status-resolved: #15803d;
+    --status-rejected: #b91c1c;
     --sidebar: oklch(0.218 0.008 223.9);
     --sidebar-foreground: oklch(0.987 0.002 197.1);
     --sidebar-primary: oklch(0.623 0.214 259.815);
@@ -85,6 +99,11 @@
     --color-sidebar-foreground: var(--sidebar-foreground);
     --color-sidebar: var(--sidebar);
     --color-chart-5: var(--chart-5);
+    --color-status-sent: var(--status-sent);
+    --color-status-acknowledged: var(--status-acknowledged);
+    --color-status-in-progress: var(--status-in-progress);
+    --color-status-resolved: var(--status-resolved);
+    --color-status-rejected: var(--status-rejected);
     --color-chart-4: var(--chart-4);
     --color-chart-3: var(--chart-3);
     --color-chart-2: var(--chart-2);
