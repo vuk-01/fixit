@@ -38,7 +38,7 @@ Gradi troje ljudi; svako vodi jednu ili dvije Claude Code sesije. Ivana je vlasn
 ### Tiketi, grane, PR
 
 - Posao je u GitHub Issues repoa na Ivaninom ličnom GitHub nalogu. Prije rada dodijeli tiket sebi. Jedan tiket = jedna grana = jedan PR.
-- Grana iz svježeg `main`: `<ime>/<broj-tiketa>-<kratak-opis>` (npr. `marko/14-mapa-prijava`). Svaka sesija radi na svojoj grani, u svom `git worktree`.
+- Grana iz svježeg `main`: `<broj-tiketa>-<kratak-opis>`, bez imena (npr. `14-mapa-prijava`; ko je otvorio PR vidi se na GitHubu). Svaka sesija radi na svojoj grani, u svom `git worktree`.
 - Izmjene idu u `main` samo kroz PR, squash merge-om. PR opis: `Closes #<broj>`, šta je provjereno na telefonu, obrazloženje za nove zavisnosti.
 - Svaki push na granu pravi Vercel preview deploy; izmjenu provjeravaš na njemu, na telefonu.
 - Ako Vercel Hobby ne pravi preview za tvoj commit (provjerava se prvog dana): izmjenu provjeravaš na računaru, na `http://localhost:3000`, gdje pregledač dozvoljava kameru i lokaciju, u prikazu širine 360 px. Na telefonu se ona provjerava tek kad Ivana spoji PR u `main` i on se deploy-uje na produkcioni URL; to zapiši u PR opis. TryCloudflare nije rezerva (`Tech.md`, „Hosting").
