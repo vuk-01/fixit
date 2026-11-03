@@ -750,7 +750,7 @@ Skripta `scripts/seed-demo.ts` radi sa servisnim ključem iz `.env.local` i prav
 | `official-saobracaj`, `official-komunalne-usluge`, `official-vik`, `official-cistoca`, `official-zelenilo` | `official` | panel za svaku instituciju koja je primalac nekog pravila (`official-zelenilo` nema demo prijavu i služi za probe) |
 | `admin` | `admin` | `/admin` |
 
-- Mejl adrese su plus-adrese mejla `TEST_INBOX` (npr. `ime+fixit-dev-1@…`; adresa se ne upisuje u repo, skripta je čita iz `.env.local`), pa bi i slučajni Auth mejl stigao Ivani (u P0 ih nema, jer je `Confirm email` isključen). Šifra je iz env varijable `DEMO_PASSWORD` (samo `.env.local`, nikad u repou).
+- Mejl adrese su izmišljene, `<nalog>@fixit.test` (npr. `dev-1@fixit.test`, `admin@fixit.test`) [Ivana, 4. 11.]: nisu povezane ni sa čijim mejlom. Domen `.test` je rezervisan (RFC 2606) i ne prima poštu, a Supabase ni ne šalje Auth mejlove, jer je `Confirm email` isključen. Šifra je iz env varijable `DEMO_PASSWORD` (samo `.env.local`, nikad u repou).
 - Imena su izmišljena, ne imena članova tima ni stvarnih službenika.
 - **Sve što tim napravi tokom razvoja mora nastati sa ovih naloga**: `create_draft` kopira `profiles.is_demo` u `reports.is_demo`, pa `db:clear-demo` poslije ocjenjivanja briše i probne prijave iz razvoja (tiket 12). Prijava napravljena sa običnog naloga ostaje javna.
 - **Postojeći nalog se ne dira:** skripta za svaki nalog iz tabele prvo provjeri da li postoji (po mejlu); ako postoji, preskače ga, bez nove šifre i bez greške. Tako drugo pokretanje samo dodaje ono što nedostaje.
