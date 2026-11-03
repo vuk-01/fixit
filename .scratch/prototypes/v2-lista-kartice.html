@@ -1,0 +1,604 @@
+<!doctype html>
+<!-- PROTOTYPE, throwaway: Fixit citizen flow, direction "Lista i kartice". Not production code; all data is fake.
+     Question: which layout / visual hierarchy should the citizen app take? Compare with the other files in this folder. -->
+<html lang="sr-Latn-ME">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fixit prototip · Lista i kartice</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  body { background: #e2e8f0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+  #app button:focus-visible, #app a:focus-visible, #app textarea:focus-visible { outline: 3px solid #2563eb; outline-offset: 2px; }
+  #app { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+  #app ::-webkit-scrollbar { width: 0; height: 0; }
+</style>
+</head>
+<body>
+<script>
+/* PROTOTYPE, throwaway. Shared core inlined into every Fixit UI direction:
+   fake data, state, actions, fake map, modals and the dev overlay.
+   Question this answers: which layout / visual direction should the citizen flow take?
+   Nothing here talks to a server; all data is fake and lives in memory. */
+
+const PHOTO_DIR = '../../scripts/demo-photos/';
+const EMBED = new URLSearchParams(location.search).has('embed');
+const TODAY = new Date(2026, 10, 3, 18, 42);
+const USER = { name: 'Marko Marković', email: 'marko.markovic@primjer.me' };
+const SITE = 'fixit.vercel.app';
+const VARIANTS = [
+  { id: 'v1', file: 'v1-mapa-donji-panel.html', name: 'Mapa i donji panel' },
+  { id: 'v2', file: 'v2-lista-kartice.html', name: 'Lista i kartice' },
+  { id: 'v3', file: 'v3-gradjanski-plakat.html', name: 'Građanski plakat' },
+];
+const ROUTING_MSG = 'Za ovu vrstu problema još nemamo provjerenog nadležnog. Administrator Fixita će ručno odrediti nadležnu instituciju i proslijediti prijavu.';
+const PRIVACY_NOTE = 'Opis je javan i vidi se uz fotografiju. Ne upisujte ime, broj telefona, mejl ni druge lične podatke.';
+const CONFIRM_NOTE = 'Slanjem potvrđujete da su podaci tačni i da prijava može biti poslata nadležnoj instituciji.';
+const PHOTO_HINT = 'Izbjegavajte lica i registarske tablice na fotografiji.';
+const DANGER_MSG = 'Ako je neko u opasnosti, pozovite 112.';
+
+/* Fake copy of institutions + jurisdiction_rules for the prototype only (DB.md §12.2). */
+const INST = {
+  saobracaj: { name: 'Sekretarijat za saobraćaj (Glavni grad Podgorica)', cc: '„Putevi“ d.o.o. Podgorica' },
+  komunalne: { name: '„Komunalne usluge“ d.o.o. Podgorica' },
+  vik: { name: '„Vodovod i kanalizacija“ d.o.o. Podgorica' },
+  cistoca: { name: '„Čistoća“ d.o.o. Podgorica' },
+  zelenilo: { name: '„Zelenilo“ d.o.o. Podgorica' },
+};
+const CATS = [
+  { slug: 'pothole', name: 'Oštećen kolovoz / rupa na putu', inst: 'saobracaj' },
+  { slug: 'sidewalk', name: 'Oštećen trotoar', inst: 'saobracaj' },
+  { slug: 'traffic_sign', name: 'Oštećen ili oboren saobraćajni znak', inst: 'saobracaj' },
+  { slug: 'street_light', name: 'Neispravna javna rasvjeta', inst: 'komunalne' },
+  { slug: 'traffic_light', name: 'Neispravan semafor', inst: 'komunalne' },
+  { slug: 'manhole', name: 'Otvoren ili oštećen šaht', inst: 'vik' },
+  { slug: 'water_leak', name: 'Curenje vode / pukla cijev', inst: 'vik' },
+  { slug: 'illegal_dump', name: 'Divlja deponija / odbačen otpad', inst: 'cistoca' },
+  { slug: 'waste_container', name: 'Prepun kontejner / otpad oko kontejnera', inst: 'cistoca' },
+  { slug: 'greenery', name: 'Oboreno drvo / neodržavano zelenilo', inst: 'zelenilo' },
+  { slug: 'graffiti', name: 'Grafiti', inst: null },
+  { slug: 'other', name: 'Drugi problem', inst: null },
+];
+const cat = s => CATS.find(c => c.slug === s);
+const instFor = s => { const c = cat(s); return c && c.inst ? INST[c.inst] : null; };
+
+/* Demo photos; desc = fake model suggestion for the public description. */
+const PHOTOS = [
+  { f: 'pothole-1.jpg', cat: 'pothole', desc: 'Na kolovozu je udarna rupa sa izlomljenim asfaltom, u traci kojom prolaze vozila.' },
+  { f: 'manhole-1.jpg', cat: 'manhole', danger: true, desc: 'Otvor šahta nema poklopac i nalazi se na površini kojom prolaze ljudi.' },
+  { f: 'illegal_dump-1.jpg', cat: 'illegal_dump', desc: 'Na neizgrađenoj površini je odbačen otpad, uključujući kabasti otpad.' },
+  { f: 'street_light-1.jpg', cat: 'street_light', desc: 'Stub ulične rasvjete je oboren i leži na trotoaru.' },
+  { f: 'pothole-2.jpg', cat: 'pothole', desc: 'Veća rupa na kolovozu, ispunjena vodom.' },
+  { f: 'street_light-2.jpg', cat: 'street_light', desc: 'Svjetiljka javne rasvjete je razbijena.' },
+  { f: 'illegal_dump-2.jpg', cat: 'illegal_dump', desc: 'Gomila odbačenog otpada pored puta.' },
+  { f: 'manhole-2.jpg', cat: 'manhole', danger: true, desc: 'Okno šahta je otvoreno, bez ograde oko otvora.' },
+];
+const photo = f => PHOTOS.find(p => p.f === f);
+const src = f => PHOTO_DIR + f;
+
+const STATUS = {
+  routing: { label: 'Određuje se nadležni', icon: 'signpost', hex: '#475569', badge: 'bg-slate-100 text-slate-800 ring-slate-300' },
+  sent: { label: 'Poslata', icon: 'send', hex: '#1d4ed8', badge: 'bg-blue-50 text-blue-800 ring-blue-200' },
+  acknowledged: { label: 'Primljena', icon: 'eye', hex: '#6d28d9', badge: 'bg-violet-50 text-violet-800 ring-violet-200' },
+  in_progress: { label: 'U radu', icon: 'wrench', hex: '#b45309', badge: 'bg-amber-50 text-amber-900 ring-amber-300' },
+  resolved: { label: 'Riješena', icon: 'checkCircle', hex: '#15803d', badge: 'bg-green-50 text-green-800 ring-green-200' },
+  not_competent: { label: 'Preusmjerava se', icon: 'arrows', hex: '#c2410c', badge: 'bg-orange-50 text-orange-900 ring-orange-200' },
+  rejected: { label: 'Odbijena', icon: 'xCircle', hex: '#b91c1c', badge: 'bg-red-50 text-red-800 ring-red-200' },
+};
+const isOpen = r => !['resolved', 'rejected'].includes(r.status);
+
+const sentTo = k => `Dopis poslat: ${INST[k].name}${INST[k].cc ? ` (kopija: ${INST[k].cc})` : ''}`;
+/* ~10 demo reports (DB.md §12.4). sub/closed = days ago. x/y = position on the fake map world. */
+const REPORTS = [
+  { id: 'r1', code: 'FX-2026-00133', cat: 'pothole', status: 'in_progress', sub: 14, closed: null, likes: 23, photos: ['pothole-1.jpg'], addr: 'Bulevar Svetog Petra Cetinjskog 64', x: 300, y: 400, demo: true,
+    desc: 'Udarna rupa u desnoj traci, oko pola metra široka, sa izlomljenim ivicama asfalta.',
+    events: [{ ago: 14, s: 'sent', t: sentTo('saobracaj'), a: 'Tim Fixit' }, { ago: 13, s: 'acknowledged', t: 'Institucija je otvorila prijavu.', a: 'Sekretarijat za saobraćaj' }, { ago: 9, s: 'in_progress', t: 'Sanacija je zakazana.', a: 'Sekretarijat za saobraćaj' }] },
+  { id: 'r2', code: 'FX-2026-00135', cat: 'street_light', status: 'resolved', sub: 8, closed: 2, likes: 7, photos: ['street_light-1.jpg'], addr: 'Ulica Slobode 33', x: 370, y: 300, demo: true,
+    desc: 'Stub ulične rasvjete je oboren i leži na trotoaru.',
+    events: [{ ago: 8, s: 'sent', t: sentTo('komunalne'), a: 'Tim Fixit' }, { ago: 7, s: 'acknowledged', t: 'Institucija je otvorila prijavu.', a: '„Komunalne usluge“' }, { ago: 5, s: 'in_progress', t: '', a: '„Komunalne usluge“' }, { ago: 2, s: 'resolved', t: 'Stub je uklonjen i postavljena je nova svjetiljka.', a: '„Komunalne usluge“' }] },
+  { id: 'r3', code: 'FX-2026-00132', cat: 'illegal_dump', status: 'sent', sub: 21, closed: null, likes: 41, photos: ['illegal_dump-1.jpg'], addr: 'Ulica Vojislavljevića bb', x: 540, y: 620, demo: true,
+    desc: 'Na neizgrađenoj površini pored puta odbačen je otpad, uključujući kabasti otpad.',
+    events: [{ ago: 21, s: 'sent', t: sentTo('cistoca'), a: 'Tim Fixit' }] },
+  { id: 'r4', code: 'FX-2026-00139', cat: 'manhole', status: 'acknowledged', sub: 3, closed: null, likes: 5, photos: ['manhole-1.jpg'], addr: 'Ulica Hercegovačka 21', x: 330, y: 480, demo: true,
+    desc: 'Otvor šahta nema poklopac i nalazi se na površini kojom prolaze ljudi.',
+    events: [{ ago: 3, s: 'sent', t: sentTo('vik'), a: 'Tim Fixit' }, { ago: 2, s: 'acknowledged', t: 'Institucija je otvorila prijavu.', a: '„Vodovod i kanalizacija“' }] },
+  { id: 'r5', code: 'FX-2026-00131', cat: 'pothole', status: 'sent', sub: 30, closed: null, likes: 18, photos: ['pothole-2.jpg'], addr: 'Bulevar Džordža Vašingtona 98', x: 240, y: 580, demo: true,
+    desc: 'Veća rupa na kolovozu, ispunjena vodom.',
+    events: [{ ago: 30, s: 'sent', t: sentTo('saobracaj'), a: 'Tim Fixit' }] },
+  { id: 'r6', code: 'FX-2026-00140', cat: 'street_light', status: 'resolved', sub: 0, closed: 0, likes: 9, photos: ['street_light-2.jpg'], addr: 'Ulica Njegoševa 12', x: 390, y: 420, demo: true,
+    desc: 'Svjetiljka javne rasvjete je razbijena.',
+    events: [{ ago: 0, s: 'sent', t: sentTo('komunalne'), a: 'Tim Fixit' }, { ago: 0, s: 'in_progress', t: '', a: '„Komunalne usluge“' }, { ago: 0, s: 'resolved', t: 'Svjetiljka je zamijenjena.', a: '„Komunalne usluge“' }] },
+  { id: 'r7', code: 'FX-2026-00137', cat: 'illegal_dump', status: 'resolved', sub: 5, closed: 4, likes: 3, photos: ['illegal_dump-2.jpg'], addr: 'Ulica Moskovska 7', x: 250, y: 300, demo: true,
+    desc: 'Gomila odbačenog otpada pored puta.',
+    events: [{ ago: 5, s: 'sent', t: sentTo('cistoca'), a: 'Tim Fixit' }, { ago: 4, s: 'resolved', t: 'Otpad je odvezen.', a: '„Čistoća“' }] },
+  { id: 'r8', code: 'FX-2026-00134', cat: 'manhole', status: 'in_progress', sub: 10, closed: null, likes: 12, photos: ['manhole-2.jpg'], addr: 'Bulevar Ivana Crnojevića 40', x: 500, y: 380, demo: true,
+    desc: 'Okno šahta je otvoreno, bez ograde oko otvora.',
+    events: [{ ago: 10, s: 'sent', t: sentTo('vik'), a: 'Tim Fixit' }, { ago: 9, s: 'acknowledged', t: 'Institucija je otvorila prijavu.', a: '„Vodovod i kanalizacija“' }, { ago: 6, s: 'in_progress', t: '', a: '„Vodovod i kanalizacija“' }] },
+  { id: 'r9', code: 'FX-2026-00136', cat: 'graffiti', status: 'routing', sub: 6, closed: null, likes: 2, photos: [], addr: 'Ulica Bokeška 5', x: 320, y: 255, demo: true,
+    desc: 'Grafiti na fasadi zgrade, u visini prizemlja.',
+    events: [{ ago: 6, s: 'routing', t: 'Prijava primljena. Nadležnu instituciju određuje tim Fixit.', a: 'Tim Fixit' }] },
+  { id: 'r10', code: 'FX-2026-00138', cat: 'other', status: 'rejected', sub: 4, closed: 3, likes: 0, photos: [], addr: 'Ulica Kralja Nikole 80', x: 560, y: 500, demo: true,
+    desc: 'Oštećena klupa u parku.',
+    events: [{ ago: 4, s: 'routing', t: 'Prijava primljena. Nadležnu instituciju određuje tim Fixit.', a: 'Tim Fixit' }, { ago: 3, s: 'rejected', t: 'Nije komunalni problem iz nadležnosti institucija na platformi.', a: 'Tim Fixit' }] },
+];
+const byId = id => REPORTS.find(r => r.id === id);
+const ADDRS = ['Ulica Vuka Karadžića 18', 'Ulica Vaka Đurovića 12', 'Bulevar Svetog Petra Cetinjskog 41', 'Ulica Slobode 50', 'Ulica Hercegovačka 9'];
+let nextCode = 142;
+
+/* ---------- text helpers ---------- */
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const MONTHS = ['januara', 'februara', 'marta', 'aprila', 'maja', 'juna', 'jula', 'avgusta', 'septembra', 'oktobra', 'novembra', 'decembra'];
+function dateAgo(ago) { const d = new Date(TODAY); d.setDate(d.getDate() - ago); return `${d.getDate()}. ${MONTHS[d.getMonth()]}`; }
+const dw = n => (n % 10 === 1 && n % 100 !== 11) ? 'dan' : 'dana';
+function likesWord(n) { const a = n % 10, b = n % 100; if (a === 1 && b !== 11) return 'podrška'; if (a >= 2 && a <= 4 && !(b >= 12 && b <= 14)) return 'podrške'; return 'podrški'; }
+const prijWord = n => { const a = n % 10, b = n % 100; return (a >= 2 && a <= 4 && !(b >= 12 && b <= 14)) ? 'prijave' : 'prijava'; };
+const likesLabel = n => `${n} ${likesWord(n)}`;
+/* FR-15 counter, split so variants can set the number large. */
+function counterParts(r) {
+  if (isOpen(r)) { const n = r.sub; return n === 0 ? { pre: '', n: null, post: 'Prijavljeno danas' } : { pre: '', n, post: `${dw(n)} bez rješenja` }; }
+  const n = r.sub - r.closed, res = r.status === 'resolved';
+  if (n === 0) return { pre: '', n: null, post: res ? 'Riješeno istog dana' : 'Odbijeno istog dana' };
+  return { pre: res ? 'Riješeno za' : 'Odbijeno nakon', n, post: dw(n) };
+}
+function counterText(r) { const p = counterParts(r); return p.n === null ? p.post : [p.pre, p.n, p.post].filter(Boolean).join(' '); }
+
+/* ---------- icons (lucide paths) ---------- */
+const ICONS = {
+  camera: '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
+  image: '<rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',
+  mapPin: '<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>',
+  send: '<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',
+  eye: '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>',
+  wrench: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
+  checkCircle: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+  xCircle: '<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/>',
+  signpost: '<path d="M12 3v3"/><path d="M18.5 13h-13L2 9.5 5.5 6h13L22 9.5Z"/><path d="M12 13v8"/>',
+  arrows: '<path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/>',
+  thumbs: '<path d="M7 10v12"/><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z"/>',
+  share: '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/>',
+  chevLeft: '<path d="m15 18-6-6 6-6"/>', chevRight: '<path d="m9 18 6-6-6-6"/>', chevDown: '<path d="m6 9 6 6 6-6"/>', chevUp: '<path d="m18 15-6-6-6 6"/>',
+  info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+  x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>', plus: '<path d="M5 12h14"/><path d="M12 5v14"/>', check: '<path d="M20 6 9 17l-5-5"/>',
+  alert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  list: '<path d="M3 12h.01"/><path d="M3 18h.01"/><path d="M3 6h.01"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M8 6h13"/>',
+  map: '<path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/>',
+  building: '<rect width="16" height="20" x="4" y="2" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01"/><path d="M16 6h.01"/><path d="M12 6h.01"/><path d="M12 10h.01"/><path d="M12 14h.01"/><path d="M16 10h.01"/><path d="M16 14h.01"/><path d="M8 10h.01"/><path d="M8 14h.01"/>',
+  fileText: '<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
+  user: '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  loader: '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
+};
+const ic = (n, cls = 'w-5 h-5') => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n] || ''}</svg>`;
+const spin = (cls = 'w-4 h-4') => ic('loader', cls + ' animate-spin');
+
+/* Shared small pieces (shadcn-ish Badge); variants may ignore them. */
+function statusBadge(st, extra = '') { const m = STATUS[st]; return `<span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset ${m.badge} ${extra}">${ic(m.icon, 'w-3.5 h-3.5')}${m.label}</span>`; }
+const demoBadge = (cls = 'border-zinc-300 text-zinc-600') => `<span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium ${cls}">Demo prijava</span>`;
+function thumb(r, cls) {
+  return r.photos.length ? `<img src="${src(r.photos[0])}" alt="Fotografija prijave" class="object-cover ${cls}">`
+    : `<div class="${cls} bg-zinc-100 text-zinc-500 flex flex-col items-center justify-center gap-1 text-[11px]">${ic('image')}Bez fotografije</div>`;
+}
+function switchHTML(onBg = 'bg-zinc-900') {
+  return `<button role="switch" aria-checked="${S.share}" aria-labelledby="lbl-share" data-a="share" class="relative w-12 h-11 shrink-0">
+    <span class="absolute inset-x-0 top-2 h-7 rounded-full transition-colors ${S.share ? onBg : 'bg-zinc-300'}"></span>
+    <span class="absolute top-[10px] w-6 h-6 rounded-full bg-white shadow transition-all ${S.share ? 'left-[22px]' : 'left-[2px]'}"></span></button>`;
+}
+
+/* ---------- fake map ---------- */
+const MAPC = { x: 400, y: 450 }; // fake "GPS" position
+function buildWorld() {
+  let blocks = '';
+  for (let x = 0; x < 800; x += 64) for (let y = 0; y < 900; y += 64) blocks += `<rect x="${x + 9}" y="${y + 9}" width="46" height="46" rx="4" fill="#dfe2d9"/>`;
+  let minor = '';
+  for (let x = 0; x <= 800; x += 64) minor += `<line x1="${x}" y1="0" x2="${x}" y2="900"/>`;
+  for (let y = 0; y <= 900; y += 64) minor += `<line x1="0" y1="${y}" x2="800" y2="${y}"/>`;
+  const main = ['M0 410 L800 380', 'M0 610 L800 590', 'M290 0 L320 900', 'M570 0 L590 900', 'M60 900 L420 260 L640 0'];
+  return `<svg width="100%" height="100%" viewBox="0 0 800 900" preserveAspectRatio="none" class="absolute inset-0" aria-hidden="true">
+  <rect width="800" height="900" fill="#ebede6"/>${blocks}
+  <g stroke="#ffffff" stroke-width="5">${minor}</g>
+  <ellipse cx="160" cy="200" rx="120" ry="95" fill="#cbe1bf"/><rect x="610" y="150" width="120" height="86" rx="12" fill="#cbe1bf"/><rect x="200" y="470" width="66" height="54" rx="8" fill="#cbe1bf"/>
+  <path id="moraca" d="M470 -20 C 430 150, 410 260, 440 380 S 480 600, 430 920" fill="none" stroke="#a7c8e3" stroke-width="38" stroke-linecap="round"/>
+  <path d="M800 520 C 700 540, 600 490, 452 470" fill="none" stroke="#a7c8e3" stroke-width="14" stroke-linecap="round"/>
+  <g fill="none" stroke-linecap="round">${main.map(d => `<path d="${d}" stroke="#d3d6cc" stroke-width="15"/><path d="${d}" stroke="#ffffff" stroke-width="11"/>`).join('')}</g>
+  <text font-size="15" font-style="italic" fill="#4a6f8f" dy="5"><textPath href="#moraca" startOffset="66%">Morača</textPath></text>
+  <g font-size="12" font-weight="600" fill="#8a8f84" letter-spacing="2">
+    <text x="105" y="205">GORICA</text><text x="330" y="345">CENTAR</text><text x="610" y="330">PREKO MORAČE</text><text x="600" y="720">ZABJELO</text><text x="90" y="700">TOLOŠI</text></g>
+  </svg>`;
+}
+const WORLD_SVG = buildWorld();
+const worldTf = (c, o, z) => `translate(${-c.x * z + o.x}px, ${-c.y * z + o.y}px)`;
+function defaultMarker(r, sel, interactive, z) {
+  const m = STATUS[r.status], s = sel ? 40 : 30;
+  return `<button ${interactive ? `data-a="sel" data-v="${r.id}"` : 'disabled tabindex="-1"'} class="absolute -translate-x-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center ${interactive ? '' : 'pointer-events-none opacity-60'} ${sel ? 'z-10' : ''}" style="left:${r.x * z}px;top:${r.y * z}px" aria-label="${esc(cat(r.cat).name)}, ${m.label}, ${counterText(r)}">
+    <span class="flex items-center justify-center rounded-full text-white shadow-md ${sel ? 'ring-4 ring-zinc-900' : 'ring-2 ring-white'}" style="width:${s}px;height:${s}px;background:${m.hex}">${ic(m.icon, sel ? 'w-5 h-5' : 'w-4 h-4')}</span></button>`;
+}
+function pinHTML(color) {
+  return `<div class="pointer-events-none absolute left-1/2 top-1/2 z-20" style="transform:translate(-50%,-100%)"><svg width="44" height="55" viewBox="0 0 24 30" aria-hidden="true"><path d="M12 29s9-8.5 9-17A9 9 0 0 0 3 12c0 8.5 9 17 9 17z" fill="${color}" stroke="#fff" stroke-width="1.5"/><circle cx="12" cy="12" r="3.5" fill="#fff"/></svg></div>
+  <div class="pointer-events-none absolute left-1/2 top-1/2 w-3 h-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/40 z-10"></div>`;
+}
+/* o: {center, offset, zoom, drag, pin, pinColor, selected, markers, interactive, markerFn} */
+function mapHTML(o = {}) {
+  const c = o.center || MAPC, off = o.offset || { x: 0, y: 0 }, z = o.zoom || 1;
+  const interactive = o.interactive !== false, mf = o.markerFn || defaultMarker;
+  const mk = o.markers === false ? '' : REPORTS.map(r => mf(r, r.id === o.selected, interactive, z)).join('');
+  const gps = o.pin ? `<div class="absolute w-4 h-4 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-600 border-2 border-white ring-8 ring-blue-600/20" style="left:${MAPC.x * z}px;top:${MAPC.y * z}px"></div>` : '';
+  return `<div class="absolute inset-0 overflow-hidden bg-[#ebede6] select-none ${o.drag ? 'touch-none cursor-grab' : ''}" ${o.drag ? 'data-drag' : ''} aria-label="Mapa Podgorice">
+    <div data-world data-zoom="${z}" class="absolute left-1/2 top-1/2" style="width:${800 * z}px;height:${900 * z}px;transform:${worldTf(c, off, z)}">${WORLD_SVG}${gps}${mk}</div>
+    ${o.pin ? pinHTML(o.pinColor || '#18181b') : ''}</div>`;
+}
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+function bindDrag() {
+  const box = document.querySelector('[data-drag]'); if (!box) return;
+  const world = box.querySelector('[data-world]'); let st = null;
+  box.addEventListener('pointerdown', e => { st = { x: e.clientX, y: e.clientY, ox: S.mapOff.x, oy: S.mapOff.y }; box.setPointerCapture(e.pointerId); });
+  box.addEventListener('pointermove', e => {
+    if (!st) return;
+    S.mapOff = { x: clamp(st.ox + e.clientX - st.x, -280, 280), y: clamp(st.oy + e.clientY - st.y, -320, 320) };
+    world.style.transform = worldTf(MAPC, S.mapOff, 1);
+  });
+  const end = e => { if (!st) return; const moved = Math.abs(e.clientX - st.x) + Math.abs(e.clientY - st.y) > 6; st = null; if (moved) { S.addrIdx = (S.addrIdx + 1) % ADDRS.length; render(); } };
+  box.addEventListener('pointerup', end); box.addEventListener('pointercancel', end);
+}
+
+/* ---------- state ---------- */
+const S = {
+  screen: 'home', sel: 'r1', tab: 'map', filter: 'all', legend: false,
+  photos: [], analysis: 'idle', aiCat: null, cat: null, desc: '', danger: false, share: false, showFull: false,
+  phase: null, stepIdx: -1, mapOff: { x: 0, y: 0 }, addrIdx: 0, pinHint: '', pos: null, sending: false,
+  modal: null, galleryMode: 'new', gallerySel: [], whyCat: null, camIdx: 0,
+  taps: [], t0: null, t1: null, liked: {}, reportId: null, newId: null, toast: null, draft: 0,
+  dev: true,
+};
+try { if (localStorage.getItem('fixit-proto-dev') === '0') S.dev = false; } catch (e) { }
+const curAddr = () => ADDRS[S.addrIdx];
+const STEP_LABELS = ['Prepoznajem problem…', 'Određujem nadležnog…', 'Provjeravam prijave u blizini…', 'Pripremam prijavu…'];
+function stepStates() {
+  return STEP_LABELS.map((label, i) => ({ label, state: (i === 0 && S.analysis === 'done') || i < S.stepIdx ? 'done' : i === S.stepIdx ? 'running' : 'pending' }));
+}
+function supportState(r) { if (r.own) return 'own'; if (!isOpen(r)) return 'closed'; if (S.liked[r.id]) return 'liked'; return 'can'; }
+function coords() { const p = S.pos || MAPC; return `${(42.4411 - (p.y - 450) * 0.00005).toFixed(5)}, ${(19.2630 + (p.x - 400) * 0.00007).toFixed(5)}`; }
+
+/* Read-only letter template (FR-10/FR-11). Shown under "Prikaži cijeli tekst". */
+function letterHTML(code) {
+  const c = cat(S.cat), inst = instFor(S.cat), a = `${curAddr()}, Podgorica`, k = code || 'FX-2026-…';
+  const p = [];
+  p.push(`<p><b>Naslov:</b> Prijava komunalnog problema br. ${code || '(broj se dodjeljuje pri slanju)'} – ${c.name}, ${a}</p>`);
+  p.push(`<p><b>Primalac:</b> ${inst ? inst.name : 'određuje administrator Fixita'}${inst && inst.cc ? `<br><b>Kopija:</b> ${inst.cc}` : ''}</p>`);
+  p.push('<p>Poštovani,</p><p>ova prijava je zaprimljena putem platforme Fixit. Prema vrsti problema i lokaciji, Vaša institucija je nadležna za postupanje.</p>');
+  p.push(`<p><b>Vrsta problema:</b> ${c.name}${S.desc.trim() ? `<br><b>Opis:</b> ${esc(S.desc.trim())}` : ''}<br><b>Lokacija:</b> ${a} (${coords()}), link ka mapi<br><b>Datum i vrijeme prijave:</b> 3. novembra 2026. u 18:42</p>`);
+  if (S.danger) p.push('<p>Na fotografiji je uočena moguća neposredna opasnost.</p>');
+  p.push(`<p><b>Prilog:</b> ${S.photos.map((_, i) => `${k}-${i + 1}.jpg`).join(', ')}</p>`);
+  p.push('<p>Molimo Vas da razmotrite prijavu i preduzmete mjere iz svoje nadležnosti.</p>');
+  p.push('<p>Ako prijava nije u Vašoj nadležnosti, molimo Vas da o tome obavijestite Fixit, kako bi bila proslijeđena odgovarajućoj instituciji.</p>');
+  if (S.share) p.push(`<p>Prijavu je podnio korisnik platforme Fixit, koji je dao saglasnost da se njegovi podaci dostave instituciji: ${USER.name}, ${USER.email}.</p>`);
+  p.push(`<p>S poštovanjem,<br>Tim Fixit<br>tim@primjer.me · ${SITE}</p>`);
+  return p.join('');
+}
+
+/* ---------- actions ---------- */
+function countTap(label) { S.taps.push({ label, t: S.t0 ? Math.round((Date.now() - S.t0) / 100) / 10 : 0 }); }
+function toast(msg) { S.toast = msg; render(); clearTimeout(toast.h); toast.h = setTimeout(() => { S.toast = null; render(); }, 2400); }
+function resetDraft() {
+  Object.assign(S, { photos: [], analysis: 'idle', aiCat: null, cat: null, desc: '', danger: false, share: false, showFull: false, phase: null, stepIdx: -1, mapOff: { x: 0, y: 0 }, addrIdx: 0, pos: null, sending: false, modal: null, taps: [], t0: null, t1: null });
+  S.draft++;
+}
+function startDraft(files, fromGallery) {
+  const d = S.draft;
+  S.photos = files.map(photo); S.t0 = Date.now(); S.t1 = null; S.taps = [];
+  S.pinHint = fromGallery ? 'Pomjerite mapu tako da pin bude tamo gdje je fotografija napravljena.' : 'Pomjerite mapu ako pin nije na mjestu problema.';
+  S.screen = 'location'; S.analysis = 'running'; S.aiCat = S.photos[0].cat; S.modal = null;
+  render();
+  setTimeout(() => {
+    if (S.draft !== d) return;
+    S.analysis = 'done'; S.cat = S.aiCat; S.desc = S.photos[0].desc; S.danger = !!S.photos[0].danger;
+    if (S.screen === 'location' && S.phase !== 'steps') render();
+  }, 2400);
+}
+function advance() {
+  const d = S.draft;
+  if (S.stepIdx === 0 && S.analysis !== 'done') { setTimeout(() => { if (S.draft === d) advance(); }, 200); return; }
+  setTimeout(() => {
+    if (S.draft !== d || S.screen !== 'location') return;
+    S.stepIdx++;
+    if (S.stepIdx >= STEP_LABELS.length) { S.screen = 'review'; S.phase = null; }
+    render();
+    if (S.screen === 'location') advance();
+  }, S.stepIdx === 0 ? 400 : 800);
+}
+const A = {
+  noop() { },
+  close() { S.modal = null; render(); },
+  dev() { S.dev = !S.dev; try { localStorage.setItem('fixit-proto-dev', S.dev ? '1' : '0'); } catch (e) { } updateOverlay(); },
+  home() { S.screen = 'home'; S.modal = null; render(); },
+  sel(id) { S.sel = id; S.legend = false; render(); },
+  legend() { S.legend = !S.legend; render(); },
+  tab(v) { S.tab = v; render(); },
+  filter(v) { S.filter = v; render(); },
+  open(id) { S.reportId = id; S.screen = 'report'; S.modal = null; render(); },
+  report() { resetDraft(); S.screen = 'photo'; render(); },
+  cancel() { const had = S.photos.length; resetDraft(); S.screen = 'home'; had ? toast('Nacrt je obrisan.') : render(); },
+  camera() { const f = ['pothole-1.jpg', 'manhole-1.jpg', 'illegal_dump-1.jpg', 'street_light-1.jpg'][S.camIdx++ % 4]; startDraft([f], false); },
+  gallery() { S.galleryMode = 'new'; S.gallerySel = []; S.modal = 'gallery'; render(); },
+  gpick(f) {
+    const i = S.gallerySel.indexOf(f), max = S.galleryMode === 'add' ? 3 - S.photos.length : 3;
+    if (i >= 0) S.gallerySel.splice(i, 1);
+    else if (S.gallerySel.length >= max) { toast('Možete dodati najviše 3 fotografije.'); return; }
+    else S.gallerySel.push(f);
+    render();
+  },
+  gdone() {
+    if (!S.gallerySel.length) return;
+    if (S.galleryMode === 'add') { S.photos.push(...S.gallerySel.map(photo)); S.modal = null; render(); }
+    else startDraft(S.gallerySel.slice(), true);
+  },
+  confirm() {
+    if (S.phase === 'steps') return;
+    countTap('Potvrdi lokaciju');
+    S.pos = { x: MAPC.x - S.mapOff.x, y: MAPC.y - S.mapOff.y };
+    S.phase = 'steps'; S.stepIdx = 0; render(); advance();
+  },
+  cat() { S.modal = 'cat'; render(); },
+  setcat(v) { S.cat = v; S.modal = null; render(); },
+  why(v) { S.whyCat = v || S.cat; S.modal = 'why'; render(); },
+  addphoto() { S.modal = 'add'; render(); },
+  addcam() { const f = PHOTOS.find(p => p.cat === S.photos[0].cat && !S.photos.includes(p)) || PHOTOS.find(p => !S.photos.includes(p)); S.photos.push(f); S.modal = null; render(); },
+  addgal() { S.galleryMode = 'add'; S.gallerySel = []; S.modal = 'gallery'; render(); },
+  rmphoto(i) { if (S.photos.length > 1) { S.photos.splice(+i, 1); render(); } },
+  share() { S.share = !S.share; render(); },
+  full() { S.showFull = !S.showFull; render(); },
+  send() {
+    if (S.sending) return;
+    countTap('Pošalji prijavu'); S.sending = true; render();
+    const d = S.draft;
+    setTimeout(() => {
+      if (S.draft !== d) return;
+      const inst = instFor(S.cat), k = Object.keys(INST).find(key => INST[key] === inst);
+      const r = { id: 'n' + nextCode, code: `FX-2026-00${nextCode++}`, cat: S.cat, status: inst ? 'sent' : 'routing', sub: 0, closed: null, likes: 0,
+        photos: S.photos.map(p => p.f), addr: curAddr(), x: S.pos.x, y: S.pos.y, desc: S.desc.trim(), own: true, demo: false,
+        events: [inst ? { ago: 0, s: 'sent', t: sentTo(k), a: 'Tim Fixit' } : { ago: 0, s: 'routing', t: 'Prijava primljena. Nadležnu instituciju određuje tim Fixit.', a: 'Tim Fixit' }] };
+      REPORTS.push(r); S.newId = r.id; S.sel = r.id; S.t1 = Date.now(); S.sending = false; S.screen = 'success'; S.draft++; render();
+    }, 1100);
+  },
+  like(id) { const r = byId(id); if (supportState(r) !== 'can') return; S.liked[id] = true; r.likes++; render(); },
+  sharelink(code) { try { navigator.clipboard && navigator.clipboard.writeText(`https://${SITE}/p/${code}`).catch(() => { }); } catch (e) { } toast('Link prijave je kopiran.'); },
+  new() { A.report(); },
+};
+
+/* ---------- modals (shared, themed by variant) ---------- */
+function modalHTML() {
+  if (!S.modal) return '';
+  const t = V.theme;
+  const head = title => `<div class="flex items-center justify-between pl-4 pr-2 h-14 border-b ${t.border} shrink-0"><h2 class="${t.h2}">${title}</h2><button data-a="close" aria-label="Zatvori" class="w-11 h-11 flex items-center justify-center">${ic('x')}</button></div>`;
+  const wrap = (title, inner, extra = '') => `<div class="absolute inset-0 z-30 bg-black/50 flex items-end" data-a="close"><div data-a="noop" role="dialog" aria-modal="true" aria-label="${title}" class="w-full bg-white ${t.sheet} max-h-[88%] flex flex-col ${extra}">${inner}</div></div>`;
+  if (S.modal === 'cat') return wrap('Vrsta problema', head('Vrsta problema') +
+    `<p class="px-4 pt-3 text-sm text-zinc-600">Nadležnu instituciju ponovo određujemo prema vrsti koju izaberete.</p><ul class="overflow-y-auto py-2">${CATS.map(c => `<li><button data-a="setcat" data-v="${c.slug}" class="w-full min-h-[48px] px-4 py-2 flex items-center justify-between gap-3 text-left text-[15px] ${c.slug === S.cat ? 'font-semibold' : ''}">${c.name}${c.slug === S.cat ? ic('check', 'w-5 h-5 shrink-0') : ''}</button></li>`).join('')}</ul>`);
+  if (S.modal === 'why') {
+    const inst = instFor(S.whyCat);
+    const body = inst ? `<div class="p-4 space-y-3 text-[15px] overflow-y-auto">
+        <p class="text-zinc-600 text-sm">Nadležnu instituciju određuje provjerena tabela pravila Fixita, prema vrsti problema i opštini. Ne određuje je vještačka inteligencija.</p>
+        <div><div class="text-xs text-zinc-500">Institucija</div><div class="font-semibold">${inst.name}</div>${inst.cc ? `<div class="text-sm text-zinc-600">Kopija: ${inst.cc}</div>` : ''}</div>
+        <div><div class="text-xs text-zinc-500">Izvor</div><div>Zvanična stranica institucije <span class="text-zinc-500">(primjer u prototipu)</span></div></div>
+        <blockquote class="border-l-4 ${t.quote} pl-3 text-zinc-700 italic">Ovdje stoji kratak citat iz izvora koji imenuje nadležnu instituciju.</blockquote>
+        <div class="text-sm text-zinc-600">Provjereno: 2. novembra 2026.</div>
+        <button data-a="close" class="w-full h-11 ${t.btn}">Zatvori</button></div>`
+      : `<div class="p-4 space-y-3 text-[15px]"><p>${ROUTING_MSG}</p><button data-a="close" class="w-full h-11 ${t.btn}">Zatvori</button></div>`;
+    return wrap('Zašto ova institucija?', head('Zašto ova institucija?') + body);
+  }
+  if (S.modal === 'add') return wrap('Dodaj fotografiju', head('Dodaj fotografiju') +
+    `<div class="p-4 space-y-2"><button data-a="addcam" class="w-full h-12 flex items-center justify-center gap-2 ${t.btn}">${ic('camera')}Fotografiši</button><button data-a="addgal" class="w-full h-12 flex items-center justify-center gap-2 ${t.btnOutline}">${ic('image')}Iz galerije</button><button data-a="close" class="w-full h-11 text-zinc-600">Otkaži</button></div>`);
+  if (S.modal === 'gallery') {
+    const taken = S.galleryMode === 'add' ? S.photos.map(p => p.f) : [];
+    return `<div class="absolute inset-0 z-30 bg-neutral-100 flex flex-col font-sans" role="dialog" aria-modal="true" aria-label="Galerija">
+      <div class="h-14 px-2 flex items-center justify-between bg-white border-b border-neutral-200"><button data-a="close" class="h-11 px-3 text-blue-700 text-[15px]">Otkaži</button><span class="font-semibold text-[15px]">Galerija</span><button data-a="gdone" class="h-11 px-3 text-blue-700 text-[15px] font-semibold ${S.gallerySel.length ? '' : 'opacity-40'}">Dodaj (${S.gallerySel.length})</button></div>
+      <p class="px-4 py-2 text-xs text-neutral-600">Sistemski izbor fotografija (simulacija). Najviše 3 fotografije.</p>
+      <div class="grid grid-cols-3 gap-0.5 overflow-y-auto">${PHOTOS.map(p => { const i = S.gallerySel.indexOf(p.f), dis = taken.includes(p.f); return `<button ${dis ? 'disabled' : `data-a="gpick" data-v="${p.f}"`} class="relative aspect-square ${dis ? 'opacity-30' : ''}" aria-pressed="${i >= 0}" aria-label="Fotografija ${p.f}"><img src="${src(p.f)}" alt="" class="w-full h-full object-cover">${i >= 0 ? `<span class="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-blue-600 text-white text-sm font-semibold flex items-center justify-center ring-2 ring-white">${i + 1}</span><span class="absolute inset-0 ring-4 ring-inset ring-blue-600"></span>` : `<span class="absolute top-1.5 right-1.5 w-7 h-7 rounded-full ring-2 ring-white bg-black/20"></span>`}</button>`; }).join('')}</div></div>`;
+  }
+  return '';
+}
+function toastHTML() { return S.toast ? `<div class="absolute bottom-28 inset-x-4 z-40 ${V.theme.toast} text-sm px-4 py-3 shadow-lg" role="status">${esc(S.toast)}</div>` : ''; }
+
+/* ---------- render loop ---------- */
+let V = null, lastScreen = null;
+function render() {
+  const app = document.getElementById('app');
+  const keep = {};
+  if (lastScreen === S.screen) app.querySelectorAll('[data-scroll]').forEach(el => keep[el.dataset.scroll] = el.scrollTop);
+  app.innerHTML = (V.screens[S.screen] || V.screens.home)() + modalHTML() + toastHTML();
+  app.querySelectorAll('[data-scroll]').forEach(el => { if (keep[el.dataset.scroll]) el.scrollTop = keep[el.dataset.scroll]; });
+  lastScreen = S.screen;
+  bindDrag(); updateOverlay();
+}
+
+/* ---------- dev overlay (not part of the app UI) ---------- */
+function updateOverlay() {
+  const d = document.getElementById('dev'); if (!d) return;
+  const i = VARIANTS.findIndex(v => v.id === V.id), n = VARIANTS.length;
+  const prev = VARIANTS[(i + n - 1) % n], next = VARIANTS[(i + 1) % n];
+  const secs = S.t0 ? Math.round(((S.t1 || Date.now()) - S.t0) / 1000) : null;
+  if (!S.dev) { d.innerHTML = `<button data-a="dev" class="fixed bottom-4 right-4 z-50 h-11 px-4 rounded-full bg-fuchsia-700 text-white text-sm font-semibold shadow-lg font-mono">RAZVOJ · dodiri ${S.taps.length}/2</button>`; return; }
+  d.innerHTML = `<aside class="fixed bottom-4 right-4 z-50 w-[300px] rounded-xl bg-neutral-950 text-neutral-100 text-[12.5px] leading-snug shadow-2xl ring-2 ring-fuchsia-500 font-mono">
+    <div class="flex items-center justify-between pl-3 pr-1 py-1 border-b border-neutral-800"><span class="text-fuchsia-300 font-bold">RAZVOJNI PRIKAZ</span><button data-a="dev" class="w-10 h-10 flex items-center justify-center text-neutral-400 hover:text-white" aria-label="Sakrij razvojni prikaz">${ic('x', 'w-4 h-4')}</button></div>
+    <div class="flex items-center gap-1 px-1 py-1 border-b border-neutral-800">
+      <a href="${prev.file}" class="w-10 h-10 flex items-center justify-center rounded hover:bg-neutral-800" aria-label="Prethodni pravac">${ic('chevLeft', 'w-4 h-4')}</a>
+      <div class="flex-1 text-center"><div class="text-neutral-400">Pravac ${i + 1} od ${n}</div><div class="font-bold">${V.name}</div></div>
+      <a href="${next.file}" class="w-10 h-10 flex items-center justify-center rounded hover:bg-neutral-800" aria-label="Sljedeći pravac">${ic('chevRight', 'w-4 h-4')}</a></div>
+    <div class="px-3 py-2 space-y-1.5">
+      <div><span class="text-neutral-400">Obavezni dodiri:</span> <b class="${S.taps.length > 4 ? 'text-red-400' : 'text-green-400'}">${S.taps.length} / 2</b> <span class="text-neutral-500">(srećni put; najviše 4)</span></div>
+      ${S.taps.length ? `<ol class="list-decimal pl-5 text-neutral-300">${S.taps.map(t => `<li>„${t.label}“ <span class="text-neutral-500">u ${t.t} s</span></li>`).join('')}</ol>` : '<div class="text-neutral-500">Brojanje počinje kad se fotografija vrati u aplikaciju.</div>'}
+      <div><span class="text-neutral-400">Od fotografije:</span> <b>${secs === null ? '–' : secs + ' s'}</b> <span class="text-neutral-500">(cilj &lt; 60 s${S.t1 ? ', završeno' : ''})</span></div>
+      <div class="rounded bg-amber-400/15 text-amber-200 px-2 py-1">Testni režim: dopisi idu na testno sanduče</div>
+      <div class="text-neutral-500">Ulogovanje je preskočeno: pretpostavlja se ulogovan građanin (FR-1). Svi podaci su izmišljeni.</div>
+      <div class="flex items-center justify-between pt-1"><a href="index.html" class="underline text-neutral-300">Svi pravci</a><span class="text-neutral-500">← → pravac · D prikaz</span></div>
+    </div></aside>`;
+}
+function boot(v) {
+  V = v;
+  document.title = `Fixit prototip · ${v.name}`;
+  document.body.insertAdjacentHTML('afterbegin', `<div id="stage" class="${EMBED ? '' : 'min-h-screen flex items-start justify-center py-6 px-2 lg:pr-[330px]'}">
+    <div id="phone" class="relative overflow-hidden bg-white shrink-0 ${EMBED ? '' : 'rounded-[38px] ring-[10px] ring-neutral-900 shadow-2xl'}" style="width:360px;height:760px">
+      <div class="${v.theme.statusbar} h-7 flex items-center justify-between px-6 text-[12px] font-semibold relative z-40"><span>18:42</span><span class="flex items-center gap-1.5" aria-hidden="true"><svg width="16" height="10" viewBox="0 0 16 10"><rect x="0" y="6" width="3" height="4" fill="currentColor"/><rect x="4.5" y="4" width="3" height="6" fill="currentColor"/><rect x="9" y="2" width="3" height="8" fill="currentColor"/><rect x="13" y="0" width="3" height="10" fill="currentColor" opacity=".4"/></svg>4G<svg width="22" height="11" viewBox="0 0 22 11"><rect x=".5" y=".5" width="19" height="10" rx="2.5" fill="none" stroke="currentColor"/><rect x="2" y="2" width="13" height="7" rx="1.5" fill="currentColor"/><rect x="20" y="3.5" width="1.5" height="4" rx=".75" fill="currentColor"/></svg></span></div>
+      <div id="app" class="absolute inset-x-0 bottom-0 top-7 overflow-hidden ${v.theme.font || ''}"></div>
+    </div></div>${EMBED ? '' : '<div id="dev"></div>'}`);
+  document.addEventListener('click', e => { const el = e.target.closest('[data-a]'); if (!el || el.disabled) return; const a = A[el.dataset.a]; if (a) { e.preventDefault(); a(el.dataset.v, el); } });
+  document.addEventListener('input', e => { if (e.target.matches('[data-desc]')) S.desc = e.target.value; });
+  document.addEventListener('keydown', e => {
+    if (EMBED || e.target.closest('input, textarea, [contenteditable]') || e.metaKey || e.ctrlKey || e.altKey) return;
+    const i = VARIANTS.findIndex(x => x.id === V.id), n = VARIANTS.length;
+    if (e.key === 'ArrowLeft') location.href = VARIANTS[(i + n - 1) % n].file;
+    else if (e.key === 'ArrowRight') location.href = VARIANTS[(i + 1) % n].file;
+    else if (e.key === 'd' || e.key === 'D') A.dev();
+  });
+  setInterval(() => { if (S.t0 && !S.t1) updateOverlay(); }, 500);
+  render();
+}
+
+</script>
+<script>
+/* Direction 2: list / card-first. Home is a feed of report cards with the map as a second tab;
+   the report flow is a 3-step wizard with a progress bar; everything sits in white cards on slate. Blue primary. */
+const T = {
+  statusbar: 'bg-white text-slate-900', border: 'border-slate-200', h2: 'text-base font-semibold',
+  sheet: 'rounded-t-3xl', quote: 'border-blue-300', toast: 'rounded-xl bg-slate-900 text-white',
+  btn: 'rounded-xl bg-blue-700 text-white text-[15px] font-semibold hover:bg-blue-800 disabled:opacity-70',
+  btnOutline: 'rounded-xl border border-slate-300 bg-white text-slate-900 text-[15px] font-semibold hover:bg-slate-50',
+};
+const B = 'inline-flex items-center justify-center gap-2 px-4 transition-colors';
+const card = (inner, extra = '') => `<section class="bg-white rounded-2xl ring-1 ring-slate-200 shadow-sm ${extra}">${inner}</section>`;
+const cardTitle = (icon, t, act = '') => `<div class="flex items-center justify-between gap-2"><h2 class="flex items-center gap-2 text-sm font-semibold text-slate-900">${ic(icon, 'w-4 h-4 text-slate-500')}${t}</h2>${act}</div>`;
+function stepHeader(n, title) {
+  return `<header class="shrink-0 bg-white border-b border-slate-200"><div class="h-14 px-4 flex items-center justify-between"><div><div class="text-[11px] font-medium text-slate-500">Korak ${n} od 3</div><div class="text-[15px] font-semibold text-slate-900">${title}</div></div><button data-a="cancel" class="h-11 px-2 text-sm font-medium text-slate-600">Odustani</button></div>
+    <div class="h-1 bg-slate-100"><div class="h-1 bg-blue-700 transition-all" style="width:${n / 3 * 100}%"></div></div></header>`;
+}
+function reportCard(r, extra = '') {
+  const c = cat(r.cat), long = isOpen(r) && r.sub >= 14;
+  return `<button data-a="open" data-v="${r.id}" class="w-full text-left bg-white rounded-2xl ring-1 ring-slate-200 shadow-sm p-3 flex gap-3 ${extra}">
+    ${thumb(r, 'w-24 h-24 rounded-xl shrink-0')}
+    <div class="min-w-0 flex-1 flex flex-col">
+      <div class="flex items-center gap-1.5">${statusBadge(r.status)}</div>
+      <div class="mt-1 font-semibold text-[15px] text-slate-900 leading-snug line-clamp-2">${c.name}</div>
+      <div class="text-xs text-slate-500 truncate">${esc(r.addr)}</div>
+      <div class="mt-auto pt-1.5 flex items-center justify-between text-xs">
+        <span class="font-semibold flex items-center gap-1 ${long ? 'text-red-700' : 'text-slate-700'}">${ic('clock', 'w-3.5 h-3.5')}${counterText(r)}</span>
+        <span class="text-slate-600 flex items-center gap-1" aria-label="${likesLabel(r.likes)}">${ic('thumbs', 'w-3.5 h-3.5')}${r.likes}</span></div></div></button>`;
+}
+const sorted = () => REPORTS.slice().sort((a, b) => (isOpen(b) - isOpen(a)) || (b.sub - a.sub));
+
+const screens = {
+  home() {
+    const tab = (v, icon, label) => `<button role="tab" aria-selected="${S.tab === v}" data-a="tab" data-v="${v}" class="h-11 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 ${S.tab === v ? 'bg-white shadow-sm text-slate-900' : 'text-slate-600'}">${ic(icon, 'w-4 h-4')}${label}</button>`;
+    const open = REPORTS.filter(isOpen).length;
+    const chips = [['all', 'Sve', REPORTS.length], ['open', 'Otvorene', open], ['closed', 'Zatvorene', REPORTS.length - open]];
+    const list = sorted().filter(r => S.filter === 'all' || (S.filter === 'open') === isOpen(r));
+    const sel = byId(S.sel);
+    const body = S.tab === 'list'
+      ? `<div data-scroll="list" class="flex-1 overflow-y-auto">
+          <div class="flex gap-2 px-4 pt-3">${chips.map(([v, l, n]) => `<button data-a="filter" data-v="${v}" aria-pressed="${S.filter === v}" class="h-11 px-4 rounded-full text-sm font-medium ring-1 ${S.filter === v ? 'bg-slate-900 text-white ring-slate-900' : 'bg-white text-slate-700 ring-slate-300'}">${l} <span class="${S.filter === v ? 'text-slate-300' : 'text-slate-400'}">${n}</span></button>`).join('')}</div>
+          <p class="px-4 pt-3 text-xs text-slate-500">Prvo otvorene, najduže bez rješenja</p>
+          <ul class="p-4 pt-2 space-y-3">${list.map(r => `<li>${reportCard(r)}</li>`).join('')}</ul></div>`
+      : `<div class="relative flex-1">${mapHTML({ center: { x: 400, y: 470 }, zoom: 0.8, selected: S.sel })}
+          ${sel ? `<div class="absolute bottom-3 inset-x-3 z-20">${reportCard(sel, 'shadow-lg')}</div>` : ''}</div>`;
+    return `<div class="h-full flex flex-col bg-slate-50">
+      <header class="shrink-0 bg-white px-4 pt-3 pb-3 border-b border-slate-200">
+        <div class="flex items-center gap-2"><span class="w-8 h-8 rounded-lg bg-blue-700 text-white flex items-center justify-center">${ic('mapPin', 'w-4 h-4')}</span><div><div class="text-[17px] font-bold text-slate-900 leading-none">Fixit</div><div class="text-xs text-slate-500">Prijave u Podgorici</div></div></div>
+        <div role="tablist" class="mt-3 grid grid-cols-2 p-1 rounded-xl bg-slate-100">${tab('map', 'map', 'Mapa')}${tab('list', 'list', 'Lista')}</div></header>
+      ${body}
+      <div class="shrink-0 bg-white border-t border-slate-200 p-3"><button data-a="report" class="${B} w-full h-14 text-base shadow-sm ${T.btn}">${ic('camera', 'w-6 h-6')}Prijavi problem</button></div>
+    </div>`;
+  },
+  photo() {
+    return `<div class="h-full flex flex-col bg-white">${stepHeader(1, 'Fotografija')}
+      <div class="flex-1 px-5 py-6 flex flex-col">
+        <div class="rounded-3xl bg-blue-50 ring-1 ring-blue-100 h-56 flex flex-col items-center justify-center text-blue-800">${ic('camera', 'w-14 h-14')}<p class="mt-3 text-[15px] font-medium text-center px-8">Fotografišite problem. Vrstu problema i nadležnu instituciju određujemo mi.</p></div>
+        <div class="mt-4 rounded-xl bg-amber-50 ring-1 ring-amber-200 text-amber-900 text-sm p-3 flex gap-2">${ic('info', 'w-5 h-5 shrink-0')}${PHOTO_HINT}</div>
+        <div class="mt-auto space-y-2"><button data-a="camera" class="${B} w-full h-14 text-base ${T.btn}">${ic('camera', 'w-6 h-6')}Fotografiši</button>
+          <button data-a="gallery" class="${B} w-full h-12 ${T.btnOutline}">${ic('image')}Iz galerije</button></div>
+      </div></div>`;
+  },
+  location() {
+    if (S.phase === 'steps') {
+      return `<div class="h-full flex flex-col bg-white">${stepHeader(2, 'Pripremamo prijavu')}
+        <div class="flex-1 px-6 py-8 flex flex-col items-center">
+          <div class="relative"><img src="${src(S.photos[0].f)}" alt="Vaša fotografija" class="w-28 h-28 rounded-3xl object-cover"><span class="absolute -bottom-2 -right-2 w-10 h-10 rounded-full bg-blue-700 text-white flex items-center justify-center ring-4 ring-white">${ic('mapPin')}</span></div>
+          <p class="mt-5 text-sm text-slate-600 text-center">${curAddr()}, Podgorica</p>
+          <ol class="mt-6 w-full rounded-2xl bg-slate-50 ring-1 ring-slate-200 divide-y divide-slate-200" aria-live="polite">${stepStates().map(s => `<li class="h-14 px-4 flex items-center gap-3 text-[15px] ${s.state === 'pending' ? 'text-slate-400' : 'text-slate-900'} ${s.state === 'running' ? 'font-semibold' : ''}">${s.state === 'done' ? `<span class="w-6 h-6 rounded-full bg-green-700 text-white flex items-center justify-center">${ic('check', 'w-4 h-4')}</span>` : s.state === 'running' ? `<span class="w-6 h-6 text-blue-700">${spin('w-6 h-6')}</span>` : '<span class="w-6 h-6 rounded-full border-2 border-slate-300"></span>'}${s.label}</li>`).join('')}</ol>
+          <p class="mt-4 text-xs text-slate-500">Ovo traje nekoliko sekundi.</p></div></div>`;
+    }
+    return `<div class="h-full flex flex-col bg-slate-50">${stepHeader(2, 'Lokacija')}
+      <div class="relative h-[330px] shrink-0">${mapHTML({ offset: S.mapOff, drag: true, pin: true, pinColor: '#1d4ed8', interactive: false })}
+        <div class="absolute bottom-2 inset-x-0 text-center pointer-events-none z-20"><span class="inline-block rounded-full bg-white/95 px-3 py-1 text-xs text-slate-700 shadow">Pomjerite mapu ispod pina</span></div></div>
+      <div class="flex-1 p-4 space-y-3 overflow-y-auto">
+        ${card(`<div class="p-3 flex items-center gap-3" role="status"><img src="${src(S.photos[0].f)}" alt="Vaša fotografija" class="w-12 h-12 rounded-xl object-cover">${S.analysis === 'done'
+          ? `<div class="text-sm"><div class="font-semibold flex items-center gap-1.5">${ic('checkCircle', 'w-4 h-4 text-green-700')}Problem prepoznat:</div><div class="text-slate-600">${cat(S.cat).name}</div></div>`
+          : `<div class="text-sm"><div class="font-semibold flex items-center gap-1.5 text-blue-800">${spin()}Prepoznajem problem…</div><div class="text-slate-500">Radi u pozadini.</div></div>`}</div>`)}
+        ${card(`<div class="p-3"><div class="text-xs text-slate-500">Adresa</div><div class="mt-0.5 font-semibold text-[15px] flex gap-2">${ic('mapPin', 'w-5 h-5 text-blue-700 shrink-0')}${curAddr()}, Podgorica</div><p class="mt-1 text-xs text-slate-500">${S.pinHint}</p></div>`)}
+      </div>
+      <div class="shrink-0 p-3 bg-white border-t border-slate-200"><button data-a="confirm" class="${B} w-full h-14 text-base ${T.btn}">Potvrdi lokaciju</button></div></div>`;
+  },
+  review() {
+    const c = cat(S.cat), inst = instFor(S.cat);
+    const hero = card(`<div class="relative h-40 rounded-t-2xl overflow-hidden"><img src="${src(S.photos[0].f)}" alt="Vaša fotografija" class="w-full h-full object-cover"><div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+        <div class="absolute bottom-3 left-3 right-3 flex items-end justify-between gap-2 text-white"><div class="min-w-0"><div class="text-xs opacity-90">Vrsta problema</div><div class="font-semibold text-lg leading-tight">${c.name}</div></div>
+        <button data-a="cat" class="h-11 px-4 shrink-0 rounded-full bg-white text-slate-900 text-sm font-semibold">Promijeni</button></div></div>
+      <div class="p-4">${inst ? `<div class="text-xs text-slate-500 flex items-center gap-1.5">${ic('building', 'w-4 h-4')}Prijavu dobija</div><div class="mt-1 text-[17px] font-semibold text-slate-900 leading-snug">${inst.name}</div>${inst.cc ? `<div class="text-sm text-slate-500">Kopija: ${inst.cc}</div>` : ''}
+        <button data-a="why" class="h-11 -mb-2 text-sm font-medium text-blue-700 flex items-center gap-1">${ic('info', 'w-4 h-4')}Zašto ova institucija?</button>`
+        : `<div class="rounded-xl bg-amber-50 ring-1 ring-amber-200 text-amber-900 text-sm p-3">${ROUTING_MSG}</div>`}</div>`);
+    const photos = card(`<div class="p-4">${cardTitle('image', `Fotografije (${S.photos.length} od 3)`)}<div class="mt-3 flex gap-2">${S.photos.map((p, i) => `<div class="relative"><img src="${src(p.f)}" alt="Fotografija ${i + 1}" class="w-[84px] h-[84px] rounded-xl object-cover">${S.photos.length > 1 ? `<button data-a="rmphoto" data-v="${i}" class="absolute -top-2 -right-2 w-11 h-11 flex items-center justify-center" aria-label="Ukloni fotografiju ${i + 1}"><span class="w-7 h-7 rounded-full bg-white text-slate-900 shadow ring-1 ring-slate-300 flex items-center justify-center">${ic('x', 'w-4 h-4')}</span></button>` : ''}</div>`).join('')}
+      ${S.photos.length < 3 ? `<button data-a="addphoto" class="w-[84px] h-[84px] rounded-xl bg-blue-50 text-blue-800 ring-1 ring-blue-200 text-[11px] font-semibold flex flex-col items-center justify-center gap-1 text-center px-1">${ic('plus')}Dodaj fotografiju</button>` : ''}</div></div>`);
+    return `<div class="h-full flex flex-col bg-slate-50">${stepHeader(3, 'Pregled prijave')}
+      <div data-scroll="review" class="flex-1 overflow-y-auto p-4 space-y-3">
+        ${hero}
+        ${S.danger ? `<div class="rounded-2xl bg-red-50 text-red-900 ring-1 ring-red-200 p-3 text-sm font-semibold flex gap-2">${ic('alert', 'w-5 h-5 shrink-0')}${DANGER_MSG}</div>` : ''}
+        ${photos}
+        ${card(`<div class="p-4">${cardTitle('mapPin', 'Adresa')}<p class="mt-1 text-[15px]">${curAddr()}, Podgorica</p></div>`)}
+        ${card(`<div class="p-4"><label for="opis" class="flex items-center gap-2 text-sm font-semibold">${ic('fileText', 'w-4 h-4 text-slate-500')}Opis problema</label>
+          <textarea id="opis" data-desc rows="4" class="mt-2 w-full rounded-xl border border-slate-300 p-3 text-[15px] focus:outline-none focus:ring-2 focus:ring-blue-700">${esc(S.desc)}</textarea>
+          <p class="mt-1.5 text-xs text-slate-500 flex gap-1.5">${ic('eye', 'w-3.5 h-3.5 shrink-0 mt-px')}${PRIVACY_NOTE}</p></div>`)}
+        ${card(`<div class="px-4 py-2"><div class="flex items-center justify-between gap-3"><span id="lbl-share" class="text-[15px] flex items-center gap-2">${ic('user', 'w-4 h-4 text-slate-500 shrink-0')}Dostavi moje ime i mejl instituciji</span>${switchHTML('bg-blue-700')}</div>
+          ${S.share ? `<p class="pb-2 text-sm text-slate-600">Instituciji se dostavlja: ${USER.name}, ${USER.email}</p>` : ''}</div>`)}
+        ${card(`<button data-a="full" aria-expanded="${S.showFull}" class="w-full px-4 h-14 flex items-center justify-between text-[15px] font-semibold"><span class="flex items-center gap-2">${ic('fileText', 'w-4 h-4 text-slate-500')}${S.showFull ? 'Sakrij cijeli tekst' : 'Prikaži cijeli tekst'}</span>${ic(S.showFull ? 'chevUp' : 'chevDown')}</button>
+          ${S.showFull ? `<div class="px-4 pb-4 text-[13px] leading-relaxed space-y-2 text-slate-700 border-t border-slate-100 pt-3">${letterHTML()}</div>` : ''}`)}
+      </div>
+      <div class="shrink-0 border-t border-slate-200 bg-white px-4 pt-2 pb-3"><p class="text-xs text-slate-500 mb-2">${CONFIRM_NOTE}</p>
+        <button data-a="send" ${S.sending ? 'disabled' : ''} class="${B} w-full h-14 text-base ${T.btn}">${S.sending ? spin('w-5 h-5') + 'Šaljem prijavu…' : ic('send') + 'Pošalji prijavu'}</button></div></div>`;
+  },
+  success() {
+    const r = byId(S.newId), inst = instFor(r.cat);
+    return `<div class="h-full flex flex-col bg-white"><div class="flex-1 flex flex-col items-center justify-center px-6 text-center">
+      <div class="w-20 h-20 rounded-full bg-green-100 text-green-700 flex items-center justify-center">${ic('check', 'w-10 h-10')}</div>
+      <h1 class="mt-5 text-2xl font-bold text-slate-900">Prijava poslata</h1>
+      <p class="mt-2 text-sm text-slate-600">${inst ? `Dopis je poslat instituciji: ${inst.name}.` : ROUTING_MSG}</p>
+      <div class="mt-6 w-full rounded-2xl bg-slate-50 ring-1 ring-slate-200 p-4"><div class="text-xs text-slate-500">Broj prijave</div><div class="mt-1 font-mono text-2xl font-bold tracking-wide text-slate-900">${r.code}</div><div class="mt-2">${statusBadge(r.status)}</div></div></div>
+      <div class="p-4 space-y-2"><button data-a="open" data-v="${r.id}" class="${B} w-full h-14 text-base ${T.btn}">Pogledaj javnu stranicu</button>
+        <div class="grid grid-cols-2 gap-2"><button data-a="sharelink" data-v="${r.code}" class="${B} h-12 ${T.btnOutline}">${ic('share', 'w-4 h-4')}Podijeli</button><button data-a="new" class="${B} h-12 ${T.btnOutline}">Nova prijava</button></div></div></div>`;
+  },
+  report() {
+    const r = byId(S.reportId), c = cat(r.cat), inst = instFor(r.cat), st = supportState(r);
+    const path = ['sent', 'acknowledged', 'in_progress', 'resolved'], cur = path.indexOf(r.status);
+    const tracker = cur >= 0 ? `<ol class="mt-4 grid grid-cols-4 gap-1.5" aria-label="Napredak prijave">${path.map((s, i) => `<li><div class="h-1.5 rounded-full ${i <= cur ? 'bg-blue-700' : 'bg-slate-200'}"></div><div class="mt-1.5 text-[11px] leading-tight flex items-center gap-0.5 ${i === cur ? 'font-semibold text-slate-900' : i < cur ? 'text-slate-600' : 'text-slate-400'}">${i <= cur ? ic('check', 'w-3 h-3 shrink-0') : ''}${STATUS[s].label}</div></li>`).join('')}</ol>` : '';
+    const support = {
+      can: `<button data-a="like" data-v="${r.id}" class="${B} h-12 px-5 ${T.btn}">${ic('thumbs')}Podržavam</button>`,
+      liked: `<button disabled class="${B} h-12 px-5 rounded-xl bg-slate-100 text-slate-700 font-semibold">${ic('check')}Podržano</button>`,
+      closed: `<span class="text-sm font-medium text-slate-600 text-right">Prijava je zatvorena</span>`,
+      own: `<span class="text-sm text-slate-600 text-right">Ovo je vaša prijava.</span>`,
+    }[st];
+    return `<div class="h-full flex flex-col bg-slate-50">
+      <header class="shrink-0 bg-white border-b border-slate-200 h-14 px-1 flex items-center gap-1"><button data-a="home" aria-label="Nazad" class="w-11 h-11 flex items-center justify-center">${ic('chevLeft')}</button><div class="flex-1 min-w-0"><div class="text-[15px] font-semibold truncate">${c.name}</div><div class="text-xs text-slate-500 font-mono">${r.code}</div></div><button data-a="sharelink" data-v="${r.code}" aria-label="Podijeli" class="w-11 h-11 flex items-center justify-center">${ic('share')}</button></header>
+      <div data-scroll="report" class="flex-1 overflow-y-auto">
+        ${r.photos.length ? `<div class="flex overflow-x-auto snap-x snap-mandatory">${r.photos.map((f, i) => `<img src="${src(f)}" alt="Fotografija ${i + 1}" class="w-full shrink-0 h-56 object-cover snap-center">`).join('')}</div>` : `<div class="h-32 bg-slate-100 flex flex-col items-center justify-center text-slate-500 text-sm gap-1">${ic('image', 'w-7 h-7')}Bez fotografije</div>`}
+        <div class="p-4 space-y-3">
+          ${card(`<div class="p-4"><div class="flex flex-wrap items-center gap-2">${statusBadge(r.status)}${r.demo ? demoBadge('border-slate-300 text-slate-600') : ''}</div>
+            <div class="mt-3 text-2xl font-bold text-slate-900">${counterText(r)}</div><p class="text-sm text-slate-500">${esc(r.addr)}, Podgorica</p>${tracker}</div>`)}
+          ${card(`<div class="p-4 flex items-center gap-4"><div class="flex-1" aria-live="polite"><div class="text-3xl font-bold text-slate-900 leading-none">${r.likes}</div><div class="text-sm text-slate-500">${likesWord(r.likes)}</div></div>${support}</div>`)}
+          ${r.desc ? card(`<div class="p-4">${cardTitle('fileText', 'Opis problema')}<p class="mt-1.5 text-[15px] text-slate-700">${esc(r.desc)}</p></div>`) : ''}
+          ${card(`<div class="p-4">${cardTitle('building', 'Nadležna institucija')}${inst ? `<p class="mt-1.5 text-[15px]">${inst.name}</p>${inst.cc ? `<p class="text-sm text-slate-500">Kopija: ${inst.cc}</p>` : ''}<button data-a="why" data-v="${r.cat}" class="h-11 -mb-2 text-sm font-medium text-blue-700">Zašto ova institucija?</button>` : '<p class="mt-1.5 text-[15px] text-slate-700">Nadležnu instituciju određuje tim Fixit.</p>'}</div>`)}
+          ${card(`<div class="p-4">${cardTitle('clock', 'Vremenska linija')}<ol class="mt-3 space-y-3">${r.events.slice().reverse().map(e => { const em = STATUS[e.s]; return `<li class="flex gap-3"><span class="w-8 h-8 shrink-0 rounded-full text-white flex items-center justify-center" style="background:${em.hex}">${ic(em.icon, 'w-4 h-4')}</span><div class="min-w-0"><div class="text-sm"><b>${em.label}</b> <span class="text-slate-500">· ${dateAgo(e.ago)}</span></div>${e.t ? `<p class="text-sm text-slate-700">${esc(e.t)}</p>` : ''}<p class="text-xs text-slate-500">${esc(e.a)}</p></div></li>`; }).join('')}</ol></div>`)}
+        </div></div></div>`;
+  },
+};
+boot({ id: 'v2', name: 'Lista i kartice', theme: T, screens });
+
+</script>
+</body>
+</html>

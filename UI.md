@@ -53,3 +53,13 @@ One mapping for every place a status is shown (map marker, public report page, p
 - `draft` is never shown publicly and has no entry here.
 - A status is always shown as text as well, never by colour alone (PRD §6, accessibility); the icon is a second cue, not a replacement for the label.
 - The exact shades depend on the preset: check them (and WCAG AA contrast of the icon on the marker) once `init` has run. Do not hand-edit the theme variables to fix a shade; pick another existing token and update this table.
+
+## Layout direction: prototype v2 (Ivana, 3. 11. 2026)
+
+Ivana chose **direction v2 ("lista i kartice")** out of three prototypes; the other two are discarded. Reference: [.scratch/prototypes/v2-lista-kartice.html](.scratch/prototypes/v2-lista-kartice.html), open it in a browser (it is a throwaway mock with fake data, not code to copy). Build the real screens with shadcn components in this direction:
+
+- **Home `/`:** a header (Fixit, „Prijave u Podgorici") with two tabs, **Mapa | Lista**. **Mapa is the default tab** when the app opens (Ivana's change to v2); Lista shows the same reports as cards (photo, category, status with icon + text, day counter, support count). A full-width primary button „Prijavi problem" sits at the bottom.
+- **Cards everywhere:** content sits in white cards (`Card`) on a light neutral background; one blue primary colour (the preset's `primary`, preset is maia/mist/blue).
+- **Report flow `/prijavi`:** a wizard with a progress bar and step titles (photo → location with live agent steps → „Pregled prijave"), matching the screen order and tap budget in PRD FR-5 and ticket 15. Each step is one screen with one primary button at the bottom.
+- **Public report page `/p/[code]`:** stacked cards (photo, public description, category/status/institution, day counter, „Podržavam" with live count, timeline).
+- The dev overlay in the prototype (tap counter, test-mode caption) is a prototype tool only; it is not part of the app.
