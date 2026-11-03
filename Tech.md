@@ -292,12 +292,12 @@ Baza, Supabase CLI 3.0.0 (migracije i `db push` radi samo Ivana; `AGENTS.md`):
 
 ## Hosting i mejl
 
-*Odluke iz tiketa 16, sa izmjenom od 3. 11. 2026.: **bez kupljenog domena**. Aplikacija treba da radi nekoliko dana i za snimanje videa. `{projekat}` je ime Vercel projekta; tačan produkcioni URL Ivana upisuje kad napravi projekat.*
+*Odluke iz tiketa 16, sa izmjenom od 3. 11. 2026.: **bez kupljenog domena**. Aplikacija treba da radi nekoliko dana i za snimanje videa. Produkcioni URL je `https://fixit-b73a.vercel.app` (Vercel projekat napravljen 3. 11. 2026; `fixit.vercel.app` je bio zauzet).*
 
 ### Hosting
 
 - Aplikacija se hostuje na **Vercelu** (Hobby plan, besplatno): projekat je na Ivaninom ličnom Vercel nalogu i povezan je sa repoom na njenom ličnom GitHub nalogu (Hobby ne može da se poveže sa repoom koji pripada GitHub organizaciji).
-- Domen se ne kupuje. Produkciona adresa je produkcioni URL projekta, `https://{projekat}.vercel.app` (Vercel → Settings → Domains). Ona je u `NEXT_PUBLIC_SITE_URL`, u potpisu dopisa i u videu. Preview deploy-i imaju svoje `*.vercel.app` adrese. Produkcioni URL mora se otvarati bez Vercel prijave (provjera u privatnom prozoru).
+- Domen se ne kupuje. Produkciona adresa je produkcioni URL projekta, `https://fixit-b73a.vercel.app` (Vercel → Settings → Domains). Ona je u `NEXT_PUBLIC_SITE_URL`, u potpisu dopisa i u videu. Preview deploy-i imaju svoje `*.vercel.app` adrese. Produkcioni URL mora se otvarati bez Vercel prijave (provjera u privatnom prozoru).
 - **TryCloudflare se ne koristi.** Quick Tunnel daje privremenu `trycloudflare.com` adresu koja se mijenja pri svakom pokretanju i radi samo dok `cloudflared` radi na nečijem računaru. Cloudflare ga namjenjuje testiranju, bez garancije dostupnosti, i ne podržava Server-Sent Events, koje agent tok koristi. Izvor: [developers.cloudflare.com, Quick Tunnels](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/do-more-with-tunnels/trycloudflare/) (pristup 3. 11. 2026).
 - **AI agent nije pozadinski proces.** To je serverska funkcija (Route Handler, Node runtime) koju pokreće zahtjev građanina nakon slanja fotografije. Jedan prolaz traje oko 10 s (PRD: ≤ 8 s + ≤ 3 s), funkcija ima `maxDuration = 60`, a strop na Hobby planu je 300 s (nalaz 07). Ne treba stalno upaljen server, red čekanja ni worker.
 - Hobby nema timsku saradnju: Vercel projekat i env varijable vidi samo Ivana. Ostali članovi rade lokalno i preko push-a na GitHub (preview deploy).
@@ -306,7 +306,7 @@ Baza, Supabase CLI 3.0.0 (migracije i `db push` radi samo Ivana; `AGENTS.md`):
 ### Mejl (Resend)
 
 - Bez sopstvenog domena Resend šalje samo sa `onboarding@resend.dev` i **samo na mejl vlasnika Resend naloga** (nalaz 05). Zato je `TEST_INBOX` Ivanin lični mejl (izmjena odluke iz tiketa 08, 3. 11.), a Resend nalog je otvoren baš tim mejlom. Adresa se ne upisuje ni u jedan dokument ni u repo; postoji samo u `.env.local` i u Vercel env varijablama. U videu se zamućuje.
-- **Dopis instituciji:** `from: Fixit <onboarding@resend.dev>`, `reply-to:` `EMAIL_REPLY_TO`, što je isti mejl kao `TEST_INBOX`. Potpis dopisa („kontakt mejl i sajt", FR-11) navodi taj mejl i `https://{projekat}.vercel.app`, nikad adresu koja ne prima poštu.
+- **Dopis instituciji:** `from: Fixit <onboarding@resend.dev>`, `reply-to:` `EMAIL_REPLY_TO`, što je isti mejl kao `TEST_INBOX`. Potpis dopisa („kontakt mejl i sajt", FR-11) navodi taj mejl i `https://fixit-b73a.vercel.app`, nikad adresu koja ne prima poštu.
 - **`EMAIL_MODE=test` ostaje podrazumijevan** i ne mijenja se. Jedino mjesto slanja je `lib/email/send.ts`, sa guard-om: sve osim tačno `live` = test, primalac i kopija idu na `TEST_INBOX`, a bez `TEST_INBOX` nema slanja. Resend uz to sam odbija svakog primaoca osim vlasnika naloga (403). To je dodatna brava, ne zamjena: guard i njegov test (AGENTS.md, test 1) ostaju, jer zaštita ne smije zavisiti od podešavanja Resend naloga.
 - Kvota besplatnog plana: 100 mejlova dnevno (UTC), 3.000 mjesečno; testovi ne troše kvotu, jer je Resend mockovan.
 - Nema Auth mejlova (vidi „Registracija"), pa nema ni Supabase SMTP-a ni drugog Resend ključa.
@@ -317,7 +317,7 @@ Baza, Supabase CLI 3.0.0 (migracije i `db push` radi samo Ivana; `AGENTS.md`):
 - Demo nalozi se prave unaprijed, već potvrđeni: `auth.admin.createUser({ email_confirm: true })` u `pnpm db:seed-demo` (`DB.md` §12.3).
 - Supabase ne šalje nijedan Auth mejl, pa se Auth šabloni ne prevode. Reset lozinke nije u P0, a ruta `/auth/callback` se u P0 ne pravi.
 - Posljedica: niko ne provjerava da je mejl zaista korisnikov, pa uz dostavljanje podataka (FR-11) dopis nosi nepotvrđen mejl. U testnom režimu dopis završava u `TEST_INBOX`; za hakaton je to prihvaćeno (tiket 16).
-- Supabase Auth URL Configuration: Site URL `https://{projekat}.vercel.app`; Redirect URLs `https://{projekat}.vercel.app/**`, `https://*-{vercel-nalog}.vercel.app/**` (preview) i `http://localhost:3000/**`.
+- Supabase Auth URL Configuration: Site URL `https://fixit-b73a.vercel.app`; Redirect URLs `https://fixit-b73a.vercel.app/**`, `https://*-{vercel-nalog}.vercel.app/**` (preview) i `http://localhost:3000/**`.
 
 ### Env varijable za hosting i mejl
 
@@ -328,7 +328,7 @@ Baza, Supabase CLI 3.0.0 (migracije i `db push` radi samo Ivana; `AGENTS.md`):
 | `EMAIL_FROM` | server | `Fixit <onboarding@resend.dev>` |
 | `EMAIL_REPLY_TO` | server | isti mejl kao `TEST_INBOX` |
 | `RESEND_API_KEY` | server | Resend ključ samo za slanje |
-| `NEXT_PUBLIC_SITE_URL` | klijent i server | produkcioni URL `https://{projekat}.vercel.app` (potpis dopisa, linkovi u mejlu, `User-Agent` za Nominatim) |
+| `NEXT_PUBLIC_SITE_URL` | klijent i server | produkcioni URL `https://fixit-b73a.vercel.app` (potpis dopisa, linkovi u mejlu, `User-Agent` za Nominatim) |
 
 Izmjena env varijabli na Vercelu važi tek za novi deploy.
 

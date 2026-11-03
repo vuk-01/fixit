@@ -113,7 +113,7 @@ Prioriteti: **P0** = mora raditi na demou; **P1** = radimo ako P0 bude gotov do 
   - **zahtjev za postupanje:** molba da institucija razmotri prijavu i preduzme mjere iz svoje nadležnosti;
   - **pogrešna nadležnost:** molba da institucija obavijesti Fixit ako prijava nije u njenoj nadležnosti, kako bi bila proslijeđena odgovarajućoj instituciji;
   - **podaci o prijaviocu:** samo ako je građanin izabrao dostavljanje podataka, tekst „Prijavu je podnio korisnik platforme Fixit, koji je dao saglasnost da se njegovi podaci dostave instituciji: {ime i prezime}, {mejl adresa}.“;
-  - **potpis:** „S poštovanjem, Tim Fixit“, uz kontakt mejl (ista adresa kao `reply-to`) i sajt (produkcioni URL `https://{projekat}.vercel.app`, `NEXT_PUBLIC_SITE_URL`).
+  - **potpis:** „S poštovanjem, Tim Fixit“, uz kontakt mejl (ista adresa kao `reply-to`) i sajt (produkcioni URL `https://fixit-b73a.vercel.app`, `NEXT_PUBLIC_SITE_URL`).
 
   Ako građanin izabere dostavljanje podataka, njegovo ime, prezime i mejl adresa automatski se uključuju u mejl, bez posebnog zahtjeva institucije. Ako to ne izabere, mejl ne sadrži njegove lične podatke. Nakon uspješnog slanja dopisa prijava prelazi u status `sent` (bez pravila nadležnosti u `routing`, bez mejla, FR-8). Građanin prijavu podnosi samo jednom; jedan dopis ide jednom primaocu i uspješno se šalje najviše jednom, a novi primalac (ručno raspoređivanje ili preusmjeravanje, FR-23) dobija novi dopis za istu prijavu. Ako slanje dopisa ne uspije, prijava ostaje nacrt (zadržava kod, FR-24) i građanin može pokušati ponovo.
 
