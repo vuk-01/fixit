@@ -18,6 +18,8 @@ Fixit je PWA u kojoj građanin fotografiše svakodnevni problem, a AI agent prep
 
 Prije zadatka pročitaj relevantne sekcije. Ako zadatak traži nešto što se kosi sa dokumentima, **stani i pitaj**. Ako se odluka promijeni, ažuriraj dokument u istom PR-u.
 
+Za Next.js API čitaj dokumentaciju instalirane verzije u `node_modules/next/dist/docs/`, ne znanje iz treninga (Next 16 se razlikuje od starijih verzija, npr. `proxy.ts` umjesto `middleware.ts`). Next.js ne dopisuje ovaj fajl sam (`agentRules: false` u `next.config.ts`).
+
 ## Zlatna pravila (ne pregovara se)
 
 1. **AI nikad ne određuje nadležnost.** Nadležnost dolazi isključivo iz `resolve_jurisdiction` / tabele `jurisdiction_rules`. Ne dodaji institucije u promptove. Jedini drugi put do primaoca je ručni izbor administratora na `/admin` (ručno raspoređivanje ili preusmjeravanje): odluka čovjeka, bez AI-ja, i ne stvara pravilo.
