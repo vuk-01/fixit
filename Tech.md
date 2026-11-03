@@ -8,12 +8,12 @@
 |---|---|
 | Aplikacija | Next.js 16 (App Router, Node runtime), React 19, TypeScript `strict`, pnpm |
 | UI | Tailwind CSS 4 + shadcn/ui (preset i pravila u `UI.md`) |
-| Baza, auth, fotografije, realtime | Supabase: Postgres + PostGIS, Auth (mejl + šifra; anonimne sesije samo za podršku), Storage (privatni bucket), Realtime. Region `eu-central-1` (Frankfurt). |
+| Baza, auth, fotografije, realtime | Supabase: Postgres + PostGIS, Auth (mejl + šifra; anonimne sesije samo za podršku), Storage (privatni bucket), Realtime. Region `eu-west-3` (Pariz) [Ivana]. |
 | AI | Claude API preko `@anthropic-ai/sdk`, model `claude-haiku-5-5`, strukturisan izlaz preko `zod` |
 | Mejl | Resend, isključivo kroz `lib/email/send.ts` |
 | Mapa | Leaflet + react-leaflet, OpenStreetMap tile-ovi |
 | Adresa (reverse geocoding) | Nominatim, samo sa servera |
-| Hosting | Vercel Hobby, region `fra1`, bez kupljenog domena (sekcija „Hosting i mejl") |
+| Hosting | Vercel Hobby, region `cdg1` (Pariz, uz Supabase `eu-west-3`), bez kupljenog domena (sekcija „Hosting i mejl") |
 | Testovi | Vitest |
 
 Nema Supabase Edge funkcija, posebnog backend servera, reda čekanja ni workera. Sav serverski kod je u Next.js aplikaciji: jedan jezik i jedno mjesto za tajne.
@@ -122,7 +122,7 @@ scripts/
   seed-demo.ts                      demo nalozi i demo prijave (`pnpm db:seed-demo`, servisni ključ)
   clear-demo.ts                     brisanje demo podataka (`pnpm db:clear-demo`, FR-25)
   demo-photos/                      8 fotografija demo prijava, po 2 za `pothole`, `street_light`, `illegal_dump`, `manhole` (Wikimedia Commons; 1600 px JPEG, bez EXIF-a) i `CREDITS.md` (autori i licence); tiket 21, `DB.md` §12.4
-vercel.json                         { "regions": ["fra1"] }
+vercel.json                         { "regions": ["cdg1"] }
 .mcp.json                           shadcn MCP (UI.md)
 .env.example                        sve varijable, bez vrijednosti
 ```
@@ -275,7 +275,7 @@ Inicijalizacija (jednom, Ivana, utorak 3. 11.):
 1. `pnpm dlx shadcn@latest init --preset b2xaqzSRuK --template next` u korijenu repoa (pravi Next.js projekat sa presetom; `UI.md`).
 2. Pinovati verzije iz sekcije 2 (`pnpm add --save-exact …`), dodati `engines` i `packageManager`, provjeriti `"strict": true` u `tsconfig.json` i dodati skripte iz tabele.
 3. `pnpm add -D --save-exact supabase@3.0.0`, pa `pnpm supabase init`, `pnpm supabase login` (Personal Access Token) i `pnpm supabase link` (izabrati projekat; `--password` v3 ignoriše).
-4. Dodati `vercel.json` (`"regions": ["fra1"]`), `.mcp.json` (`UI.md`) i `.env.example`.
+4. Dodati `vercel.json` (`"regions": ["cdg1"]`), `.mcp.json` (`UI.md`) i `.env.example`.
 
 Baza, Supabase CLI 3.0.0 (migracije i `db push` radi samo Ivana; `AGENTS.md`):
 - `pnpm supabase migration new <naziv>`
