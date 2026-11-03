@@ -1,17 +1,31 @@
-import { Geist, Geist_Mono, DM_Sans, Outfit } from "next/font/google"
+import type { Metadata, Viewport } from "next"
+import { DM_Sans, Geist_Mono, Outfit } from "next/font/google"
 
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
-import { cn } from "@/lib/utils";
+import { APP_DESCRIPTION, APP_NAME } from "@/lib/constants"
+import { cn } from "@/lib/utils"
 
-const outfitHeading = Outfit({subsets:['latin'],variable:'--font-heading'});
+const outfitHeading = Outfit({ subsets: ["latin", "latin-ext"], variable: "--font-heading" })
 
-const dmSans = DM_Sans({subsets:['latin'],variable:'--font-sans'})
+const dmSans = DM_Sans({ subsets: ["latin", "latin-ext"], variable: "--font-sans" })
 
 const fontMono = Geist_Mono({
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext"],
   variable: "--font-mono",
 })
+
+export const metadata: Metadata = {
+  title: { default: APP_NAME, template: `%s · ${APP_NAME}` },
+  description: APP_DESCRIPTION,
+  metadataBase: process.env.NEXT_PUBLIC_SITE_URL ? new URL(process.env.NEXT_PUBLIC_SITE_URL) : undefined,
+}
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+}
 
 export default function RootLayout({
   children,
@@ -20,11 +34,11 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="sr-Latn-ME"
       suppressHydrationWarning
       className={cn("antialiased", fontMono.variable, "font-sans", dmSans.variable, outfitHeading.variable)}
     >
-      <body>
+      <body className="min-h-svh bg-background text-foreground">
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
