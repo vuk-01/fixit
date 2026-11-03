@@ -40,19 +40,21 @@
 
 One mapping for every place a status is shown (map marker, public report page, panel). Colours are tokens from the preset (`--muted`, `--chart-1`…`--chart-4`, `--destructive` in `app/globals.css`, used as Tailwind classes such as `bg-chart-1`); icons come from the preset's icon library (lucide). Keep the mapping in one `Record<report_status, …>` next to the status labels, so a missing status breaks `pnpm typecheck`.
 
-| Status | Label (public) | Colour token | Icon |
-|---|---|---|---|
-| `routing` | Određuje se nadležni | `muted` | `CircleHelp` |
-| `sent` | Poslata | `chart-1` | `Send` |
-| `acknowledged` | Primljena | `chart-2` | `Eye` |
-| `in_progress` | U radu | `chart-3` | `Wrench` |
-| `resolved` | Riješena | `chart-4` | `CircleCheck` |
-| `not_competent` | Preusmjerava se (panel: „Nije naša nadležnost") | `muted` | `ArrowLeftRight` |
-| `rejected` | Odbijena | `destructive` | `CircleX` |
+| Status | Label (public) | Colour token | Icon / text colour | Icon |
+|---|---|---|---|---|
+| `routing` | Određuje se nadležni | `muted` | `foreground` | `CircleHelp` |
+| `sent` | Poslata | `chart-1` | black | `Send` |
+| `acknowledged` | Primljena | `chart-2` | black | `Eye` |
+| `in_progress` | U radu | `chart-3` | black | `Wrench` |
+| `resolved` | Riješena | `chart-4` | white | `CircleCheck` |
+| `not_competent` | Preusmjerava se (panel: „Nije naša nadležnost") | `muted` | `foreground` | `ArrowLeftRight` |
+| `rejected` | Odbijena | `destructive` | white (dark mode: black) | `CircleX` |
 
 - `draft` is never shown publicly and has no entry here.
 - A status is always shown as text as well, never by colour alone (PRD §6, accessibility); the icon is a second cue, not a replacement for the label.
 - The exact shades depend on the preset: check them (and WCAG AA contrast of the icon on the marker) once `init` has run. Do not hand-edit the theme variables to fix a shade; pick another existing token and update this table.
+- **Checked after `init` (ticket 7, 4. 11. 2026):** with the icon/text colour above, every token passes WCAG AA for text (≥ 4.5:1) in light and dark mode, so no token was replaced. Computed from the oklch values in `app/globals.css`: muted/foreground 17.7 (dark 14.3), chart-1/black 12.3, chart-2/black 7.3, chart-3/black 5.9, chart-4/white 5.2, destructive/white 4.8 (dark: destructive/black 7.3). White fails on chart-1 (1.7), chart-2 (2.9) and chart-3 (3.6), which is why those use black. `STATUS_STYLE` in `lib/constants.ts` holds these classes.
+- The preset's chart palette is orange (`chartColor: orange`), so `sent`, `acknowledged`, `in_progress` and `resolved` are four shades of orange; the icon and the label tell them apart. Markers have a white border and a dark ring so the muted ones stay visible on the map.
 
 ## Layout direction: prototype v2 (Ivana, 3. 11. 2026)
 

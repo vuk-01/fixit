@@ -30,6 +30,10 @@ export const MAP_TILES = {
   maxZoom: 19,
 } as const
 
+// map start when there is no GPS (PRD §4.1); centre of Podgorica
+export const PODGORICA_CENTER = { lat: 42.4411, lng: 19.2636 } as const
+export const MAP_DEFAULT_ZOOM = 13
+
 // ---------------------------------------------------------------------------------------------
 // Categories (PRD §5.2 "Vrste problema"). Labels and prompt descriptions never name an institution.
 // ---------------------------------------------------------------------------------------------
@@ -107,14 +111,15 @@ export const STATUS_LABELS: Record<ReportStatus, { public: string; panel: string
 }
 
 // a status is always shown as text too, never by colour alone (PRD §6)
+// Icon/text colour per token passes WCAG AA (≥ 4.5:1) in light and dark mode (UI.md table).
 export const STATUS_STYLE: Record<PublicReportStatus, { colorClass: string; icon: LucideIcon }> = {
-  routing: { colorClass: "bg-muted text-muted-foreground", icon: CircleHelp },
-  sent: { colorClass: "bg-chart-1 text-white", icon: Send },
-  acknowledged: { colorClass: "bg-chart-2 text-white", icon: Eye },
-  in_progress: { colorClass: "bg-chart-3 text-white", icon: Wrench },
+  routing: { colorClass: "bg-muted text-foreground", icon: CircleHelp },
+  sent: { colorClass: "bg-chart-1 text-black", icon: Send },
+  acknowledged: { colorClass: "bg-chart-2 text-black", icon: Eye },
+  in_progress: { colorClass: "bg-chart-3 text-black", icon: Wrench },
   resolved: { colorClass: "bg-chart-4 text-white", icon: CircleCheck },
-  not_competent: { colorClass: "bg-muted text-muted-foreground", icon: ArrowLeftRight },
-  rejected: { colorClass: "bg-destructive text-white", icon: CircleX },
+  not_competent: { colorClass: "bg-muted text-foreground", icon: ArrowLeftRight },
+  rejected: { colorClass: "bg-destructive text-white dark:text-black", icon: CircleX },
 }
 
 // "open report" (GLOSSARY, FR-18); the database has the same set in private.is_open
