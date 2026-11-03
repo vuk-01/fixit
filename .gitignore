@@ -1,0 +1,20 @@
+# secrets
+.env*.local
+.env
+
+# macOS
+.DS_Store
+
+# dependencies and build output
+node_modules/
+.next/
+out/
+build/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# vercel / supabase local state
+.vercel/
+supabase/.temp/
+supabase/.branches/
