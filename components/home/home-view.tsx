@@ -10,15 +10,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ReportCounters, ReportPhoto, REPORT_SUMMARY_TEXT } from "@/components/report/report-summary"
 import { StatusBadge } from "@/components/report/status-badge"
 import { useLiveLikeCounts } from "@/components/report/use-live-like-counts"
-import { APP_NAME, CATEGORIES } from "@/lib/constants"
+import { CATEGORIES } from "@/lib/constants"
 import type { MapReport } from "@/lib/reports/public-map"
 
 const HOME_TEXT = {
-  subtitle: "Prijave u Podgorici",
+  title: "Prijave u Podgorici",
   tabMap: "Mapa",
   tabList: "Lista",
   report: "Prijavi problem",
-  signIn: "Uloguj se",
   mapLoading: "Učitavam mapu…",
   empty: "Još nema prijava. Budite prvi koji će prijaviti problem.",
   failed: "Prijave trenutno nije moguće učitati. Pokušajte ponovo za nekoliko minuta.",
@@ -33,22 +32,15 @@ const ReportMap = dynamic(() => import("@/components/map/report-map").then((m) =
   ),
 })
 
-// Home `/` (UI.md, prototype v2): header, Mapa | Lista with Mapa as default, „Prijavi problem".
+// Home `/` (UI.md, prototype v2): Mapa | Lista with Mapa as default, „Prijavi problem".
+// The header („Fixit" / „Prijave u Podgorici", sign-in or the account menu) is SiteHeader in the layout.
 export function HomeView({ reports: initialReports, failed }: { reports: MapReport[]; failed: boolean }) {
   const reports = useLiveLikeCounts(initialReports)
   const notice = failed ? HOME_TEXT.failed : reports.length === 0 ? HOME_TEXT.empty : null
 
   return (
-    <div className="flex h-svh flex-col bg-muted/50">
-      <header className="flex items-center justify-between gap-3 border-b bg-background px-4 py-2">
-        <div>
-          <h1 className="font-heading text-xl leading-tight font-semibold">{APP_NAME}</h1>
-          <p className="text-sm text-muted-foreground">{HOME_TEXT.subtitle}</p>
-        </div>
-        <Link href="/uloguj-se" className={buttonVariants({ variant: "ghost", className: "h-11 px-3" })}>
-          {HOME_TEXT.signIn}
-        </Link>
-      </header>
+    <div className="flex h-[calc(100svh-4rem-1px)] flex-col bg-muted/50">
+      <h1 className="sr-only">{HOME_TEXT.title}</h1>
 
       <Tabs defaultValue="mapa" className="min-h-0 flex-1 gap-0">
         <div className="border-b bg-background px-4 py-2">

@@ -114,12 +114,12 @@ export const STATUS_LABELS: Record<ReportStatus, { public: string; panel: string
 // Icon/text colour per token passes WCAG AA (≥ 4.5:1) in light and dark mode (UI.md table).
 export const STATUS_STYLE: Record<PublicReportStatus, { colorClass: string; icon: LucideIcon }> = {
   routing: { colorClass: "bg-muted text-foreground", icon: CircleHelp },
-  sent: { colorClass: "bg-chart-1 text-black", icon: Send },
-  acknowledged: { colorClass: "bg-chart-2 text-black", icon: Eye },
-  in_progress: { colorClass: "bg-chart-3 text-black", icon: Wrench },
-  resolved: { colorClass: "bg-chart-4 text-white", icon: CircleCheck },
+  sent: { colorClass: "bg-status-sent text-white", icon: Send },
+  acknowledged: { colorClass: "bg-status-acknowledged text-white", icon: Eye },
+  in_progress: { colorClass: "bg-status-in-progress text-black", icon: Wrench },
+  resolved: { colorClass: "bg-status-resolved text-white", icon: CircleCheck },
   not_competent: { colorClass: "bg-muted text-foreground", icon: ArrowLeftRight },
-  rejected: { colorClass: "bg-destructive text-white dark:text-black", icon: CircleX },
+  rejected: { colorClass: "bg-status-rejected text-white", icon: CircleX },
 }
 
 // "open report" (GLOSSARY, FR-18); the database has the same set in private.is_open
@@ -240,6 +240,7 @@ export const APP_DESCRIPTION = "Prijave komunalnih problema u Podgorici"
 // header menu (PRD §8: "Odjavi se" for every signed-in account, never for an anonymous session)
 export const HEADER_TEXT = {
   home: "Fixit, početna",
+  subtitle: "Prijave u Podgorici",
   signIn: "Uloguj se",
   signOut: "Odjavi se",
 } as const
