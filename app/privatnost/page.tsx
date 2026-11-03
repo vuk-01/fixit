@@ -1,7 +1,6 @@
 import type { Metadata } from "next"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { getServerEnv } from "@/lib/env"
 
 export const metadata: Metadata = { title: "Privatnost" }
 
@@ -88,8 +87,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export default function PrivacyPage() {
-  const contact = getServerEnv().EMAIL_REPLY_TO
-
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4 py-6">
       <h1 className="font-heading text-2xl font-semibold">Privatnost</h1>
@@ -151,11 +148,8 @@ export default function PrivacyPage() {
 
       <Section title="Uklanjanje fotografije ili prijave">
         <p>
-          Ako želite da uklonimo fotografiju ili prijavu, pišite nam na{" "}
-          <a href={`mailto:${contact}`} className={linkClass}>
-            {contact}
-          </a>{" "}
-          i navedite broj prijave (npr. FX-2026-00142).
+          Ako želite da uklonimo fotografiju ili prijavu, javite se timu Fixit odgovorom na dopis i
+          navedite broj prijave (npr. FX-2026-00142).
         </p>
       </Section>
 
