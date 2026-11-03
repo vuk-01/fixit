@@ -149,3 +149,8 @@ Status se uvijek prikazuje i tekstom, ne samo bojom (pristupačnost, PRD §6).
 - `AGENTS.md`: „Tiketi, grane, PR" (rezerva bez preview-a); „Baza (Supabase)" (brisanje tek poslije ocjenjivanja, seed se smije ponoviti); obavezni test 3 (`letter-template.ts`, „dodjeljuje se pri slanju") i napomena o `server-only` mocku; definicija „gotovo".
 - `GLOSSARY.md`: „Demo prijava" obuhvata i prijave sa demo naloga.
 - `.scratch/fixit-planiranje/build-issues.md`: sekcija „Nejasno u dokumentima" zamijenjena sa „Razriješeno u tiketu 22"; odluke unesene u stavke 1, 5, 6 (sada i odjava i atribucija `street_light-2.jpg` na `/privatnost`), 7, 8, 10, 11, 12, 13, 14, 16 (zavisi i od 10, dan Sri–Čet) i 17 (preimenovana u „Generalna proba i spremnost aplikacije za video").
+
+## Dopuna (3. 11. uveče): probne prijave tima
+
+- **[Ivana]** Probne prijave tima se prije snimanja smiju **obrisati ili sakriti** (`hidden_at`); demo prijave iz seed-a (`citizen-seed`) se ne diraju. Pojedinačne probe se brišu ručno u Table Editoru; za sve odjednom su SQL komande (spisak, sakrij, obriši) u komentaru na issue #17.
+- **[Claude]** Pravilo za tim: probu iste vrste problema ne raditi na lokaciji gdje se snima video, da se u snimanju ne pojavi ekran „postoji slična prijava".
