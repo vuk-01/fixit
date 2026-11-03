@@ -822,7 +822,7 @@ pa PR samo sa migracijom i tipovima, merge odmah. Ne koristiti `db push` bez `--
 | 10 | `seed_institutions_and_rules` | 8 institucija i 10 pravila (sekcija 12.2) |
 
 - Politike koriste helpere iz sekcije 7, a helperi čitaju tabele; zato se tabele u koracima 3 i 4 prave sa uključenim RLS-om bez politika (= sve zatvoreno), a politike se dodaju u koraku 5, odmah poslije helpera. Između koraka baza je zatvorena, nikad otvorena.
-- Podešavanja koja nisu u migracijama (Ivana, Supabase dashboard): Anonymous Sign-Ins uključen; limit anonimnih prijavljivanja ostaje 30/h po IP-u (PRD §6); `Confirm email` isključen (Tech.md, „Hosting i mejl", „Registracija"; tiket 16); region `eu-central-1`.
+- Podešavanja koja nisu u migracijama (Ivana, Supabase dashboard): Anonymous Sign-Ins uključen; limit anonimnih prijavljivanja ostaje 30/h po IP-u (PRD §6); `Confirm email` isključen (Tech.md, „Hosting i mejl", „Registracija"; tiket 16); region `eu-west-3` (Pariz) [Ivana].
 - Poslije koraka 10: ručna provjera iz sekcija 12.1 i 12.2, pa `pnpm db:seed-demo`.
 - RLS testovi iz AGENTS.md (test 4) idu na zajednički projekat i samo pokušavaju zabranjene operacije; šema ih podržava jer zabranjen upis pada prije nego što išta upiše.
 
