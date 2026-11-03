@@ -35,7 +35,7 @@ insert into public.jurisdiction_rules (
 )
 select v.category::public.report_category, m.id, i.id, cc.id,
        v.source_type::public.source_type, v.source_url, v.source_title, v.source_excerpt,
-       date '2026-11-03', 'nalaz 02; ponovna provjera 2026-11-03 (Claude Code za Ivanu)'
+       date '2026-11-03', 'nalaz 02; ponovna provjera 2026-11-03 (Claude Code)'
 from public.municipalities m
 cross join (values
   ('pothole', 'pg-sekretarijat-saobracaj', 'pg-putevi', 'official_document',
