@@ -611,7 +611,7 @@ Službenik nikad ne vraća status unazad i ne otvara zatvorenu prijavu. Građani
 
 ## 9. RLS politike
 
-RLS je uključen na svakoj tabeli. **Nijedna tabela nema `INSERT`, `UPDATE` ni `DELETE` politiku za `anon` ili `authenticated`**: svaki upis ide kroz funkcije iz sekcije 8 (`security definer`) ili kroz servisni ključ. Jedini klijentski upis u cijeloj bazi je otprema fotografije u Storage (sekcija 10). Zato anonimna sesija ne može ništa upisati osim kroz `like_report`, a zahtjev iz AGENTS.md (test 4: anonimni klijent i anonimna sesija ne mogu upisati u `reports` ni pročitati `report_private`) slijedi iz nepostojanja politika.
+RLS je uključen na svakoj tabeli. **Nijedna tabela nema `INSERT`, `UPDATE` ni `DELETE` politiku za `anon` ili `authenticated`**: svaki upis ide kroz funkcije iz sekcije 8 (`security definer`) ili kroz servisni ključ. Jedini klijentski upis u cijeloj bazi je otprema fotografije u Storage (sekcija 10). Zato anonimna sesija ne može ništa upisati osim kroz `like_report`, a zahtjev iz AGENTS.md (test 4: anonimni klijent i anonimna sesija ne mogu upisati u `reports` ni pročitati `report_private`) slijedi iz nepostojanja politika. Druga brava (migracija 4): `anon` i `authenticated` imaju na tabelama u `public` samo `SELECT`; `insert`, `update`, `delete` i `truncate` su im oduzeti, nezavisno od toga da li projekat nove tabele sam izlaže API ulogama.
 
 Politike čitanja (`SELECT`); više politika na istoj tabeli se sabira (OR). Helperi su iz sekcije 7.
 
@@ -663,7 +663,7 @@ Napomene:
   - potpisani URL sadrži putanju, a javna stranica i mapa ih dijele svakome. Sa `{user_id}/` u putanji svako bi mogao povezati sve prijave istog prijavioca, iako mu ime ne vidi, što krši FR „identitet prijavioca nikad nije javan";
   - `{report_id}/` bi tražio da nacrt postoji prije otpreme, pa bi otprema i prepoznavanje išli jedno za drugim, protivno 15 Q2 (analiza počinje odmah, paralelno);
   - ono što je tiket 15 htio postići folderom (otprema samo za sebe, samo u nacrt) postiže se drugačije: politika otpreme dozvoljava samo stalnom građaninu; Storage sam upisuje `owner_id = auth.uid()`; `storage_path` je `unique`, pa ista putanja ne može ući u dvije prijave; `begin_submission` prije slanja provjerava da svaki fajl postoji i da mu je `owner_id` baš prijavilac. Tuđa putanja, viđena u nečijem potpisanom URL-u, tako ne može ući u dopis.
-- **Politike na `storage.objects`:** samo jedna, za otpremu:
+- **Politike na `storage.objects`:** za klijente samo jedna, za otpremu (druga je `SELECT` za ulogu `postgres`, vlasnika funkcija, da provjera fajlova u `begin_submission` ne zavisi od toga da li `postgres` zaobilazi RLS; klijenti nikad ne rade kao `postgres`):
 
   ```sql
   create policy "citizens upload report photos" on storage.objects
