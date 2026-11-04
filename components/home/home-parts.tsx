@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { ReportCounters, ReportPhoto, REPORT_SUMMARY_TEXT } from "@/components/report/report-summary"
 import { StatusBadge } from "@/components/report/status-badge"
-import { CATEGORIES, OPEN_STATUSES, STATUS_STYLE, type PublicReportStatus } from "@/lib/constants"
+import { CATEGORIES, OPEN_STATUSES } from "@/lib/constants"
 import type { MapReport } from "@/lib/reports/public-map"
 
 export const HOME_TEXT = {
@@ -19,31 +19,13 @@ export const HOME_TEXT = {
   mapLoading: "Učitavam mapu…",
   empty: "Još nema prijava. Budite prvi koji će prijaviti problem.",
   failed: "Prijave trenutno nije moguće učitati. Pokušajte ponovo za nekoliko minuta.",
-  // laptop layouts (ticket 32)
+  // laptop sidebar (ticket 32)
   heading: "Sve prijave",
   statTotal: "Ukupno",
   statOpen: "Otvorene",
   statResolved: "Riješene",
   stats: "Pregled prijava",
-  legend: "Statusi na mapi",
 } as const
-
-// "14 prijava · 9 otvorenih · 4 riješene" (same plural rule as likeCountText)
-function plural(n: number, [one, few, many]: [string, string, string]): string {
-  const lastDigit = n % 10
-  const lastTwo = n % 100
-  if (lastDigit === 1 && lastTwo !== 11) return `${n} ${one}`
-  if (lastDigit >= 2 && lastDigit <= 4 && (lastTwo < 12 || lastTwo > 14)) return `${n} ${few}`
-  return `${n} ${many}`
-}
-
-export function statsLine(stats: ReportStats): string {
-  return [
-    plural(stats.total, ["prijava", "prijave", "prijava"]),
-    plural(stats.open, ["otvorena", "otvorene", "otvorenih"]),
-    plural(stats.resolved, ["riješena", "riješene", "riješenih"]),
-  ].join(" · ")
-}
 
 export function homeNotice(reports: MapReport[], failed: boolean): string | null {
   return failed ? HOME_TEXT.failed : reports.length === 0 ? HOME_TEXT.empty : null
@@ -53,20 +35,14 @@ export type ReportStats = {
   total: number
   open: number
   resolved: number
-  byStatus: { status: PublicReportStatus; count: number }[]
 }
 
 // counts from the reports already on the page (no extra query)
 export function reportStats(reports: MapReport[]): ReportStats {
-  const counts = new Map<PublicReportStatus, number>()
-  for (const r of reports) counts.set(r.status, (counts.get(r.status) ?? 0) + 1)
   return {
     total: reports.length,
     open: reports.filter((r) => OPEN_STATUSES.includes(r.status)).length,
-    resolved: counts.get("resolved") ?? 0,
-    byStatus: (Object.keys(STATUS_STYLE) as PublicReportStatus[])
-      .map((status) => ({ status, count: counts.get(status) ?? 0 }))
-      .filter((s) => s.count > 0),
+    resolved: reports.filter((r) => r.status === "resolved").length,
   }
 }
 
@@ -104,7 +80,7 @@ export function ReportListCard({
   onActiveChange,
 }: {
   report: MapReport
-  // laptop layouts: hovering or focusing a card highlights its marker
+  // laptop sidebar: hovering or focusing a card highlights its marker
   onActiveChange?: (id: string | null) => void
 }) {
   return (
@@ -142,7 +118,7 @@ export function ReportListCard({
   )
 }
 
-// Three numbers: total, open, resolved (laptop layouts a and c)
+// Three numbers: total, open, resolved (laptop sidebar)
 export function StatTiles({ stats }: { stats: ReportStats }) {
   const tiles = [
     { label: HOME_TEXT.statTotal, value: stats.total },
@@ -158,19 +134,5 @@ export function StatTiles({ stats }: { stats: ReportStats }) {
         </div>
       ))}
     </dl>
-  )
-}
-
-// Status legend: badge (colour + icon + text) and how many reports have it
-export function StatusLegend({ stats, className }: { stats: ReportStats; className?: string }) {
-  return (
-    <ul aria-label={HOME_TEXT.legend} className={className}>
-      {stats.byStatus.map(({ status, count }) => (
-        <li key={status} className="flex items-center justify-between gap-3">
-          <StatusBadge status={status} />
-          <span className="text-sm text-muted-foreground tabular-nums">{count}</span>
-        </li>
-      ))}
-    </ul>
   )
 }

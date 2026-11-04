@@ -14,30 +14,21 @@ import {
   ReportMap,
   useIsLaptop,
 } from "@/components/home/home-parts"
-import { LaptopHome, type LaptopLayout } from "@/components/home/laptop-layouts"
+import { LaptopHome } from "@/components/home/laptop-home"
 import type { MapReport } from "@/lib/reports/public-map"
 
 // Home `/` (UI.md, prototype v2): Mapa | Lista with Mapa as default, „Prijavi problem".
 // The header („Fixit" / „Prijave u Podgorici", sign-in or the account menu) is SiteHeader in the layout.
-// Below `lg` the phone layout; from `lg` one of three laptop layouts (`?izgled=a|b|c`, ticket 32)
-// until Ivana picks one. Both are server-rendered and switched by CSS; the Leaflet map is mounted
-// only in the one that is visible.
-export function HomeView({
-  reports: initialReports,
-  failed,
-  layout,
-}: {
-  reports: MapReport[]
-  failed: boolean
-  layout: LaptopLayout
-}) {
+// Below `lg` the phone layout, from `lg` the list sidebar + map (LaptopHome, ticket 32). Both are
+// server-rendered and switched by CSS; the Leaflet map is mounted only in the one that is visible.
+export function HomeView({ reports: initialReports, failed }: { reports: MapReport[]; failed: boolean }) {
   const reports = useLiveLikeCounts(initialReports)
   const isLaptop = useIsLaptop()
 
   return (
     <>
       <PhoneHome reports={reports} failed={failed} showMap={!isLaptop} />
-      <LaptopHome layout={layout} reports={reports} failed={failed} showMap={isLaptop} />
+      <LaptopHome reports={reports} failed={failed} showMap={isLaptop} />
     </>
   )
 }
