@@ -228,6 +228,34 @@ export const LIKE_LABELS = {
   button: "Podržavam",
   done: "Podržano",
   closed: "Prijava je zatvorena",
+  // ticket #13: why the button is not offered (FR-16), and the tap in progress
+  own: "Ne možete podržati svoju prijavu.",
+  staff: "Službenici i administratori ne podržavaju prijave.",
+  liking: "Podržavam…",
+  // the anonymous session could not be created (e.g. Supabase's hourly limit per IP, PRD §6)
+  sessionFailed: "Podrška trenutno nije moguća. Pokušajte ponovo za nekoliko minuta.",
+  countLabel: "Broj podrški",
+} as const
+
+// Public report page /p/[code] (ticket #13, PRD §8, UI.md v2: stacked cards)
+export const PUBLIC_REPORT_TEXT = {
+  photosTitle: "Fotografije",
+  photoAlt: (category: string, n: number) => `Fotografija problema ${n}: ${category}`,
+  // PRD §6 "Privatnost", verbatim: a photo the administrator hid
+  photoHidden: "Fotografija je uklonjena radi zaštite privatnosti",
+  photoUnavailable: "Fotografija trenutno nije dostupna.",
+  descriptionTitle: "Opis problema",
+  noDescription: "Prijava nema opis.",
+  statusTitle: "Status",
+  institutionTitle: "Nadležna institucija",
+  cc: "Kopija",
+  // a report rejected from `routing` never had a recipient
+  noInstitution: "Nadležna institucija nije određena.",
+  supportTitle: "Podrške",
+  // "Podijeli" and its texts are SENT_TEXT's (the same share as on "Prijava poslata")
+  notFoundTitle: "Prijava nije pronađena",
+  notFound: "Prijava sa ovim brojem ne postoji ili nije javna.",
+  backToMap: "Nazad na mapu",
 } as const
 
 // ---------------------------------------------------------------------------------------------

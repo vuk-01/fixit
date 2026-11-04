@@ -2,9 +2,9 @@
 
 import { CircleCheck, ExternalLink, Landmark, Plus, Share2 } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
 
 import type { SendReportResult } from "@/app/prijavi/actions"
+import { useShareLink } from "@/components/report/use-share-link"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { PREPARE_TEXT, SENT_TEXT } from "@/lib/constants"
@@ -14,29 +14,8 @@ type Sent = Extract<SendReportResult, { ok: true }>
 // "Prijava poslata" (FR-5 step 7): the report number, the public page /p/[code], "Podijeli" and
 // "Nova prijava". The title is the same for `routing`, with the FR-8 message under it (ticket 19 Q8).
 export function SentStep({ sent, onNewReport }: { sent: Sent; onNewReport: () => void }) {
-  const [shareNote, setShareNote] = useState<string | null>(null)
   const path = `/p/${sent.code}`
-
-  // the system share sheet where there is one, otherwise the link is copied
-  const share = async () => {
-    const url = `${window.location.origin}${path}`
-    setShareNote(null)
-    if (typeof navigator.share === "function") {
-      try {
-        await navigator.share({ title: SENT_TEXT.shareTitle(sent.code), url })
-        return
-      } catch (error) {
-        // the citizen closed the sheet: nothing to do
-        if (error instanceof DOMException && error.name === "AbortError") return
-      }
-    }
-    try {
-      await navigator.clipboard.writeText(url)
-      setShareNote(SENT_TEXT.linkCopied)
-    } catch {
-      setShareNote(`${SENT_TEXT.copyLink} ${url}`)
-    }
-  }
+  const { share, note: shareNote } = useShareLink(path, SENT_TEXT.shareTitle(sent.code))
 
   return (
     <div className="flex min-h-0 flex-1 flex-col" data-testid="sent" data-outcome={sent.outcome}>
