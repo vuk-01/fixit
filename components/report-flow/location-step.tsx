@@ -2,11 +2,10 @@
 
 import { MapPin } from "lucide-react"
 import dynamic from "next/dynamic"
-import Link from "next/link"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import type { MapView } from "@/components/map/location-picker"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { Button } from "@/components/ui/button"
 import {
   ERROR_MESSAGES,
   LOCATION_FALLBACK_ZOOM,
@@ -20,6 +19,7 @@ import {
 import { roundCoordinate } from "@/lib/geo/address"
 import { createClient } from "@/lib/supabase/client"
 
+import { AnalysisBanner, analysisBlocksFlow } from "./analysis-banner"
 import { locationHint, type ConfirmedPoint, type FlowPhoto, type FlowState } from "./flow-state"
 import { PhotoStrip } from "./photo-strip"
 
@@ -35,11 +35,15 @@ type Address = { status: "loading" } | { status: "ready"; text: string | null }
 export function LocationStep({
   state,
   onRetryUpload,
+  onRetryAnalysis,
   onConfirm,
+  cancel,
 }: {
   state: FlowState
   onRetryUpload: (photo: FlowPhoto) => void
+  onRetryAnalysis: () => void
   onConfirm: (point: ConfirmedPoint) => void
+  cancel: React.ReactNode
 }) {
   const device = state.device
   const [initial] = useState<MapView>(() =>
@@ -142,6 +146,7 @@ export function LocationStep({
           {hintText}
         </p>
         <PhotoStrip photos={state.photos} onRetry={onRetryUpload} />
+        <AnalysisBanner analysis={state.analysis} onRetry={onRetryAnalysis} />
         {state.notice && (
           <p className="text-sm text-destructive" role="alert">
             {state.notice}
@@ -173,12 +178,15 @@ export function LocationStep({
             {error}
           </p>
         )}
-        <Button size="lg" className="h-12 w-full text-base" disabled={confirming} onClick={() => void confirm()}>
+        <Button
+          size="lg"
+          className="h-12 w-full text-base"
+          disabled={confirming || analysisBlocksFlow(state.analysis)}
+          onClick={() => void confirm()}
+        >
           {confirming ? REPORT_FLOW_TEXT.confirming : REPORT_FLOW_TEXT.confirmLocation}
         </Button>
-        <Link href="/" className={buttonVariants({ variant: "ghost", className: "h-11 w-full" })}>
-          {REPORT_FLOW_TEXT.cancel}
-        </Link>
+        {cancel}
       </div>
     </div>
   )

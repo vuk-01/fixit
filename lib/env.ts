@@ -9,7 +9,12 @@ const serverEnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
   NEXT_PUBLIC_SITE_URL: z.url(),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
-  ANTHROPIC_API_KEY: z.string().min(1),
+  // optional on purpose: without a key the classify route answers `fallback` and the citizen
+  // picks the category (ticket #9, FR-7); an empty value counts as missing
+  ANTHROPIC_API_KEY: z
+    .string()
+    .optional()
+    .transform((value) => value?.trim() || undefined),
   ANTHROPIC_MODEL: z.string().min(1).default("claude-haiku-5-5"),
   RESEND_API_KEY: z.string().min(1),
   // anything except exactly "live" means test; lib/email/send.ts applies that guard

@@ -351,3 +351,36 @@ export const REPORT_FLOW_TEXT = {
   cancel: "Odustani",
   citizensOnly: "Prijave šalju građani. Ulogujte se nalogom građanina da biste prijavili problem.",
 } as const
+
+// ---------------------------------------------------------------------------------------------
+// Report flow: recognition and category choice (ticket #9, FR-5, FR-6, FR-7)
+// ---------------------------------------------------------------------------------------------
+
+// Tech.md §6: each 1024 px version sent to the classify route is a JPEG of at most 1 MB
+export const MODEL_IMAGE_MAX_BYTES = 1_000_000
+// Tech.md §6: the client stops waiting 15 s after the analysis started (the model's own limit
+// is 12 s on the server), then continues with the manual flow
+export const CLASSIFY_CLIENT_TIMEOUT_MS = 15_000
+// Tech.md §7: server check of the model output
+export const AI_TITLE_MAX_LENGTH = 120
+export const AI_DESCRIPTION_MAX_SENTENCES = 3
+export const DESCRIPTION_MAX_LENGTH = 1000
+
+export const CLASSIFY_TEXT = {
+  // FR-5, PRD §4.1: band on the location screen while the model works
+  analyzing: "Prepoznajem problem…",
+  // FR-7, verbatim: the model did not answer in time or returned an error
+  failed: "Prepoznavanje nije uspjelo. Vrstu ćete izabrati sami.",
+  recognized: (label: string) => `Prepoznato: ${label}`,
+  // FR-7, verbatim: not a municipal problem or confidence below the threshold
+  unsureTitle: "Nismo sigurni šta je na fotografiji. Izaberite vrstu problema.",
+  // manual flow and "Promijeni": the same picker without the "not sure" sentence
+  chooseTitle: "Izaberite vrstu problema.",
+  categoryListLabel: "Vrste problema",
+  categoryLabel: "Vrsta problema",
+  descriptionLabel: "Opis problema",
+  noDescription: "Opis ćete moći da upišete na pregledu prijave.",
+  changeCategory: "Promijeni vrstu",
+  retry: "Pokušaj ponovo",
+  cancelling: "Odustajem…",
+} as const
