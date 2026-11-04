@@ -122,6 +122,8 @@ lib/
   panel/                            pristup panelu, dozvoljeni prelazi službenika (čiste funkcije) i čitanje prijava za panel (server-only)
   admin/                            pristup /admin (samo uloga `admin`, čista funkcija) i čitanje prijava za /admin (server-only) [tiket 15]
   reports/timeline.ts               tekst vremenske linije iz `report_events` (čista funkcija, dijele je panel i javna stranica)
+  reports/public-report.ts          čitanje javne prijave za `/p/[code]` sesijom posjetioca (server-only): nacrt, sakrivena i nepostojeća daju „nije pronađeno" [tiket 13]
+  reports/public-photos.ts, like.ts fotografije javne stranice (sakrivena = napomena, bez URL-a) i stanje dugmeta „Podržavam" (čiste funkcije) [tiket 13]
   photos/compress.ts                kompresija na klijentu (canvas)
 proxy.ts                            osvježavanje Supabase sesije
 supabase/
