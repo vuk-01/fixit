@@ -89,14 +89,16 @@ app/
   uloguj-se/, privatnost/            (`auth/callback` nije u P0: `Confirm email` je isključen, „Hosting i mejl")
   prijavi/page.tsx                  tok prijave
   prijavi/actions.ts                Server Actions: sendReport, dodavanje i uklanjanje fotografije, „Odustani", „Podrži postojeću"
-  panel/…, admin/…
+  panel/page.tsx, panel/prijave/[id]/  panel institucije; panel/actions.ts: promjena statusa (set_report_status)
+  admin/…
   api/agent/classify/route.ts       prepoznavanje (jedini poziv modela)
   api/agent/prepare/route.ts        nadležnost, duplikati, dopis (koraci kao SSE)
   api/geo/reverse/route.ts          adresa ispod pina (Nominatim preko servera)
 components/
   ui/                               shadcn komponente (pravi ih CLI)
   map/                              Leaflet komponente ('use client')
-  report/                           dijelovi javne stranice i mape (status, sažetak prijave, „Zašto ova institucija?")
+  report/                           dijelovi javne stranice i mape (status, sažetak prijave, „Zašto ova institucija?", vremenska linija)
+  panel/                            forma za promjenu statusa u panelu
   report-flow/                      čarobnjak na /prijavi: stanje toka (flow-state.ts), koraci fotografija, lokacija i „Pregled prijave" (review-step.tsx)
 lib/
   constants.ts                      sav tekst za korisnika, nazivi i opisi vrsta, ograničenja, MAP_TILES
@@ -116,6 +118,8 @@ lib/
   email/dispatch.ts                 koraci 3–5 slanja dopisa: `start_dispatch` → fotografije iz Storage-a → `send.ts` → `complete_dispatch`; dijele ga `sendReport` i `/admin` [tiket 12]
   email/letter-template.ts          šablon dopisa (FR-10, FR-11) kao čista funkcija: bez `server-only`, bez aliasa `@/`, bez upita; koriste ga server, seed i testovi (tiket 22 Q6)
   email/report-letter.ts            serverski dio dopisa: skuplja podatke prijave i zove `letter-template.ts` (dopis za pregled i dopis koji se šalje)
+  panel/                            pristup panelu, dozvoljeni prelazi službenika (čiste funkcije) i čitanje prijava za panel (server-only)
+  reports/timeline.ts               tekst vremenske linije iz `report_events` (čista funkcija, dijele je panel i javna stranica)
   photos/compress.ts                kompresija na klijentu (canvas)
 proxy.ts                            osvježavanje Supabase sesije
 supabase/

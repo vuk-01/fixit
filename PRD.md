@@ -265,8 +265,8 @@ Zaglavlje svih stranica: ulogovan nalog (ne anonimna sesija) ima meni sa „Odja
 ### Institucija
 | Ruta | Namjena |
 |---|---|
-| `/panel` | Lista prijava institucije (P0); filteri i sortiranje su P1 (§4.3). |
-| `/panel/prijave/[id]` | Detalji prijave (uključujući ozbiljnost, FR-6), dopis upućen instituciji, promjena statusa uz poruku (FR-21); prvo otvaranje mijenja `sent` u `acknowledged` (FR-22). |
+| `/panel` | Lista prijava institucije (P0), samo za službenika; filteri i sortiranje su P1 (§4.3). Službenik do panela dolazi i iz menija zaglavlja („Panel institucije"). |
+| `/panel/prijave/[id]` | Detalji prijave (uključujući ozbiljnost, FR-6), dopis upućen instituciji, promjena statusa uz poruku (FR-21); prvo otvaranje mijenja `sent` u `acknowledged` (FR-22). Administrator stranicu otvara samo za čitanje, bez promjene statusa; status mijenja na `/admin` (tiket 14). |
 | `/panel/mapa` | Mapa prijava institucije (P1). |
 | `/panel/analitika` | Analitika institucije (P1). |
 

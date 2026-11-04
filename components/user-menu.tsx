@@ -1,6 +1,7 @@
 "use client"
 
-import { LogOut, UserRound } from "lucide-react"
+import { LayoutList, LogOut, UserRound } from "lucide-react"
+import Link from "next/link"
 import { useTransition } from "react"
 
 import { signOut } from "@/app/uloguj-se/actions"
@@ -17,7 +18,7 @@ import {
 import { HEADER_TEXT } from "@/lib/constants"
 
 // Shown only for a signed-in account, never for a guest or an anonymous session (PRD §8).
-export function UserMenu({ name }: { name: string }) {
+export function UserMenu({ name, links }: { name: string; links?: { href: string; label: string }[] }) {
   const [pending, startTransition] = useTransition()
 
   return (
@@ -31,6 +32,17 @@ export function UserMenu({ name }: { name: string }) {
           <DropdownMenuLabel className="truncate">{name}</DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
+        {links && links.length > 0 && (
+          <>
+            {links.map((link) => (
+              <DropdownMenuItem key={link.href} className="min-h-11" render={<Link href={link.href} />}>
+                <LayoutList aria-hidden />
+                {link.label}
+              </DropdownMenuItem>
+            ))}
+            <DropdownMenuSeparator />
+          </>
+        )}
         <DropdownMenuItem
           disabled={pending}
           className="min-h-11"

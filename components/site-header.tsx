@@ -18,7 +18,10 @@ export async function SiteHeader() {
           <span className="text-sm leading-tight text-muted-foreground">{HEADER_TEXT.subtitle}</span>
         </Link>
         {account ? (
-          <UserMenu name={`${account.firstName} ${account.lastName}`} />
+          <UserMenu
+            name={`${account.firstName} ${account.lastName}`}
+            links={account.role === "official" ? [{ href: "/panel", label: HEADER_TEXT.panel }] : undefined}
+          />
         ) : (
           <Link href="/uloguj-se" className={cn(buttonVariants({ variant: "ghost" }), "h-11 px-3")}>
             {HEADER_TEXT.signIn}
