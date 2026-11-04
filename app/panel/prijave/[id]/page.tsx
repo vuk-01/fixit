@@ -43,9 +43,9 @@ export default async function PanelReportPage({ params }: { params: Promise<{ id
   const isOfficial = access.kind === "official"
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-6">
+    <main className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-6 wrap-break-word">
       {isOfficial && (
-        <Link href="/panel" className={cn(buttonVariants({ variant: "ghost" }), "h-11 self-start px-3")}>
+        <Link href="/panel" className={cn(buttonVariants({ variant: "ghost" }), "-ml-3 h-11 self-start px-3")}>
           <ArrowLeft aria-hidden data-icon="inline-start" />
           {PANEL_TEXT.back}
         </Link>
@@ -69,8 +69,10 @@ export default async function PanelReportPage({ params }: { params: Promise<{ id
         </Alert>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="flex flex-col gap-4 lg:col-span-2">
+      {/* grid-cols-1 (minmax(0, 1fr)) and min-w-0: without them the column grew to the letter's
+          longest unbroken line (the map URL) and the page scrolled sideways on phones (#32) */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="flex min-w-0 flex-col gap-4 lg:col-span-2">
           <Photos report={report} />
 
           <Card>
@@ -118,7 +120,7 @@ export default async function PanelReportPage({ params }: { params: Promise<{ id
                   <p className="text-sm text-muted-foreground">
                     {PANEL_TEXT.letterSentAt}: {formatLetterDate(report.letter.sentAt)}
                   </p>
-                  <pre className="max-h-[32rem] overflow-auto rounded-lg bg-muted p-3 font-sans text-sm whitespace-pre-wrap">
+                  <pre className="max-h-[32rem] overflow-auto rounded-lg bg-muted p-3 font-sans text-sm wrap-anywhere whitespace-pre-wrap">
                     {report.letter.body}
                   </pre>
                 </>
@@ -129,7 +131,7 @@ export default async function PanelReportPage({ params }: { params: Promise<{ id
           </Card>
         </div>
 
-        <div className="flex flex-col gap-4 max-lg:-order-1">
+        <div className="flex min-w-0 flex-col gap-4 max-lg:-order-1">
           {isOfficial && (
             <Card>
               <CardHeader>

@@ -23,7 +23,7 @@ export function UserMenu({ name, links }: { name: string; links?: { href: string
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="ghost" className="h-11 max-w-48 gap-2 px-3" />}>
+      <DropdownMenuTrigger render={<Button variant="ghost" className="-mr-3 h-11 max-w-48 gap-2 px-3" />}>
         <UserRound aria-hidden />
         <span className="truncate">{name}</span>
       </DropdownMenuTrigger>

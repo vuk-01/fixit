@@ -43,11 +43,15 @@ export function HomeView({ reports: initialReports, failed }: { reports: MapRepo
       <h1 className="sr-only">{HOME_TEXT.title}</h1>
 
       <Tabs defaultValue="mapa" className="min-h-0 flex-1 gap-0">
-        <div className="border-b bg-background px-4 py-2">
-          <TabsList className="w-full group-data-horizontal/tabs:h-11">
-            <TabsTrigger value="mapa">{HOME_TEXT.tabMap}</TabsTrigger>
-            <TabsTrigger value="lista">{HOME_TEXT.tabList}</TabsTrigger>
-          </TabsList>
+        {/* bars use the header's container (max-w-5xl px-4) so they line up with it on a laptop;
+            the map itself stays full width */}
+        <div className="border-b bg-background py-2">
+          <div className="mx-auto max-w-5xl px-4">
+            <TabsList className="w-full group-data-horizontal/tabs:h-11">
+              <TabsTrigger value="mapa">{HOME_TEXT.tabMap}</TabsTrigger>
+              <TabsTrigger value="lista">{HOME_TEXT.tabList}</TabsTrigger>
+            </TabsList>
+          </div>
         </div>
 
         <TabsContent value="mapa" className="relative min-h-0">
@@ -63,9 +67,10 @@ export function HomeView({ reports: initialReports, failed }: { reports: MapRepo
         </TabsContent>
 
         <TabsContent value="lista" className="min-h-0 overflow-y-auto">
-          <ul className="flex flex-col gap-3 p-4">
+          {/* one column on a phone, cards side by side from a tablet up */}
+          <ul className="mx-auto grid max-w-5xl gap-3 p-4 md:grid-cols-2 lg:grid-cols-3">
             {notice && (
-              <li>
+              <li className="col-span-full">
                 <Card size="sm" className="px-4 text-center">
                   <p>{notice}</p>
                 </Card>
@@ -80,10 +85,12 @@ export function HomeView({ reports: initialReports, failed }: { reports: MapRepo
         </TabsContent>
       </Tabs>
 
-      <div className="border-t bg-background px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <Link href="/prijavi" className={buttonVariants({ className: "h-12 w-full text-base" })}>
-          {HOME_TEXT.report}
-        </Link>
+      <div className="border-t bg-background pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="mx-auto max-w-5xl px-4">
+          <Link href="/prijavi" className={buttonVariants({ className: "h-12 w-full text-base" })}>
+            {HOME_TEXT.report}
+          </Link>
+        </div>
       </div>
     </div>
   )
@@ -93,12 +100,12 @@ function ReportListCard({ report }: { report: MapReport }) {
   return (
     <Link
       href={`/p/${report.code}`}
-      className="block rounded-2xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+      className="block h-full rounded-2xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
     >
       {/* Equal padding on all sides: Card drops its top padding when an <img> is the first
           child (has-[>img:first-child]:pt-0), which pushed the thumbnail to the top edge.
           Fixed square thumbnail, text column centred next to it (prototype v2). */}
-      <Card size="sm" className="flex-row items-center gap-3 p-3 has-[>img:first-child]:pt-3">
+      <Card size="sm" className="h-full flex-row items-center gap-3 p-3 has-[>img:first-child]:pt-3">
         <ReportPhoto report={report} className="size-22 shrink-0 rounded-xl" />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <p className="line-clamp-2 font-heading leading-snug font-medium">
