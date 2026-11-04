@@ -1,6 +1,6 @@
 // Ticket #9: "Odustani" deletes the draft with the citizen's session and only the files that
 // delete_draft returned, with the admin client. Ticket #10: "Podrži postojeću" the same way,
-// with support_existing_report. Ticket #11: photos on the review and the sendReport stub.
+// with support_existing_report. Ticket #11: photos on the review (sendReport: send-report.test.ts).
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const m = vi.hoisted(() => ({
@@ -30,7 +30,7 @@ vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({ storage: { from: () => ({ remove: m.remove }) } }),
 }))
 
-import { addReportPhoto, cancelReport, removeReportPhoto, sendReport, supportExistingReport } from "./actions"
+import { addReportPhoto, cancelReport, removeReportPhoto, supportExistingReport } from "./actions"
 
 const REPORT = "22222222-2222-4222-8222-222222222222"
 const A = "44444444-4444-4444-8444-444444444444.jpg"
@@ -175,26 +175,5 @@ describe("removeReportPhoto (FR-2, review)", () => {
     expect((await removeReportPhoto({ reportId: REPORT, path: B })).ok).toBe(false)
     expect(m.rpc).not.toHaveBeenCalled()
     expect(m.remove).not.toHaveBeenCalled()
-  })
-})
-
-describe("sendReport (stub until #12)", () => {
-  const input = { reportId: REPORT, category: "pothole" as const, description: "Rupa.", shareContact: false }
-
-  it("answers that sending is not available yet, without writing anything", async () => {
-    expect(await sendReport(input)).toEqual({
-      ok: false,
-      error: "Slanje prijave još nije dostupno. Pokušajte ponovo kasnije.",
-      code: null,
-    })
-    expect(m.rpc).not.toHaveBeenCalled()
-    expect(m.remove).not.toHaveBeenCalled()
-  })
-
-  it("checks the input and the session first", async () => {
-    expect((await sendReport({ ...input, category: "parking" as never })).ok).toBe(false)
-    expect((await sendReport({ ...input, description: "x".repeat(1001) })).ok).toBe(false)
-    m.claims = null
-    expect(await sendReport(input)).toEqual({ ok: false, error: "Prijavite se da biste nastavili.", code: null })
   })
 })

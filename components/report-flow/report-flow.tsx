@@ -1,9 +1,8 @@
 "use client"
 
-import { useRouter } from "next/navigation"
-import { useCallback, useEffect, useReducer, useRef } from "react"
+import { useCallback, useEffect, useReducer, useRef, useState } from "react"
 
-import { addReportPhoto } from "@/app/prijavi/actions"
+import { addReportPhoto, type SendReportResult } from "@/app/prijavi/actions"
 
 import { Progress } from "@/components/ui/progress"
 import { GEOLOCATION_OPTIONS, REPORT_FLOW_STEPS, REPORT_FLOW_TEXT } from "@/lib/constants"
@@ -36,15 +35,22 @@ import { LocationStep } from "./location-step"
 import { PhotoStep } from "./photo-step"
 import { runPrepare } from "./prepare-client"
 import { ReviewStep, type ReviewAccount } from "./review-step"
+import { SentStep } from "./sent-step"
 
 const STEP_INDEX: Record<FlowStep, number> = { photos: 0, location: 1, confirmed: 2 }
 
-// The report wizard (UI.md v2): photo → location → "Pregled prijave". One primary button per step.
-// `account` is the signed-in citizen's name, for "Dostavi moje ime i mejl instituciji" (never the
-// email: the account's email is not shown in the UI, ticket #11).
+// The report wizard (UI.md v2): photo → location → "Pregled prijave" → "Prijava poslata". One
+// primary button per step. `account` is the signed-in citizen's name, for "Dostavi moje ime i mejl
+// instituciji" (never the email: the account's email is not shown in the UI, ticket #11).
+// "Nova prijava" starts a fresh flow by mounting it again (all state, refs and photos reset).
 export function ReportFlow({ account }: { account: ReviewAccount }) {
-  const router = useRouter()
+  const [run, setRun] = useState(0)
+  return <Flow key={run} account={account} onNewReport={() => setRun((n) => n + 1)} />
+}
+
+function Flow({ account, onNewReport }: { account: ReviewAccount; onNewReport: () => void }) {
   const [state, dispatch] = useReducer(flowReducer, initialFlowState)
+  const [sent, setSent] = useState<Extract<SendReportResult, { ok: true }> | null>(null)
   const geolocationStarted = useRef(false)
 
   // FR-3: the first tap on "Fotografiši" / "Iz galerije" also asks for the device location
@@ -193,7 +199,8 @@ export function ReportFlow({ account }: { account: ReviewAccount }) {
         </Progress>
       </div>
 
-      {state.step === "photos" && (
+      {sent && <SentStep sent={sent} onNewReport={onNewReport} />}
+      {!sent && state.step === "photos" && (
         <PhotoStep
           existing={state.photos.length}
           notice={state.notice}
@@ -205,7 +212,7 @@ export function ReportFlow({ account }: { account: ReviewAccount }) {
           onNotice={(notice) => dispatch({ type: "notice", notice })}
         />
       )}
-      {state.step === "location" && (
+      {!sent && state.step === "location" && (
         <LocationStep
           state={state}
           onRetryUpload={upload}
@@ -215,7 +222,7 @@ export function ReportFlow({ account }: { account: ReviewAccount }) {
           cancel={cancel}
         />
       )}
-      {showCategories && (
+      {!sent && showCategories && (
         <CategoryStep
           analysis={state.analysis}
           changing={state.reviewOpened}
@@ -223,7 +230,7 @@ export function ReportFlow({ account }: { account: ReviewAccount }) {
           cancel={cancel}
         />
       )}
-      {state.step === "confirmed" && !showCategories && duplicate && reportId && (
+      {!sent && state.step === "confirmed" && !showCategories && duplicate && reportId && (
         <DuplicateStep
           duplicate={duplicate}
           draftId={reportId}
@@ -231,7 +238,7 @@ export function ReportFlow({ account }: { account: ReviewAccount }) {
           cancel={cancel}
         />
       )}
-      {state.step === "confirmed" && state.confirmed && !showCategories && !duplicate && (
+      {!sent && state.step === "confirmed" && state.confirmed && !showCategories && !duplicate && (
         <ReviewStep
           state={state}
           account={account}
@@ -244,8 +251,7 @@ export function ReportFlow({ account }: { account: ReviewAccount }) {
           onRetryAnalysis={classify}
           onRetryUpload={upload}
           onAddPhotos={onAddPhotos}
-          // ticket #12 replaces this with the "Prijava poslata" screen
-          onSent={(sent) => router.push(`/p/${sent.code}`)}
+          onSent={setSent}
           cancel={cancel}
         />
       )}
