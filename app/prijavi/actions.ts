@@ -12,7 +12,10 @@ import {
   UNKNOWN_ERROR_MESSAGE,
   type ReportCategory,
 } from "@/lib/constants"
+import { dispatchLetter } from "@/lib/email/dispatch"
+import { buildSubmissionLetter } from "@/lib/email/report-letter"
 import { createAdminClient } from "@/lib/supabase/admin"
+import type { Json } from "@/lib/supabase/database.types"
 import { createClient } from "@/lib/supabase/server"
 
 const PHOTO_PATH = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.jpg$/
@@ -202,17 +205,138 @@ export type SendReportResult =
   | { ok: true; outcome: "sent" | "routing"; code: string }
   | { ok: false; error: string; code: string | null }
 
+// begin_submission codes the citizen gets their own message for; the rest is "sending failed"
+const SUBMISSION_ERRORS = new Set(["not_found", "not_allowed", "photos_required", "photo_missing", "code_overflow"])
+// begin_submission raises these only after it has checked that the caller is the reporter
+const AFTER_OWNER_CHECK = new Set(["invalid_state", "photos_required", "photo_missing", "code_overflow"])
+
 /**
- * "Pošalji prijavu" (FR-11, Tech.md §6 point 3). STUB until ticket #12: it checks the input and
- * the session and answers that sending is not available yet. No database write, no email.
- * #12 implements: begin_submission → (routing: done) → count_previous_reports + letter template
- * (lib/email/letter-template.ts, with code, date and count) → start_dispatch → lib/email/send.ts
- * → complete_dispatch, plus the agent_runs row for `send`.
+ * "Pošalji prijavu" (FR-11, Tech.md §6 point 3, DB.md §8.5 point 3), with the admin client after
+ * getClaims():
+ * 1. begin_submission: owner, draft, location, photos in Storage (`photo_missing`), final category,
+ *    description and contact sharing, the code (kept on failure, FR-24), jurisdiction. No rule or
+ *    no verified email → `routing`, no email, done (FR-8).
+ * 2. count_previous_reports + the letter template with the real code, date and count.
+ * 3–5. start_dispatch → lib/email/send.ts with the photos → complete_dispatch (lib/email/dispatch.ts).
+ * One agent_runs row for step `send` (FR-13), without names, emails or images.
+ *
+ * "Pokušaj ponovo" calls it again and repeats the whole sequence with the same code. A double tap
+ * or a second tab sends at most one email: begin_submission locks the report and start_dispatch
+ * refuses a second pending attempt (`dispatch_in_progress`); a call after the report was already
+ * submitted (e.g. the first answer got lost) answers with the result of that submission.
  */
 export async function sendReport(input: SendReportInput): Promise<SendReportResult> {
   const parsed = sendSchema.safeParse(input)
   if (!parsed.success) return { ok: false, error: UNKNOWN_ERROR_MESSAGE, code: null }
   const session = await citizenSession()
   if (!session) return { ok: false, error: ERROR_MESSAGES.not_authenticated, code: null }
-  return { ok: false, error: SEND_TEXT.notImplemented, code: null }
+
+  const { reportId, category, description, shareContact } = parsed.data
+  const userId = session.userId
+  const admin = createAdminClient()
+  const startedAt = Date.now()
+  const log: { outcome: "ok" | "error"; errorCode: string | null; photoCount: number | null; meta: Record<string, Json> } = {
+    outcome: "ok",
+    errorCode: null,
+    photoCount: null,
+    meta: {},
+  }
+  const fail = (errorCode: string, error: string, code: string | null): SendReportResult => {
+    log.outcome = "error"
+    log.errorCode = errorCode
+    return { ok: false, error, code }
+  }
+
+  let code: string | null = null
+  try {
+    // 1. begin_submission
+    const begun = await admin.rpc("begin_submission", {
+      p_report_id: reportId,
+      p_user_id: userId,
+      p_category: category,
+      p_description: description,
+      p_share_contact: shareContact,
+    })
+    if (begun.error) {
+      const dbCode = begun.error.message
+      // these come after the function's ownership check, so it is the caller's own report
+      const current = AFTER_OWNER_CHECK.has(dbCode) ? await currentReport(admin, reportId) : null
+      code = current?.code ?? null
+      // already submitted (a double tap, or the first answer never reached the phone)
+      if (dbCode === "invalid_state" && current?.code && (current.status === "sent" || current.status === "routing")) {
+        log.meta = { submission: current.status, already_submitted: true }
+        return { ok: true, outcome: current.status, code: current.code }
+      }
+      return fail(dbCode, SUBMISSION_ERRORS.has(dbCode) ? errorMessage(begun.error) : SEND_TEXT.failed, code)
+    }
+    const submission = begun.data?.[0]
+    if (!submission) return fail("unknown", SEND_TEXT.failed, null)
+    code = submission.code
+    log.meta = { jurisdiction_outcome: submission.outcome }
+
+    if (submission.outcome !== "matched") {
+      log.meta.submission = "routing"
+      return { ok: true, outcome: "routing", code }
+    }
+
+    // 2. the letter that is sent: real code, date and time, earlier reports
+    const letter = await buildSubmissionLetter(admin, {
+      reportId,
+      userId,
+      code,
+      institutionId: submission.institution_id,
+      ccInstitutionId: submission.cc_institution_id,
+      shareContact,
+      submittedAt: new Date(),
+    })
+    log.photoCount = letter.photos.length
+    log.meta.previous_reports = letter.previousReports
+
+    // 3–5. start_dispatch → send.ts → complete_dispatch
+    const dispatched = await dispatchLetter(admin, {
+      reportId,
+      kind: "initial",
+      institutionId: submission.institution_id,
+      ccInstitutionId: submission.cc_institution_id,
+      ruleId: submission.rule_id,
+      actorId: userId,
+      subject: letter.subject,
+      bodyText: letter.bodyText,
+      includesContact: letter.includesContact,
+      photos: letter.photos,
+    })
+    log.meta.dispatch_id = dispatched.dispatchId
+    if (dispatched.send) log.meta.email_mode = dispatched.send.emailMode
+    if (!dispatched.ok) {
+      log.meta.submission = "failed"
+      const message = dispatched.errorCode === "dispatch_in_progress" ? ERROR_MESSAGES.dispatch_in_progress : SEND_TEXT.failed
+      return fail(dispatched.errorCode, message, code)
+    }
+    log.meta.submission = "sent"
+    return { ok: true, outcome: "sent", code }
+  } catch (error) {
+    console.error("sendReport: failed", error instanceof Error ? error.message : "unknown")
+    return fail("unknown", SEND_TEXT.failed, code)
+  } finally {
+    const finishedAt = Date.now()
+    const { error } = await admin.from("agent_runs").insert({
+      report_id: reportId,
+      user_id: userId,
+      step: "send",
+      photo_count: log.photoCount,
+      started_at: new Date(startedAt).toISOString(),
+      finished_at: new Date(finishedAt).toISOString(),
+      duration_ms: finishedAt - startedAt,
+      outcome: log.outcome,
+      error_code: log.errorCode,
+      meta: log.meta,
+    })
+    if (error) console.error("sendReport: agent_runs insert failed", error.code)
+  }
+}
+
+// status and code of a report, read after begin_submission refused it
+async function currentReport(admin: ReturnType<typeof createAdminClient>, reportId: string) {
+  const { data } = await admin.from("reports").select("code, status").eq("id", reportId).maybeSingle()
+  return data
 }

@@ -468,9 +468,25 @@ export const REVIEW_TEXT = {
   waitingForPhotos: "Sačekajte da se fotografije otpreme.",
 } as const
 
-// sendReport is ticket #12; until then the action answers with this
+// "Pošalji prijavu" (ticket #12, FR-11): the letter could not be sent; the draft keeps its number
+// and "Pokušaj ponovo" repeats the whole sequence (FR-24)
 export const SEND_TEXT = {
-  notImplemented: "Slanje prijave još nije dostupno. Pokušajte ponovo kasnije.",
+  failed: "Slanje prijave nije uspjelo. Pokušajte ponovo.",
+  retry: "Pokušaj ponovo",
+} as const
+
+// "Prijava poslata" (FR-5 step 7, FR-8): also the title for a report in `routing`, with the FR-8
+// message (PREPARE_TEXT.noRecipient) under it
+export const SENT_TEXT = {
+  title: "Prijava poslata",
+  codeLabel: "Broj prijave",
+  publicNote: "Prijava je javna na mapi i drugi građani je mogu podržati.",
+  openReport: "Otvori stranicu prijave",
+  share: "Podijeli",
+  shareTitle: (code: string) => `Prijava ${code}`,
+  linkCopied: "Link je kopiran.",
+  copyLink: "Kopirajte link:",
+  newReport: "Nova prijava",
 } as const
 
 // "Zašto ova institucija?" (PRD "Pravila nadležnosti", GLOSSARY "Izvor pravila", "Slabiji izvor")
