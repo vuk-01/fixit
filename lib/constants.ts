@@ -245,6 +245,8 @@ export const HEADER_TEXT = {
   signOut: "Odjavi se",
   // officials only (ticket #14)
   panel: "Panel institucije",
+  // admin only (ticket #15)
+  admin: "Administracija",
 } as const
 
 // ---------------------------------------------------------------------------------------------
@@ -634,4 +636,69 @@ export const PANEL_TEXT = {
   notCompetent: "Prijava čeka da je tim Fixit preusmjeri.",
   notFoundTitle: "Prijava nije pronađena",
   notFound: "Prijava ne postoji ili nije upućena vašoj instituciji.",
+} as const
+
+// ---------------------------------------------------------------------------------------------
+// Administration (/admin, ticket #15, PRD §4.4, FR-8, FR-23): manual assignment of a report in
+// `routing`. The account email is never shown, only the name (ticket #15 comment, 4. 11.).
+// ---------------------------------------------------------------------------------------------
+
+export type RoutingReason = Database["public"]["Enums"]["routing_reason"]
+
+export const ADMIN_TEXT = {
+  pageTitle: "Administracija",
+  listTitle: "Prijave bez nadležnog",
+  listDescription:
+    "Prijave u statusu „Određuje se nadležni”: za njihovu vrstu nema pravila nadležnosti ili primalac nema provjeren mejl. Otvorite prijavu, izaberite instituciju i pošaljite joj dopis.",
+  count: (n: number) => `Ukupno: ${n}`,
+  empty: "Nema prijava koje čekaju nadležnog.",
+  failed: "Prijave trenutno nije moguće učitati. Pokušajte ponovo za nekoliko minuta.",
+  columns: {
+    code: "Broj",
+    category: "Vrsta problema i adresa",
+    reason: "Razlog",
+    days: "Brojač dana",
+    likes: "Podrške",
+  },
+  routingReason: {
+    no_rule: "Nema pravila nadležnosti",
+    no_email: "Primalac nema provjeren mejl",
+  } satisfies Record<RoutingReason, string>,
+  demo: "Demo prijava",
+  hidden: "Sakrivena sa javne stranice",
+  back: "Prijave bez nadležnog",
+  // detail
+  reasonTitle: "Razlog",
+  submittedAt: "Podnesena",
+  reporter: "Prijavilac",
+  reporterHint: "Ime prijavioca vidi samo administrator; javno se nikad ne prikazuje.",
+  allDetails: "Svi detalji prijave",
+  assignTitle: "Ručno raspoređivanje",
+  assignDescription:
+    "Izaberite nadležnu instituciju. Izbor važi samo za ovu prijavu i ne pravi pravilo nadležnosti. Ponuđene su samo institucije sa provjerenim mejlom.",
+  institutionLegend: "Institucija",
+  noInstitutions: "Nema institucija sa provjerenim mejlom.",
+  chooseInstitution: "Izaberite instituciju.",
+  letterTitle: "Dopis",
+  letterHint:
+    "Dopis se pravi iz istog šablona kao kod prijave građanina i šalje se mejlom, sa fotografijama prijave u prilogu.",
+  institutionPlaceholder: "[izabrana institucija]",
+  contactEmailPlaceholder: "[mejl naloga prijavioca]",
+  send: "Pošalji dopis",
+  sending: "Šaljem dopis…",
+  noPhotos: "Prijava nema fotografiju, pa dopis ne može biti poslat.",
+  sendFailed: "Slanje dopisa nije uspjelo. Pokušajte ponovo.",
+  completeFailed:
+    "Mejl je otišao, ali ishod slanja nije upisan. Ne šaljite dopis ponovo; provjerite prijavu za nekoliko minuta.",
+  notRouting: "Prijava više ne čeka nadležnog. Osvježite stranicu.",
+  sent: (institution: string) => `Dopis je poslat. Nadležna institucija: ${institution}.`,
+  statusChanged: "Dopis je poslat, ali se status prijave u međuvremenu promijenio.",
+  statusLabel: "Status prijave",
+  // a report that already has a recipient
+  assignedTitle: "Prijava ima nadležnu instituciju",
+  recipient: "Primalac",
+  sentLetterTitle: "Poslat dopis",
+  noLetter: "Dopis nije dostupan.",
+  notFoundTitle: "Prijava nije pronađena",
+  notFound: "Prijava ne postoji ili je još nacrt.",
 } as const

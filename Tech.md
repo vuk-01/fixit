@@ -99,6 +99,7 @@ components/
   map/                              Leaflet komponente ('use client')
   report/                           dijelovi javne stranice i mape (status, sažetak prijave, „Zašto ova institucija?", vremenska linija)
   panel/                            forma za promjenu statusa u panelu
+  admin/                            forma za ručno raspoređivanje na /admin: izbor institucije, dopis, „Pošalji dopis" [tiket 15]
   report-flow/                      čarobnjak na /prijavi: stanje toka (flow-state.ts), koraci fotografija, lokacija i „Pregled prijave" (review-step.tsx)
 lib/
   constants.ts                      sav tekst za korisnika, nazivi i opisi vrsta, ograničenja, MAP_TILES
@@ -119,6 +120,7 @@ lib/
   email/letter-template.ts          šablon dopisa (FR-10, FR-11) kao čista funkcija: bez `server-only`, bez aliasa `@/`, bez upita; koriste ga server, seed i testovi (tiket 22 Q6)
   email/report-letter.ts            serverski dio dopisa: skuplja podatke prijave i zove `letter-template.ts` (dopis za pregled i dopis koji se šalje)
   panel/                            pristup panelu, dozvoljeni prelazi službenika (čiste funkcije) i čitanje prijava za panel (server-only)
+  admin/                            pristup /admin (samo uloga `admin`, čista funkcija) i čitanje prijava za /admin (server-only) [tiket 15]
   reports/timeline.ts               tekst vremenske linije iz `report_events` (čista funkcija, dijele je panel i javna stranica)
   photos/compress.ts                kompresija na klijentu (canvas)
 proxy.ts                            osvježavanje Supabase sesije
@@ -205,6 +207,12 @@ Agent nije pozadinski proces. To su dvije rute (Route Handler, Node runtime) koj
 5. `complete_dispatch`: tek nakon uspjeha status postaje `sent`; neuspjeh ostavlja nacrt sa kodom, a „Pokušaj ponovo" ponavlja cijeli niz.
 
 `/admin` („Pošalji dopis", ručno raspoređivanje) koristi korake 3–5 sa `start_dispatch(assignment)`. Prelaze statusa upisuju samo RPC funkcije, nikad klijent (`DB.md`).
+
+Detalji [tiket 15]:
+- `/admin` je lista prijava u `routing` (najstarije prvo), a `/admin/prijave/[id]` stranica jedne prijave sa izborom institucije (samo `email is not null and is_active`), dopisom i „Pošalji dopis". Pristup samo ulozi `admin`: gost i anonimna sesija idu na `/uloguj-se?next=…`, ostali na `/`. Administrator u meniju zaglavlja ima „Administracija".
+- Server Action `assignReport` (`app/admin/actions.ts`): `getClaims()` (preko `getAccount`) i uloga `admin`, pa servisnim ključem provjera institucije i statusa `routing`, dopis `buildAssignmentLetter` (`lib/email/report-letter.ts`: pravi kod, `submitted_at`, `count_previous_reports`, broj podrški, bez kopije i bez pravila) i `dispatchLetter` sa `kind: 'assignment'`, `ruleId: null`. Ne piše ni u jednu tabelu direktno i nikad ne dira `jurisdiction_rules` (zlatno pravilo 1).
+- Pregled dopisa na `/admin` se renderuje u pregledaču istim šablonom za svaki izbor institucije; ime prijavioca se vidi samo ako je uključio dostavljanje podataka, a umjesto mejla naloga stoji „[mejl naloga prijavioca]". Server pri slanju dopis pravi ponovo iz baze.
+- Prijava bez fotografije (samo demo prijave 9 i 10, `DB.md` §12.4) ne može dobiti dopis: dugme je onemogućeno, a akcija je odbija prije `start_dispatch`, pa ne nastaje ni dopis ni pokušaj slanja.
 
 Detalji [tiket 12]:
 - Koraci 3–5 su `dispatchLetter` u `lib/email/dispatch.ts`, isti za `sendReport` (`initial`) i `/admin` (`assignment`). Fotografije čita admin klijent (`download`) i prilaže ih kao `{kod}-{position}.jpg`; fotografija koja se ne može pročitati je neuspjelo slanje (`photo_unreadable`), bez mejla.
