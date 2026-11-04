@@ -2,7 +2,13 @@
 // (categories, places, statuses, dates, timeline, supports) and the rows the seed inserts. No
 // database, network or clock access here, so Vitest covers it and the seed only writes.
 // Plain Node 24 imports this file: relative `.ts` imports, no `@/`, no enums (Tech.md §11).
-import { dayCounterText, TIME_ZONE } from "../lib/constants.ts"
+import {
+  CATEGORIES,
+  dayCounterText,
+  PREPARE_TEXT,
+  TIME_ZONE,
+} from "../lib/constants.ts"
+import { renderLetter, type Letter } from "../lib/email/letter-template.ts"
 import type { Database } from "../lib/supabase/database.types"
 
 type Enums = Database["public"]["Enums"]
@@ -726,6 +732,44 @@ export function buildReportRows(
 export type DemoLetterRows = {
   letter: Tables["letters"]["Insert"]
   dispatch: Tables["dispatches"]["Insert"]
+}
+
+// Signature of demo letters: the production URL (PRD FR-11), not NEXT_PUBLIC_SITE_URL from
+// .env.local, which is localhost on the machine that runs the seed.
+export const DEMO_SITE_URL = "https://fixit-b73a.vercel.app"
+
+// The first letter of a demo report from the same template as real letters
+// (lib/email/letter-template.ts; DB.md §12.4, ticket 22 Q6): real code, submission time and
+// earlier-reports count; no supports yet at send time; contact sharing off, so no name or email.
+export function renderDemoLetter(
+  report: PlannedReport,
+  data: {
+    code: string
+    previousReports: number
+    institutionName: string
+    ccInstitutionName: string | null
+  }
+): Letter {
+  return renderLetter({
+    kind: "initial",
+    code: data.code,
+    submittedAt: report.submittedAt,
+    previousReports: data.previousReports,
+    pendingText: PREPARE_TEXT.assignedAtSubmit,
+    categoryLabel: CATEGORIES[report.category].label,
+    description: report.description,
+    address: report.address,
+    lat: report.lat,
+    lng: report.lng,
+    institutionName: data.institutionName,
+    ccInstitutionName: data.ccInstitutionName,
+    likeCount: 0,
+    immediateDanger: report.immediateDanger,
+    photoPositions: report.photo ? [1] : [],
+    contact: null,
+    siteUrl: DEMO_SITE_URL,
+    timeZone: TIME_ZONE,
+  })
 }
 
 // The first letter of a sent report and its one successful, test-mode dispatch. Nothing is

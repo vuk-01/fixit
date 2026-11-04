@@ -11,7 +11,9 @@ import {
   distanceMeters,
   planDemoReports,
   podgoricaTime,
+  DEMO_SITE_URL,
   RECORDING_DAY_NOON,
+  renderDemoLetter,
   type DemoRowIds,
   type PlannedReport,
 } from "./demo-plan.ts"
@@ -401,5 +403,59 @@ describe("demo rows", () => {
       email_mode: "test",
       delivered_to: null,
     })
+  })
+})
+
+describe("demo letters (lib/email/letter-template.ts)", () => {
+  const plan = planDemoReports(podgoricaTime(2026, 11, 8))
+  const sent = plan.filter((r) => r.institutionSlug)
+
+  it("renders a real letter for every sent demo report", () => {
+    expect(sent).toHaveLength(8)
+    sent.forEach((report, i) => {
+      const code = `FX-2026-${String(i + 1).padStart(5, "0")}`
+      const letter = renderDemoLetter(report, {
+        code,
+        previousReports: 0,
+        institutionName: "Institucija",
+        ccInstitutionName: report.ccInstitutionSlug ? "Kopija" : null,
+      })
+      expect(letter.subject).toContain(code)
+      expect(letter.subject).toContain(report.address)
+      expect(letter.attachmentNames).toEqual([`${code}-1.jpg`])
+      // no preview placeholders left (FR-11, ticket 22 Q5)
+      expect(`${letter.subject}\n${letter.bodyText}`).not.toContain(
+        "dodjeljuje se pri slanju"
+      )
+      // contact sharing is off: no email address anywhere in the text
+      expect(letter.bodyText).not.toMatch(/[^\s@]+@[^\s@]+\.[a-z]{2,}/i)
+      expect(letter.bodyText).not.toContain("saglasnost")
+      expect(letter.bodyText).toContain(report.description)
+      expect(letter.bodyText).toContain(DEMO_SITE_URL)
+      expect(letter.bodyText).not.toContain("localhost")
+      // supports are 0 at send time, so that line is absent
+      expect(letter.bodyText).not.toContain("podržali")
+      expect(letter.bodyText.includes("Kopija ovog dopisa")).toBe(
+        Boolean(report.ccInstitutionSlug)
+      )
+      expect(letter.bodyText.includes("neposredna opasnost")).toBe(
+        report.immediateDanger
+      )
+    })
+  })
+
+  it("shows the earlier-reports line only when there are some", () => {
+    const report = sent[0]
+    const data = {
+      code: "FX-2026-00001",
+      institutionName: "Institucija",
+      ccInstitutionName: null,
+    }
+    expect(
+      renderDemoLetter(report, { ...data, previousReports: 0 }).bodyText
+    ).not.toContain("Ranije prijave")
+    expect(
+      renderDemoLetter(report, { ...data, previousReports: 2 }).bodyText
+    ).toContain("Ranije prijave iste vrste na ovoj lokaciji (do 50 m): 2")
   })
 })

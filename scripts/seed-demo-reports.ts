@@ -16,6 +16,7 @@ import {
   buildReportRows,
   planDemoReports,
   RECORDING_DAY_NOON,
+  renderDemoLetter,
   type DemoInstitution,
   type DemoJurisdiction,
   type DemoRowIds,
@@ -27,22 +28,19 @@ type Client = SupabaseClient<Database>
 const BUCKET = "report-photos"
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024
 
-// Signature of demo letters: the production URL (PRD FR-11), not NEXT_PUBLIC_SITE_URL from
-// .env.local, which is localhost on the machine that runs the seed.
-const DEMO_SITE_URL = "https://fixit-b73a.vercel.app"
-
-// Subject and body come from lib/email/letter-template.ts (#10), the same template as real
-// letters (DB.md §12.4, ticket 22 Q6). Until that file is in main this stops the seed before
-// it writes anything (the preflight below calls it).
-function demoLetter(
-  item: Prepared,
-  code: string,
-  previousReports: number
-): { subject: string; bodyText: string } {
-  void [item, code, previousReports, DEMO_SITE_URL]
-  throw new Error(
-    "lib/email/letter-template.ts još nije u main (#10): demo prijave se ne prave."
-  )
+// Subject and body from the same template as real letters (demo-plan.ts → letter-template.ts).
+// previousReports comes from count_previous_reports, called right after this report's row is
+// inserted (the RPC needs the row and its location), like sendReport does for a real letter.
+function demoLetter(item: Prepared, code: string, previousReports: number) {
+  if (!item.institutionName) {
+    throw new Error(`Demo prijava ${item.report.row}: dopis bez primaoca.`)
+  }
+  return renderDemoLetter(item.report, {
+    code,
+    previousReports,
+    institutionName: item.institutionName,
+    ccInstitutionName: item.ccInstitutionName,
+  })
 }
 
 type Institution = {
@@ -199,7 +197,7 @@ export async function seedDemoReports(supabase: Client, reporterId: string) {
   const plan = planDemoReports(new Date())
   const { prepared, institutionIdBySlug } = await prepare(supabase, plan)
 
-  // the template must work before anything is written
+  // the template must render before anything is written
   const firstSent = prepared.find((item) => item.report.institutionSlug)
   if (firstSent) demoLetter(firstSent, "FX-2026-00000", 0)
 
