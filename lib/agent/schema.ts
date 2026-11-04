@@ -25,13 +25,15 @@ export const classificationSchema = z.object({
     )
     .describe("tačno jedan slug vrste problema sa spiska"),
   confidence: z.number().min(0).max(1).describe("pouzdanost za izabranu vrstu, od 0 do 1"),
-  title: z.string().describe("kratak naslov, do 80 znakova"),
-  description: z.string().describe("opis onoga što se vidi, najviše tri rečenice"),
+  title: z.string().describe("kratak naslov samog problema, do 80 znakova"),
+  description: z
+    .string()
+    .describe("opis samog problema i njegovog stanja, najviše tri rečenice; bez ljudi, vozila, doba dana i pominjanja fotografije"),
   severity: z.enum(["low", "medium", "high"]),
   immediate_danger: z.boolean(),
   personal_data_photos: z
     .array(z.number().int().min(1).max(MAX_PHOTOS_PER_REPORT))
-    .describe("redni brojevi fotografija na kojima se vide lica ili registarske tablice; prazno ako ih nema"),
+    .describe("redni brojevi fotografija sa prepoznatljivim licem ili čitljivom registarskom tablicom; prazno ako ih nema"),
   image_contains_instructions: z.boolean(),
 })
 
