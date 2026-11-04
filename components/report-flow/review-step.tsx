@@ -3,7 +3,7 @@
 import { CircleAlert, FileText, Landmark, MapPin, Send, TriangleAlert } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useRef, useState } from "react"
 
 import { sendReport, supportExistingReport, type SendReportResult } from "@/app/prijavi/actions"
 import { WhyInstitution } from "@/components/report/why-institution"
@@ -21,6 +21,7 @@ import {
   ERROR_MESSAGES,
   PREPARE_TEXT,
   REVIEW_TEXT,
+  SEND_TEXT,
   UNKNOWN_ERROR_MESSAGE,
 } from "@/lib/constants"
 
@@ -44,7 +45,7 @@ const coordinates = (lat: number, lng: number) => `${lat.toFixed(5)}, ${lng.toFi
 // Then "Pregled prijave" on one screen: photos (add / remove), category ("Promijeni" runs
 // prepare again, no model call), recipient or the FR-8 message with "Zašto ova institucija?",
 // address, the editable public description, "Dostavi moje ime i mejl instituciji" (off), the
-// read-only letter, and "Pošalji prijavu" (sendReport, ticket #12).
+// read-only letter, and "Pošalji prijavu" (sendReport, ticket #12; then "Prijava poslata").
 export function ReviewStep({
   state,
   account,
@@ -76,6 +77,9 @@ export function ReviewStep({
 }) {
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState<string | null>(null)
+  // a second tap before React re-renders the disabled button must not start a second send
+  // (the database refuses a second attempt anyway, ticket #12)
+  const inFlight = useRef(false)
   const result = prepare?.status === "done" ? prepare.result : null
   const reportId = result?.reportId ?? null
   const point = state.confirmed!
@@ -111,8 +115,11 @@ export function ReviewStep({
     )
   }
 
+  // "Pošalji prijavu"; after a failure the same button reads "Pokušaj ponovo" and repeats the whole
+  // sequence (the draft keeps its number, FR-24)
   const send = async () => {
-    if (!reportId || !state.category) return
+    if (!reportId || !state.category || inFlight.current) return
+    inFlight.current = true
     setSending(true)
     setSendError(null)
     const sent = await sendReport({
@@ -121,6 +128,7 @@ export function ReviewStep({
       description: state.description,
       shareContact: state.shareContact,
     }).catch(() => null)
+    inFlight.current = false
     setSending(false)
     if (!sent || !sent.ok) {
       setSendError(sent ? sent.error : UNKNOWN_ERROR_MESSAGE)
@@ -264,7 +272,7 @@ export function ReviewStep({
         )}
         <Button size="lg" className="h-12 w-full text-base" disabled={!canSend || sending} onClick={() => void send()}>
           <Send aria-hidden />
-          {sending ? REVIEW_TEXT.sending : REVIEW_TEXT.send}
+          {sending ? REVIEW_TEXT.sending : sendError ? SEND_TEXT.retry : REVIEW_TEXT.send}
         </Button>
         {cancel}
       </div>

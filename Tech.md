@@ -112,9 +112,10 @@ lib/
   geo/reverse.ts                    Nominatim
   geo/address.ts                    adresa iz Nominatim odgovora, zaokruživanje, ograničenje 1 zahtjev/s (čiste funkcije)
   geo/transliterate.ts              ćirilica → latinica
-  email/send.ts                     JEDINO mjesto slanja mejla (guard za EMAIL_MODE)
+  email/send.ts                     JEDINO mjesto slanja mejla (guard za EMAIL_MODE); jedini fajl koji uvozi `resend` (ESLint `no-restricted-imports`)
+  email/dispatch.ts                 koraci 3–5 slanja dopisa: `start_dispatch` → fotografije iz Storage-a → `send.ts` → `complete_dispatch`; dijele ga `sendReport` i `/admin` [tiket 12]
   email/letter-template.ts          šablon dopisa (FR-10, FR-11) kao čista funkcija: bez `server-only`, bez aliasa `@/`, bez upita; koriste ga server, seed i testovi (tiket 22 Q6)
-  email/report-letter.ts            serverski dio dopisa: skuplja podatke prijave i zove `letter-template.ts`
+  email/report-letter.ts            serverski dio dopisa: skuplja podatke prijave i zove `letter-template.ts` (dopis za pregled i dopis koji se šalje)
   photos/compress.ts                kompresija na klijentu (canvas)
 proxy.ts                            osvježavanje Supabase sesije
 supabase/
@@ -200,6 +201,15 @@ Agent nije pozadinski proces. To su dvije rute (Route Handler, Node runtime) koj
 5. `complete_dispatch`: tek nakon uspjeha status postaje `sent`; neuspjeh ostavlja nacrt sa kodom, a „Pokušaj ponovo" ponavlja cijeli niz.
 
 `/admin` („Pošalji dopis", ručno raspoređivanje) koristi korake 3–5 sa `start_dispatch(assignment)`. Prelaze statusa upisuju samo RPC funkcije, nikad klijent (`DB.md`).
+
+Detalji [tiket 12]:
+- Koraci 3–5 su `dispatchLetter` u `lib/email/dispatch.ts`, isti za `sendReport` (`initial`) i `/admin` (`assignment`). Fotografije čita admin klijent (`download`) i prilaže ih kao `{kod}-{position}.jpg`; fotografija koja se ne može pročitati je neuspjelo slanje (`photo_unreadable`), bez mejla.
+- Datum i vrijeme prijave u dopisu su trenutak slanja; `submitted_at` upisuje `complete_dispatch` sekund kasnije.
+- `sendReport` upisuje jedan red u `agent_runs` za korak `send`: `outcome`, `error_code`, `photo_count` (broj priloga) i `meta` bez ličnih podataka (`submission`: `sent` / `routing` / `failed`, `jurisdiction_outcome`, `email_mode`, `previous_reports`, `dispatch_id`).
+- Poruke građaninu: `photo_missing` i ostali kodovi iz `begin_submission` imaju svoj tekst iz `lib/constants.ts`; `dispatch_in_progress` „Prijava se već šalje…" (drugi mejl se ne šalje); svaki drugi neuspjeh „Slanje prijave nije uspjelo. Pokušajte ponovo.", a dugme „Pošalji prijavu" tada glasi „Pokušaj ponovo" i ponavlja cijeli niz sa istim kodom.
+- Dvostruki dodir: klijent ne šalje drugi zahtjev dok prvi traje, a baza odbija drugi istovremeni pokušaj (`dispatch_in_progress`). Ako `begin_submission` vrati `invalid_state` za prijavu koja je već `sent` ili `routing` (npr. prvi odgovor nije stigao do telefona), `sendReport` vraća ishod tog podnošenja umjesto greške.
+- Ako mejl ode, a `complete_dispatch` ne uspije ni u drugom pokušaju, prijava ostaje nacrt sa pokušajem `pending`; ponovni pokušaj dobija `dispatch_in_progress` dok `start_dispatch` taj pokušaj poslije 2 minuta ne označi kao `stale`, pa novi pokušaj šalje novi mejl. Rijedak slučaj, prihvaćen za P0.
+- Ekran „Prijava poslata" (`components/report-flow/sent-step.tsx`): broj prijave, link na `/p/[code]`, „Podijeli" (sistemski meni za dijeljenje, inače kopiranje linka) i „Nova prijava" (tok kreće ispočetka); za `routing` ispod naslova stoji poruka iz FR-8.
 
 Podešavanja i rokovi:
 - Obje rute agenta imaju `export const runtime = 'nodejs'` i `export const maxDuration = 60`. To je samo plafon (Hobby dozvoljava 300 s); stvarni rokovi su kraći: model 12 s (sekcija 7), klijent 15 s, Nominatim 3 s.
@@ -328,7 +338,7 @@ Baza, Supabase CLI 3.0.0 (migracije i `db push` radi samo Ivana; `AGENTS.md`):
 - Bez sopstvenog domena Resend šalje samo sa `onboarding@resend.dev` i **samo na mejl vlasnika Resend naloga** (nalaz 05). Zato je `TEST_INBOX` Ivanin lični mejl (izmjena odluke iz tiketa 08, 3. 11.), a Resend nalog je otvoren baš tim mejlom. Adresa se ne upisuje ni u jedan dokument ni u repo; postoji samo u `.env.local` i u Vercel env varijablama. U videu se zamućuje.
 - **Dopis instituciji:** `from: Fixit <onboarding@resend.dev>`, `reply-to:` `EMAIL_REPLY_TO`, što je isti mejl kao `TEST_INBOX`. Potpis dopisa (FR-11) navodi samo `https://fixit-b73a.vercel.app`, bez mejl adrese.
 - **Ivanin lični mejl se ne prikazuje nigdje** [Ivana, 4. 11.]: ni u UI-ju (stranice, zaglavlje, poruke o greškama, `/privatnost`), ni u tekstu dopisa ni drugog mejla koji aplikacija šalje. Postoji samo u env varijablama (`TEST_INBOX`, `EMAIL_REPLY_TO`) i kao `reply-to` zaglavlje dopisa, koji u testnom režimu ionako stiže samo u `TEST_INBOX`. Demo nalozi imaju izmišljene adrese `<nalog>@fixit.test` (`DB.md` §12.3), nepovezane sa ovim mejlom; mejl naloga se ipak ne prikazuje u UI-ju (meni pokazuje ime).
-- **`EMAIL_MODE=test` ostaje podrazumijevan** i ne mijenja se. Jedino mjesto slanja je `lib/email/send.ts`, sa guard-om: sve osim tačno `live` = test, primalac i kopija idu na `TEST_INBOX`, a bez `TEST_INBOX` nema slanja. Resend uz to sam odbija svakog primaoca osim vlasnika naloga (403). To je dodatna brava, ne zamjena: guard i njegov test (AGENTS.md, test 1) ostaju, jer zaštita ne smije zavisiti od podešavanja Resend naloga.
+- **`EMAIL_MODE=test` ostaje podrazumijevan** i ne mijenja se. Jedino mjesto slanja je `lib/email/send.ts` (`sendLetter`), sa guard-om: sve osim tačno `live` = test, primalac i kopija idu na `TEST_INBOX`, a bez `TEST_INBOX` nema slanja (ishod `no_test_inbox`, bez izuzetka). ID pokušaja (`dispatches.id`) ide kao Resend `Idempotency-Key`. Rezultat ima oblik argumenata `complete_dispatch` (`completeDispatchArgs`) [tiket 12]. Resend uz to sam odbija svakog primaoca osim vlasnika naloga (403). To je dodatna brava, ne zamjena: guard i njegov test (AGENTS.md, test 1) ostaju, jer zaštita ne smije zavisiti od podešavanja Resend naloga.
 - Kvota besplatnog plana: 100 mejlova dnevno (UTC), 3.000 mjesečno; testovi ne troše kvotu, jer je Resend mockovan.
 - Nema Auth mejlova (vidi „Registracija"), pa nema ni Supabase SMTP-a ni drugog Resend ključa.
 
