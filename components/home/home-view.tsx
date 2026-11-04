@@ -95,15 +95,23 @@ function ReportListCard({ report }: { report: MapReport }) {
       href={`/p/${report.code}`}
       className="block rounded-2xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
     >
-      <Card size="sm" className="flex-row gap-3 px-3">
-        <ReportPhoto report={report} className="size-20 shrink-0 rounded-lg" />
-        <div className="flex min-w-0 flex-col gap-1">
-          <p className="font-heading leading-snug font-medium">{CATEGORIES[report.category].label}</p>
+      {/* Equal padding on all sides: Card drops its top padding when an <img> is the first
+          child (has-[>img:first-child]:pt-0), which pushed the thumbnail to the top edge.
+          Fixed square thumbnail, text column centred next to it (prototype v2). */}
+      <Card size="sm" className="flex-row items-center gap-3 p-3 has-[>img:first-child]:pt-3">
+        <ReportPhoto report={report} className="size-22 shrink-0 rounded-xl" />
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <p className="line-clamp-2 font-heading leading-snug font-medium">
+            {CATEGORIES[report.category].label}
+          </p>
           <div className="flex flex-wrap items-center gap-1.5">
             <StatusBadge status={report.status} />
             {report.is_demo && <Badge variant="outline">{REPORT_SUMMARY_TEXT.demo}</Badge>}
           </div>
-          <ReportCounters report={report} />
+          {/* keep "Riješeno za 6 dana" and "7 podrški" whole; a narrow card wraps at the " · " */}
+          <div className="[&_span:not([aria-hidden])]:whitespace-nowrap">
+            <ReportCounters report={report} />
+          </div>
         </div>
       </Card>
     </Link>
