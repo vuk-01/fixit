@@ -36,6 +36,10 @@
   - citizen pages work at 360 px width (mobile-first); the panel is desktop-first but usable on a tablet;
   - touch targets at least 44 × 44 px; WCAG AA contrast; statuses are never shown by colour alone (colour + icon/text);
   - all user-facing text is Montenegrin, Latin script, ijekavian, and lives in `lib/constants.ts` or next to the component.
+## Light theme only (P0) [Claude, 4. 11. 2026]
+
+The app is always light (`ThemeProvider forcedTheme="light"` in `app/layout.tsx`), even when the phone is in dark mode. On Ivana's phone in dark mode the tabs, buttons and cards were hard to read next to the light map tiles. Dark mode can come back after P0, once every screen is checked in it.
+
 ## Status colours and icons (ticket 22 Q10; colours changed by Ivana, 4. 11. 2026)
 
 One mapping for every place a status is shown (map marker, public report page, panel). Icons come from the preset's icon library (lucide). Keep the mapping in one `Record<report_status, …>` next to the status labels (`STATUS_STYLE` in `lib/constants.ts`), so a missing status breaks `pnpm typecheck`.
