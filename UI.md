@@ -65,7 +65,7 @@ One mapping for every place a status is shown (map marker, public report page, p
 
 Ivana chose **direction v2 ("lista i kartice")** out of three prototypes; the other two are discarded. Reference: [.scratch/prototypes/v2-lista-kartice.html](.scratch/prototypes/v2-lista-kartice.html), open it in a browser (it is a throwaway mock with fake data, not code to copy). Build the real screens with shadcn components in this direction:
 
-- **Home `/`:** a header (Fixit, „Prijave u Podgorici") with two tabs, **Mapa | Lista**. **Mapa is the default tab** when the app opens (Ivana's change to v2); Lista shows the same reports as cards (photo, category, status with icon + text, day counter, support count). A full-width primary button „Prijavi problem" sits at the bottom.
+- **Home `/`:** a header (Fixit, „Prijave u Podgorici") with two tabs, **Mapa | Lista**. **Mapa is the default tab** when the app opens (Ivana's change to v2); Lista shows the same reports as cards (photo, category, status with icon + text, day counter, support count). A primary button „Prijavi problem" sits at the bottom: full width on a phone, a fixed 320 px (`md:w-80`) on the right of the bar from `md` (Ivana, ticket 32).
 - **Cards everywhere:** content sits in white cards (`Card`) on a light neutral background; one blue primary colour (the preset's `primary`, preset is maia/mist/blue).
 - **Report flow `/prijavi`:** a wizard with a progress bar and step titles (photo → location with live agent steps → „Pregled prijave"), matching the screen order and tap budget in PRD FR-5 and ticket 15. Each step is one screen with one primary button at the bottom.
 - **Public report page `/p/[code]`:** stacked cards (photo, public description, category/status/institution, day counter, „Podržavam" with live count, timeline).
@@ -76,7 +76,8 @@ Ivana chose **direction v2 ("lista i kartice")** out of three prototypes; the ot
 Every page works at 360, 390 and 430 px (phone), 768 px (tablet) and 1280–1440 px (laptop), with no horizontal page scroll; a wide table scrolls only inside its own card.
 
 - **One container:** the header, home bars (Mapa | Lista, „Prijavi problem"), the list, `/p/[code]`, `/panel` and `/admin` pages use `mx-auto max-w-5xl px-4`, so the logo and account name line up with the content. The ghost buttons at the edges (account menu, „Uloguj se", back links) pull back by their padding (`-mr-3` / `-ml-3`).
-- **Map:** full width between the bars on every screen.
+- **Map:** full width between the bars on every screen below `lg`.
+- **Home `/` from `lg` (being decided, ticket 32):** three candidate laptop layouts on one preview, `?izgled=a` (list sidebar + map, default), `?izgled=b` (contained, heading row, map card) and `?izgled=c` (full-height map with a floating panel). Below `lg` the phone layout is unchanged. After Ivana picks one, the other two and the switch are removed and this line describes the chosen layout. Layouts a and c widen the header to the screen edges (`data-header="wide"`).
 - **Lista:** one column on a phone, two from `md`, three from `lg`.
 - **`/p/[code]` from `lg`:** two columns, photo and description on the left (3fr), institution, supports and timeline on the right (2fr). On a phone it is the same single column as before.
 - **Single-task pages stay narrow and centred:** `/prijavi` is one `max-w-2xl` column with side borders from `md`; `/uloguj-se` (`max-w-md`) and `/privatnost` (`max-w-2xl`) are unchanged.

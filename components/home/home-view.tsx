@@ -1,49 +1,56 @@
 "use client"
 
 import Link from "next/link"
-import dynamic from "next/dynamic"
 
-import { Badge } from "@/components/ui/badge"
 import { buttonVariants } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ReportCounters, ReportPhoto, REPORT_SUMMARY_TEXT } from "@/components/report/report-summary"
-import { StatusBadge } from "@/components/report/status-badge"
 import { useLiveLikeCounts } from "@/components/report/use-live-like-counts"
-import { CATEGORIES } from "@/lib/constants"
+import {
+  HOME_TEXT,
+  homeNotice,
+  MapLoading,
+  ReportListCard,
+  ReportMap,
+  useIsLaptop,
+} from "@/components/home/home-parts"
+import { LaptopHome, type LaptopLayout } from "@/components/home/laptop-layouts"
 import type { MapReport } from "@/lib/reports/public-map"
-
-const HOME_TEXT = {
-  title: "Prijave u Podgorici",
-  tabMap: "Mapa",
-  tabList: "Lista",
-  report: "Prijavi problem",
-  mapLoading: "Učitavam mapu…",
-  empty: "Još nema prijava. Budite prvi koji će prijaviti problem.",
-  failed: "Prijave trenutno nije moguće učitati. Pokušajte ponovo za nekoliko minuta.",
-} as const
-
-const ReportMap = dynamic(() => import("@/components/map/report-map").then((m) => m.ReportMap), {
-  ssr: false,
-  loading: () => (
-    <div className="flex h-full items-center justify-center bg-muted text-muted-foreground">
-      {HOME_TEXT.mapLoading}
-    </div>
-  ),
-})
 
 // Home `/` (UI.md, prototype v2): Mapa | Lista with Mapa as default, „Prijavi problem".
 // The header („Fixit" / „Prijave u Podgorici", sign-in or the account menu) is SiteHeader in the layout.
-export function HomeView({ reports: initialReports, failed }: { reports: MapReport[]; failed: boolean }) {
+// Below `lg` the phone layout; from `lg` one of three laptop layouts (`?izgled=a|b|c`, ticket 32)
+// until Ivana picks one. Both are server-rendered and switched by CSS; the Leaflet map is mounted
+// only in the one that is visible.
+export function HomeView({
+  reports: initialReports,
+  failed,
+  layout,
+}: {
+  reports: MapReport[]
+  failed: boolean
+  layout: LaptopLayout
+}) {
   const reports = useLiveLikeCounts(initialReports)
-  const notice = failed ? HOME_TEXT.failed : reports.length === 0 ? HOME_TEXT.empty : null
+  const isLaptop = useIsLaptop()
 
   return (
-    <div className="flex h-[calc(100svh-4rem-1px)] flex-col bg-muted/50">
+    <>
+      <PhoneHome reports={reports} failed={failed} showMap={!isLaptop} />
+      <LaptopHome layout={layout} reports={reports} failed={failed} showMap={isLaptop} />
+    </>
+  )
+}
+
+function PhoneHome({ reports, failed, showMap }: { reports: MapReport[]; failed: boolean; showMap: boolean }) {
+  const notice = homeNotice(reports, failed)
+
+  return (
+    <div className="flex h-[calc(100svh-4rem-1px)] flex-col bg-muted/50 lg:hidden">
       <h1 className="sr-only">{HOME_TEXT.title}</h1>
 
       <Tabs defaultValue="mapa" className="min-h-0 flex-1 gap-0">
-        {/* bars use the header's container (max-w-5xl px-4) so they line up with it on a laptop;
+        {/* bars use the header's container (max-w-5xl px-4) so they line up with it on a tablet;
             the map itself stays full width */}
         <div className="border-b bg-background py-2">
           <div className="mx-auto max-w-5xl px-4">
@@ -56,9 +63,7 @@ export function HomeView({ reports: initialReports, failed }: { reports: MapRepo
 
         <TabsContent value="mapa" className="relative min-h-0">
           {/* isolate: Leaflet's panes use z-index 400–1000; keep them below the header menu */}
-          <div className="absolute inset-0 isolate">
-            <ReportMap reports={reports} />
-          </div>
+          <div className="absolute inset-0 isolate">{showMap ? <ReportMap reports={reports} /> : <MapLoading />}</div>
           {notice && (
             <Card size="sm" className="absolute inset-x-4 bottom-8 z-10 px-4 text-center">
               <p>{notice}</p>
@@ -85,42 +90,14 @@ export function HomeView({ reports: initialReports, failed }: { reports: MapRepo
         </TabsContent>
       </Tabs>
 
+      {/* full width on a phone; from a tablet a fixed-width button on the right (Ivana, ticket 32) */}
       <div className="border-t bg-background pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <div className="mx-auto max-w-5xl px-4">
-          <Link href="/prijavi" className={buttonVariants({ className: "h-12 w-full text-base" })}>
+        <div className="mx-auto max-w-5xl px-4 md:flex md:justify-end">
+          <Link href="/prijavi" className={buttonVariants({ className: "h-12 w-full text-base md:w-80" })}>
             {HOME_TEXT.report}
           </Link>
         </div>
       </div>
     </div>
-  )
-}
-
-function ReportListCard({ report }: { report: MapReport }) {
-  return (
-    <Link
-      href={`/p/${report.code}`}
-      className="block h-full rounded-2xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-    >
-      {/* Equal padding on all sides: Card drops its top padding when an <img> is the first
-          child (has-[>img:first-child]:pt-0), which pushed the thumbnail to the top edge.
-          Fixed square thumbnail, text column centred next to it (prototype v2). */}
-      <Card size="sm" className="h-full flex-row items-center gap-3 p-3 has-[>img:first-child]:pt-3">
-        <ReportPhoto report={report} className="size-22 shrink-0 rounded-xl" />
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <p className="line-clamp-2 font-heading leading-snug font-medium">
-            {CATEGORIES[report.category].label}
-          </p>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <StatusBadge status={report.status} />
-            {report.is_demo && <Badge variant="outline">{REPORT_SUMMARY_TEXT.demo}</Badge>}
-          </div>
-          {/* keep "Riješeno za 6 dana" and "7 podrški" whole; a narrow card wraps at the " · " */}
-          <div className="[&_span:not([aria-hidden])]:whitespace-nowrap">
-            <ReportCounters report={report} />
-          </div>
-        </div>
-      </Card>
-    </Link>
   )
 }
