@@ -421,6 +421,11 @@ export const PREPARE_STEPS: readonly PrepareStep[] = ["jurisdiction", "duplicate
 // the client stops waiting for the steps after this (Nominatim alone may take 3 s, Tech.md §8);
 // the citizen then gets "Pokušaj ponovo"
 export const PREPARE_CLIENT_TIMEOUT_MS = 20_000
+// the steps finish in well under a second, so the browser shows each one at least this long
+// (started → done) and keeps the last tick before the review appears (ticket #32); an error is
+// never held back
+export const PREPARE_STEP_MIN_MS = 900
+export const PREPARE_RESULT_HOLD_MS = 400
 
 export const PREPARE_TEXT = {
   // FR-5 step 3, verbatim

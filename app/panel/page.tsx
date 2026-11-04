@@ -1,10 +1,10 @@
 import type { Metadata } from "next"
-import Link from "next/link"
 
+import { RowLinkCell } from "@/components/report/row-link-cell"
 import { StatusBadge } from "@/components/report/status-badge"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { CATEGORIES, dayCounterText, likeCountText, PANEL_TEXT, SEVERITY_LABELS } from "@/lib/constants"
 import { getInstitutionReports, requirePanelAccess } from "@/lib/panel/reports"
 
@@ -48,40 +48,43 @@ export default async function PanelPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {reports.map((report) => (
-                  <TableRow key={report.id} className="relative">
-                    <TableCell className="font-medium whitespace-nowrap">
-                      {/* no prefetch: opening a report acknowledges it (FR-22), so only a real click may load it */}
-                      <Link
-                        href={`/panel/prijave/${report.id}`}
-                        prefetch={false}
-                        className="inline-flex min-h-11 items-center text-primary underline-offset-4 after:absolute after:inset-0 hover:underline"
+                {reports.map((report) => {
+                  const href = `/panel/prijave/${report.id}`
+                  return (
+                    <TableRow key={report.id}>
+                      <RowLinkCell
+                        href={href}
+                        primary
+                        className="font-medium whitespace-nowrap"
+                        linkClassName="text-primary underline-offset-4 hover:underline"
                       >
                         {report.code}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="min-w-56 whitespace-normal">
-                      <p className="font-medium">{CATEGORIES[report.category].label}</p>
-                      {report.address && <p className="text-muted-foreground">{report.address}</p>}
-                      {(report.is_demo || report.is_hidden) && (
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {report.is_demo && <Badge variant="outline">{PANEL_TEXT.demo}</Badge>}
-                          {report.is_hidden && <Badge variant="secondary">{PANEL_TEXT.hidden}</Badge>}
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={report.status} label="panel" />
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {report.severity ? SEVERITY_LABELS[report.severity].label : PANEL_TEXT.severityUnknown}
-                    </TableCell>
-                    <TableCell className="whitespace-normal">{dayCounterText(report)}</TableCell>
-                    <TableCell className="hidden text-right whitespace-nowrap lg:table-cell">
-                      {likeCountText(report.like_count)}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </RowLinkCell>
+                      <RowLinkCell href={href} className="min-w-56 whitespace-normal">
+                        <p className="font-medium">{CATEGORIES[report.category].label}</p>
+                        {report.address && <p className="text-muted-foreground">{report.address}</p>}
+                        {(report.is_demo || report.is_hidden) && (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {report.is_demo && <Badge variant="outline">{PANEL_TEXT.demo}</Badge>}
+                            {report.is_hidden && <Badge variant="secondary">{PANEL_TEXT.hidden}</Badge>}
+                          </div>
+                        )}
+                      </RowLinkCell>
+                      <RowLinkCell href={href} linkClassName="items-start">
+                        <StatusBadge status={report.status} label="panel" />
+                      </RowLinkCell>
+                      <RowLinkCell href={href} className="hidden md:table-cell">
+                        {report.severity ? SEVERITY_LABELS[report.severity].label : PANEL_TEXT.severityUnknown}
+                      </RowLinkCell>
+                      <RowLinkCell href={href} className="whitespace-normal">
+                        {dayCounterText(report)}
+                      </RowLinkCell>
+                      <RowLinkCell href={href} className="hidden text-right whitespace-nowrap lg:table-cell">
+                        {likeCountText(report.like_count)}
+                      </RowLinkCell>
+                    </TableRow>
+                  )
+                })}
               </TableBody>
             </Table>
           )}
