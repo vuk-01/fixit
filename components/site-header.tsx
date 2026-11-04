@@ -7,6 +7,8 @@ import { APP_NAME, HEADER_TEXT } from "@/lib/constants"
 import { cn } from "@/lib/utils"
 
 // Header on every page (PRD §8, UI.md v2: „Fixit" / „Prijave u Podgorici"): the menu with "Odjavi se" is for a signed-in account only.
+// Same container as the wide pages (max-w-5xl px-4, UI.md "Page widths"); the ghost buttons on the
+// right pull back by their own padding (-mr-3) so the account name lines up with the content edge.
 export async function SiteHeader() {
   const account = await getAccount()
 
@@ -29,7 +31,7 @@ export async function SiteHeader() {
             }
           />
         ) : (
-          <Link href="/uloguj-se" className={cn(buttonVariants({ variant: "ghost" }), "h-11 px-3")}>
+          <Link href="/uloguj-se" className={cn(buttonVariants({ variant: "ghost" }), "-mr-3 h-11 px-3")}>
             {HEADER_TEXT.signIn}
           </Link>
         )}

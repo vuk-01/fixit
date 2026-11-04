@@ -36,8 +36,8 @@ export default async function AdminReportPage({ params }: { params: Promise<{ id
   const routing = report.status === "routing"
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-6">
-      <Link href="/admin" className={cn(buttonVariants({ variant: "ghost" }), "h-11 self-start px-3")}>
+    <main className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-6 wrap-break-word">
+      <Link href="/admin" className={cn(buttonVariants({ variant: "ghost" }), "-ml-3 h-11 self-start px-3")}>
         <ArrowLeft aria-hidden data-icon="inline-start" />
         {ADMIN_TEXT.back}
       </Link>
@@ -54,7 +54,7 @@ export default async function AdminReportPage({ params }: { params: Promise<{ id
         </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="flex min-w-0 flex-col gap-4 lg:col-span-2">
           {routing ? (
             <Card>

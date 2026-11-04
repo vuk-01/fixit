@@ -70,3 +70,14 @@ Ivana chose **direction v2 ("lista i kartice")** out of three prototypes; the ot
 - **Report flow `/prijavi`:** a wizard with a progress bar and step titles (photo → location with live agent steps → „Pregled prijave"), matching the screen order and tap budget in PRD FR-5 and ticket 15. Each step is one screen with one primary button at the bottom.
 - **Public report page `/p/[code]`:** stacked cards (photo, public description, category/status/institution, day counter, „Podržavam" with live count, timeline).
 - The dev overlay in the prototype (tap counter, test-mode caption) is a prototype tool only; it is not part of the app.
+
+## Page widths (ticket 32, 4. 11. 2026) [Claude]
+
+Every page works at 360, 390 and 430 px (phone), 768 px (tablet) and 1280–1440 px (laptop), with no horizontal page scroll; a wide table scrolls only inside its own card.
+
+- **One container:** the header, home bars (Mapa | Lista, „Prijavi problem"), the list, `/p/[code]`, `/panel` and `/admin` pages use `mx-auto max-w-5xl px-4`, so the logo and account name line up with the content. The ghost buttons at the edges (account menu, „Uloguj se", back links) pull back by their padding (`-mr-3` / `-ml-3`).
+- **Map:** full width between the bars on every screen.
+- **Lista:** one column on a phone, two from `md`, three from `lg`.
+- **`/p/[code]` from `lg`:** two columns, photo and description on the left (3fr), institution, supports and timeline on the right (2fr). On a phone it is the same single column as before.
+- **Single-task pages stay narrow and centred:** `/prijavi` is one `max-w-2xl` column with side borders from `md`; `/uloguj-se` (`max-w-md`) and `/privatnost` (`max-w-2xl`) are unchanged.
+- **Long text never widens a page:** grid columns are `grid-cols-1` / `minmax(0, …)` with `min-w-0` children, detail pages carry `wrap-break-word`, and letters (`<pre>`, `whitespace-pre-wrap`) add `wrap-anywhere` so the map URL wraps.

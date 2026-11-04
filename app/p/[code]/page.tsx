@@ -44,7 +44,9 @@ export default async function PublicReportPage({ params }: Props) {
 
   return (
     <div className="min-h-[calc(100svh-4rem-1px)] bg-muted/50">
-      <main className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4 py-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+      {/* the header's container (max-w-5xl px-4); from lg up the photo and description sit
+          next to the institution, supports and timeline instead of one stretched column (#32) */}
+      <main className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] wrap-break-word">
         <div className="flex flex-col gap-2">
           <p
             className="text-sm text-muted-foreground"
@@ -71,57 +73,63 @@ export default async function PublicReportPage({ params }: Props) {
           </p>
         </div>
 
-        <Photos report={report} category={category} />
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
+          <div className="flex min-w-0 flex-col gap-4">
+            <Photos report={report} category={category} />
 
-        <Card size="sm">
-          <CardHeader>
-            <CardTitle>{PUBLIC_REPORT_TEXT.descriptionTitle}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="whitespace-pre-wrap" data-testid="description">
-              {report.description ?? PUBLIC_REPORT_TEXT.noDescription}
-            </p>
-          </CardContent>
-        </Card>
+            <Card size="sm">
+              <CardHeader>
+                <CardTitle>{PUBLIC_REPORT_TEXT.descriptionTitle}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="whitespace-pre-wrap" data-testid="description">
+                  {report.description ?? PUBLIC_REPORT_TEXT.noDescription}
+                </p>
+              </CardContent>
+            </Card>
+          </div>
 
-        <Card size="sm">
-          <CardHeader>
-            <CardTitle>{PUBLIC_REPORT_TEXT.institutionTitle}</CardTitle>
-          </CardHeader>
-          <CardContent
-            className="flex flex-col gap-1"
-            data-testid="institution"
-          >
-            <Institution report={report} />
-          </CardContent>
-        </Card>
+          <div className="flex min-w-0 flex-col gap-4">
+            <Card size="sm">
+              <CardHeader>
+                <CardTitle>{PUBLIC_REPORT_TEXT.institutionTitle}</CardTitle>
+              </CardHeader>
+              <CardContent
+                className="flex flex-col gap-1"
+                data-testid="institution"
+              >
+                <Institution report={report} />
+              </CardContent>
+            </Card>
 
-        <Card size="sm">
-          <CardHeader>
-            <CardTitle>{PUBLIC_REPORT_TEXT.supportTitle}</CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            <LikeButton
-              reportId={report.id}
-              initialCount={report.like_count}
-              initialState={report.likeState}
-            />
-            <ShareReportButton code={report.code} />
-          </CardContent>
-        </Card>
+            <Card size="sm">
+              <CardHeader>
+                <CardTitle>{PUBLIC_REPORT_TEXT.supportTitle}</CardTitle>
+              </CardHeader>
+              <CardContent className="flex flex-col gap-3">
+                <LikeButton
+                  reportId={report.id}
+                  initialCount={report.like_count}
+                  initialState={report.likeState}
+                />
+                <ShareReportButton code={report.code} />
+              </CardContent>
+            </Card>
 
-        <Card size="sm">
-          <CardHeader>
-            <CardTitle>{TIMELINE_TEXT.title}</CardTitle>
-          </CardHeader>
-          <CardContent data-testid="timeline">
-            <ReportTimeline
-              events={report.events}
-              institutionNames={report.institutionNames}
-              view="public"
-            />
-          </CardContent>
-        </Card>
+            <Card size="sm">
+              <CardHeader>
+                <CardTitle>{TIMELINE_TEXT.title}</CardTitle>
+              </CardHeader>
+              <CardContent data-testid="timeline">
+                <ReportTimeline
+                  events={report.events}
+                  institutionNames={report.institutionNames}
+                  view="public"
+                />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </main>
     </div>
   )
