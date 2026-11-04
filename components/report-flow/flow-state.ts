@@ -9,9 +9,14 @@
 // Ticket #9: `analysis` is the classify request (draft + recognition); `category` the category
 // the flow continues with (from the model, or picked by the citizen, FR-7) and `description`
 // the model's description (empty in the manual flow). #10/#11 continue from these.
+//
+// Ticket #10: `prepare` is the prepare request (jurisdiction, duplicates, letter) for the
+// current draft, point and category; `key` tells which input a state belongs to, so a late
+// event of an older request is ignored and a new point or category starts a new request.
 
 import type { ClassificationForClient, ClassifyErrorCode, FallbackReason } from "@/lib/agent/schema"
-import { CONFIDENCE_THRESHOLD, type ReportCategory } from "@/lib/constants"
+import type { PrepareErrorCode, PrepareResult, StepStatus } from "@/lib/agent/steps"
+import { CONFIDENCE_THRESHOLD, ERROR_MESSAGES, PREPARE_STEPS, type PrepareStep, type ReportCategory } from "@/lib/constants"
 
 export type UploadStatus = "uploading" | "done" | "failed"
 
@@ -44,6 +49,17 @@ export type Analysis =
 
 export type CategorySource = "ai" | "citizen"
 
+export type PrepareStepState = "waiting" | StepStatus
+export type PrepareSteps = Record<PrepareStep, PrepareStepState>
+
+export type Prepare =
+  | { status: "idle" }
+  | { status: "running"; key: string; steps: PrepareSteps }
+  | { status: "done"; key: string; steps: PrepareSteps; result: PrepareResult }
+  | { status: "error"; key: string; steps: PrepareSteps; code: PrepareErrorCode }
+
+export type PrepareInput = { reportId: string; lat: number; lng: number; category: ReportCategory }
+
 export type FlowState = {
   step: FlowStep
   source: PhotoSource | null // what the first photo came from (FR-3: gallery → check the pin)
@@ -55,6 +71,9 @@ export type FlowState = {
   category: ReportCategory | null
   categorySource: CategorySource | null
   description: string
+  prepare: Prepare
+  // FR-9: the duplicate the citizen answered with "Ipak pošalji novu"
+  dismissedDuplicate: string | null
 }
 
 export const initialFlowState: FlowState = {
@@ -68,6 +87,8 @@ export const initialFlowState: FlowState = {
   category: null,
   categorySource: null,
   description: "",
+  prepare: { status: "idle" },
+  dismissedDuplicate: null,
 }
 
 export type FlowAction =
@@ -85,6 +106,12 @@ export type FlowAction =
   | { type: "draftFound"; reportId: string }
   | { type: "chooseCategory"; category: ReportCategory }
   | { type: "changeCategory" }
+  | { type: "prepareStarted"; key: string }
+  | { type: "prepareStep"; key: string; step: PrepareStep; status: StepStatus }
+  | { type: "prepareDone"; key: string; result: PrepareResult }
+  | { type: "prepareError"; key: string; code: PrepareErrorCode }
+  | { type: "prepareRetry" }
+  | { type: "dismissDuplicate"; id: string }
 
 export function flowReducer(state: FlowState, action: FlowAction): FlowState {
   switch (action.type) {
@@ -142,7 +169,92 @@ export function flowReducer(state: FlowState, action: FlowAction): FlowState {
       return { ...state, category: action.category, categorySource: "citizen" }
     case "changeCategory":
       return { ...state, category: null, categorySource: null }
+    case "prepareStarted":
+      return { ...state, prepare: { status: "running", key: action.key, steps: waitingSteps() } }
+    case "prepareStep":
+      if (state.prepare.status !== "running" || state.prepare.key !== action.key) return state
+      return {
+        ...state,
+        prepare: { ...state.prepare, steps: { ...state.prepare.steps, [action.step]: action.status } },
+      }
+    case "prepareDone":
+      if (state.prepare.status !== "running" || state.prepare.key !== action.key) return state
+      return { ...state, prepare: { status: "done", key: action.key, steps: state.prepare.steps, result: action.result } }
+    case "prepareError": {
+      if (state.prepare.status !== "running" || state.prepare.key !== action.key) return state
+      const prepare: Prepare = { status: "error", key: action.key, steps: state.prepare.steps, code: action.code }
+      // FR-4: outside Podgorica the citizen goes back to the map, which shows the message
+      // (locationError) under the pin until the map moves
+      if (action.code === "outside_area") return { ...state, prepare, step: "location" }
+      return { ...state, prepare }
+    }
+    case "prepareRetry":
+      return { ...state, prepare: { status: "idle" } }
+    case "dismissDuplicate":
+      return { ...state, dismissedDuplicate: action.id }
   }
+}
+
+// the FR-4 message on the map after prepare refused the point (the second lock, Tech.md §6)
+export function locationError(state: Pick<FlowState, "step" | "prepare">): string | null {
+  if (state.step !== "location" || state.prepare.status !== "error") return null
+  return state.prepare.code === "outside_area" ? ERROR_MESSAGES.outside_area : null
+}
+
+export function waitingSteps(): PrepareSteps {
+  return Object.fromEntries(PREPARE_STEPS.map((step) => [step, "waiting"])) as PrepareSteps
+}
+
+// The prepare input once the pin is confirmed, the category is known and the draft id is
+// known (Tech.md §6, point 2); null while one of them is missing.
+export function prepareInput(
+  state: Pick<FlowState, "step" | "confirmed" | "category" | "analysis">,
+): PrepareInput | null {
+  const reportId = draftId(state.analysis)
+  if (state.step !== "confirmed" || !state.confirmed || !state.category || !reportId) return null
+  return { reportId, lat: state.confirmed.lat, lng: state.confirmed.lng, category: state.category }
+}
+
+// the key is the input itself, so an effect can depend on a string and still get the input back
+export function prepareKey(input: PrepareInput): string {
+  const { reportId, lat, lng, category } = input
+  return JSON.stringify({ reportId, lat, lng, category })
+}
+
+export function inputFromKey(key: string): PrepareInput {
+  return JSON.parse(key) as PrepareInput
+}
+
+// a request is due when there is an input and no request (or only an older one) for it
+export function prepareDue(state: Pick<FlowState, "prepare">, input: PrepareInput | null): boolean {
+  if (!input) return false
+  return state.prepare.status === "idle" || state.prepare.key !== prepareKey(input)
+}
+
+// The steps on the screen (FR-5 step 3): while the analysis still runs, or the request is about
+// to start, the first step already shows as running.
+export function visibleSteps(
+  state: Pick<FlowState, "step" | "confirmed" | "category" | "analysis" | "prepare">,
+): PrepareSteps {
+  const input = prepareInput(state)
+  if (input && state.prepare.status !== "idle" && state.prepare.key === prepareKey(input)) return state.prepare.steps
+  const steps = waitingSteps()
+  if (input || state.analysis.status === "pending") steps.jurisdiction = "started"
+  return steps
+}
+
+// the result for the current input, if it has arrived
+export function currentPrepare(state: Pick<FlowState, "step" | "confirmed" | "category" | "analysis" | "prepare">) {
+  const input = prepareInput(state)
+  if (!input || state.prepare.status === "idle" || state.prepare.key !== prepareKey(input)) return null
+  return state.prepare
+}
+
+// FR-9: the duplicate screen shows until the citizen answers it
+export function shownDuplicate(state: Pick<FlowState, "step" | "confirmed" | "category" | "analysis" | "prepare" | "dismissedDuplicate">) {
+  const prepare = currentPrepare(state)
+  if (prepare?.status !== "done" || !prepare.result.duplicate) return null
+  return prepare.result.duplicate.id === state.dismissedDuplicate ? null : prepare.result.duplicate
 }
 
 // FR-7: manual category choice when the model failed or timed out, is not sure (below 0.6) or

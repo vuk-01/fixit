@@ -56,3 +56,43 @@ export async function cancelReport(input: { reportId: string | null; photoPaths:
   }
   return { ok: true }
 }
+
+const supportSchema = z.object({ draftId: z.uuid(), reportId: z.uuid() })
+
+export type SupportResult = { ok: true; code: string } | { ok: false; error: string }
+
+// "Podrži postojeću" (FR-9, DB.md §8.2 transition 2): support_existing_report with the citizen's
+// session likes the existing report and deletes the draft in one transaction (the function
+// checks the reporter, the draft, that the report is open and not the citizen's own); then the
+// same action removes only the returned files with the admin client. The client goes to
+// /p/[code] with the code read here, never one it sent.
+export async function supportExistingReport(input: { draftId: string; reportId: string }): Promise<SupportResult> {
+  const parsed = supportSchema.safeParse(input)
+  if (!parsed.success) return { ok: false, error: UNKNOWN_ERROR_MESSAGE }
+
+  const supabase = await createClient()
+  const { data } = await supabase.auth.getClaims()
+  const claims = data?.claims
+  if (!claims || claims.is_anonymous !== false) return { ok: false, error: ERROR_MESSAGES.not_authenticated }
+
+  const { data: report } = await supabase
+    .from("reports")
+    .select("code")
+    .eq("id", parsed.data.reportId)
+    .neq("status", "draft")
+    .maybeSingle()
+  if (!report?.code) return { ok: false, error: ERROR_MESSAGES.report_not_open }
+
+  const { data: rows, error } = await supabase.rpc("support_existing_report", {
+    p_draft_id: parsed.data.draftId,
+    p_report_id: parsed.data.reportId,
+  })
+  if (error) return { ok: false, error: errorMessage(error) }
+
+  const paths = rows?.[0]?.removed_paths ?? []
+  if (paths.length > 0) {
+    const removed = await createAdminClient().storage.from("report-photos").remove(paths)
+    if (removed.error) console.error("supportExistingReport: storage remove failed", removed.error.name)
+  }
+  return { ok: true, code: report.code }
+}

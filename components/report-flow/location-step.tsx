@@ -37,12 +37,15 @@ export function LocationStep({
   onRetryUpload,
   onRetryAnalysis,
   onConfirm,
+  initialError = null,
   cancel,
 }: {
   state: FlowState
   onRetryUpload: (photo: FlowPhoto) => void
   onRetryAnalysis: () => void
   onConfirm: (point: ConfirmedPoint) => void
+  // ticket #10: the FR-4 message when prepare refused the confirmed point
+  initialError?: string | null
   cancel: React.ReactNode
 }) {
   const device = state.device
@@ -59,7 +62,7 @@ export function LocationStep({
   const userMoved = useRef(state.confirmed !== null || device.status === "found")
   const [address, setAddress] = useState<Address>({ status: "loading" })
   const [confirming, setConfirming] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(initialError)
 
   // the device location arrived after the screen opened: go there unless the citizen moved
   useEffect(() => {

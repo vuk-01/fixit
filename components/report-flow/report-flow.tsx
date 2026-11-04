@@ -7,10 +7,18 @@ import { GEOLOCATION_OPTIONS, REPORT_FLOW_STEPS, REPORT_FLOW_TEXT } from "@/lib/
 import { createClient } from "@/lib/supabase/client"
 
 import {
+  currentPrepare,
   draftId,
   flowReducer,
   initialFlowState,
+  inputFromKey,
+  locationError,
+  prepareDue,
+  prepareInput,
+  prepareKey,
   showCategoryPicker,
+  shownDuplicate,
+  visibleSteps,
   type FlowPhoto,
   type FlowStep,
   type PhotoSource,
@@ -19,8 +27,10 @@ import { CancelButton } from "./cancel-button"
 import { CategoryStep } from "./category-step"
 import { runClassification } from "./classify-client"
 import { ConfirmedStep } from "./confirmed-step"
+import { DuplicateStep } from "./duplicate-step"
 import { LocationStep } from "./location-step"
 import { PhotoStep } from "./photo-step"
+import { runPrepare } from "./prepare-client"
 
 const STEP_INDEX: Record<FlowStep, number> = { photos: 0, location: 1, confirmed: 2 }
 
@@ -97,6 +107,29 @@ export function ReportFlow() {
 
   const showCategories = showCategoryPicker(state)
 
+  // Ticket #10: prepare starts once the pin is confirmed, the category is known and the draft
+  // id is there (it waits for classify, at most until its 15 s limit), and again for a new
+  // point or category. An older request is aborted; its late events are ignored by key.
+  const input = prepareInput(state)
+  const key = input ? prepareKey(input) : null
+  const due = prepareDue(state, input)
+  const running = useRef<AbortController | null>(null)
+  useEffect(() => {
+    if (!key || !due) return
+    running.current?.abort()
+    const controller = new AbortController()
+    running.current = controller
+    void runPrepare(inputFromKey(key), key, dispatch, controller.signal)
+  }, [key, due])
+  useEffect(() => () => running.current?.abort(), [])
+
+  const prepare = currentPrepare(state)
+  const duplicate = shownDuplicate(state)
+  const reportId = draftId(state.analysis)
+  // the category is known but the draft never came back (classify gave up and none was found)
+  const noDraft =
+    state.step === "confirmed" && !!state.category && !reportId && state.analysis.status !== "pending"
+
   // thumbnails are object URLs; free them when the flow goes away
   const photosRef = useRef(state.photos)
   useEffect(() => {
@@ -137,6 +170,7 @@ export function ReportFlow() {
           onRetryUpload={upload}
           onRetryAnalysis={classify}
           onConfirm={(point) => dispatch({ type: "confirm", point })}
+          initialError={locationError(state)}
           cancel={cancel}
         />
       )}
@@ -147,16 +181,28 @@ export function ReportFlow() {
           cancel={cancel}
         />
       )}
-      {state.step === "confirmed" && state.confirmed && !showCategories && (
+      {state.step === "confirmed" && !showCategories && duplicate && reportId && (
+        <DuplicateStep
+          duplicate={duplicate}
+          draftId={reportId}
+          onSendNew={() => dispatch({ type: "dismissDuplicate", id: duplicate.id })}
+          cancel={cancel}
+        />
+      )}
+      {state.step === "confirmed" && state.confirmed && !showCategories && !duplicate && (
         <ConfirmedStep
           point={state.confirmed}
           photos={state.photos}
           analysis={state.analysis}
           category={state.category}
           description={state.description}
+          steps={visibleSteps(state)}
+          prepare={prepare}
+          noDraft={noDraft}
           onEdit={() => dispatch({ type: "editLocation" })}
           onChangeCategory={() => dispatch({ type: "changeCategory" })}
           onRetry={classify}
+          onRetryPrepare={() => dispatch({ type: "prepareRetry" })}
           cancel={cancel}
         />
       )}
