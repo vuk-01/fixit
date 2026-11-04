@@ -36,6 +36,7 @@ import { PhotoStep } from "./photo-step"
 import { runPrepare } from "./prepare-client"
 import { ReviewStep, type ReviewAccount } from "./review-step"
 import { SentStep } from "./sent-step"
+import { createStepPacer } from "./step-pacer"
 
 const STEP_INDEX: Record<FlowStep, number> = { photos: 0, location: 1, confirmed: 2 }
 
@@ -165,7 +166,11 @@ function Flow({ account, onNewReport }: { account: ReviewAccount; onNewReport: (
     running.current?.abort()
     const controller = new AbortController()
     running.current = controller
-    void runPrepare(inputFromKey(key), key, dispatch, controller.signal)
+    // the first prepare shows its steps one by one (ticket #32); a new category on the review
+    // has no steps on the screen, so its result is not held back
+    const pacer = stateRef.current.reviewOpened ? null : createStepPacer(dispatch)
+    controller.signal.addEventListener("abort", () => pacer?.cancel(), { once: true })
+    void runPrepare(inputFromKey(key), key, pacer?.dispatch ?? dispatch, controller.signal)
   }, [key, due])
   useEffect(() => () => running.current?.abort(), [])
 
