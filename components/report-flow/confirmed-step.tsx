@@ -35,7 +35,9 @@ export function ConfirmedStep({
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4">
+      {/* scroll area: its children must not shrink (Card has overflow-hidden and would clip
+          its own text instead of letting this area scroll) */}
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4 *:shrink-0">
         {!category && <AnalysisBanner analysis={analysis} onRetry={onRetry} />}
         <Card>
           <CardHeader>

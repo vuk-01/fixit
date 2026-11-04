@@ -31,7 +31,7 @@ export function CategoryStep({
           {title}
         </h1>
       </div>
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="min-h-0 flex-1 overflow-y-auto p-4">
         <ul className="flex flex-col gap-2" aria-label={CLASSIFY_TEXT.categoryListLabel}>
           {CATEGORY_ORDER.map((slug) => (
             <li key={slug}>
