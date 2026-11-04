@@ -8,8 +8,10 @@ import type { PrepareResult } from "@/lib/agent/steps"
 import { ERROR_MESSAGES } from "@/lib/constants"
 
 import {
+  canSend,
   currentPrepare,
   draftId,
+  duplicateNotice,
   flowReducer,
   initialFlowState,
   inputFromKey,
@@ -33,6 +35,7 @@ const photo = (id: string): FlowPhoto => ({
   full: new Blob(),
   model: new Blob(),
   upload: "uploading",
+  origin: "initial",
 })
 
 describe("flowReducer", () => {
@@ -220,6 +223,11 @@ describe("prepare (ticket #10, FR-5 step 3)", () => {
     expect(locationError(flowReducer(s, { type: "confirm", point }))).toBeNull()
   })
 
+  it("opens the review right away when there is no duplicate", () => {
+    const s = flowReducer(flowReducer(ready, { type: "prepareStarted", key }), { type: "prepareDone", key, result: outcome() })
+    expect(s.reviewOpened).toBe(true)
+  })
+
   it("shows the duplicate until the citizen answers 'Ipak pošalji novu'", () => {
     const duplicate = {
       id: "d",
@@ -245,5 +253,75 @@ describe("prepare (ticket #10, FR-5 step 3)", () => {
     expect(shownDuplicate(s)?.id).toBe("d")
     s = flowReducer(s, { type: "dismissDuplicate", id: "d" })
     expect(shownDuplicate(s)).toBeNull()
+    expect(s.reviewOpened).toBe(true)
+
+    // FR-5: a new category on the review that finds a duplicate gives a notice, not the screen
+    s = flowReducer(flowReducer(s, { type: "changeCategory" }), { type: "chooseCategory", category: "sidewalk" })
+    const k2 = prepareKey(prepareInput(s)!)
+    s = flowReducer(flowReducer(s, { type: "prepareStarted", key: k2 }), {
+      type: "prepareDone",
+      key: k2,
+      result: outcome({ ...duplicate, id: "e" }),
+    })
+    expect(shownDuplicate(s)).toBeNull()
+    expect(duplicateNotice(s)?.id).toBe("e")
+  })
+})
+
+describe("review (ticket #11, FR-11)", () => {
+  const sure = {
+    is_municipal_problem: true,
+    category: "pothole" as const,
+    confidence: 0.9,
+    description: "Rupa.",
+    immediate_danger: false,
+    personal_data_photos: [2],
+  }
+  const withPhotos = flowReducer(initialFlowState, { type: "photosAdded", photos: [photo("a"), photo("b")], notice: null })
+
+  it("starts every report with 'Dostavi moje ime i mejl instituciji' off", () => {
+    expect(initialFlowState.shareContact).toBe(false)
+    const on = flowReducer(initialFlowState, { type: "shareContact", on: true })
+    expect(on.shareContact).toBe(true)
+    // a new report is a new flow: the switch is not remembered
+    expect(flowReducer(initialFlowState, { type: "analysisStarted" }).shareContact).toBe(false)
+  })
+
+  it("marks the photos the model flagged, by position, and forgets a removed one", () => {
+    let s = flowReducer(flowReducer(withPhotos, { type: "analysisStarted" }), { type: "analysisDone", reportId: "r", result: sure })
+    expect(s.flaggedPhotos).toEqual(["b"])
+    s = flowReducer(s, { type: "photoRemoved", id: "b" })
+    expect(s.photos.map((p) => p.id)).toEqual(["a"])
+    expect(s.flaggedPhotos).toEqual([])
+  })
+
+  it("keeps the manual flow's description empty and lets the citizen edit it", () => {
+    let s = flowReducer(flowReducer(withPhotos, { type: "analysisStarted" }), { type: "analysisFallback", reportId: "r", reason: "timeout" })
+    expect(s.description).toBe("")
+    s = flowReducer(s, { type: "editDescription", description: "Moj opis" })
+    expect(s.description).toBe("Moj opis")
+  })
+
+  it("can send only with the review prepared and every photo stored", () => {
+    let s = flowReducer(flowReducer(withPhotos, { type: "analysisStarted" }), { type: "analysisDone", reportId: "r", result: sure })
+    s = flowReducer(s, { type: "confirm", point: { lat: 42.44, lng: 19.26, address: null } })
+    const key = prepareKey(prepareInput(s)!)
+    s = flowReducer(flowReducer(s, { type: "prepareStarted", key }), {
+      type: "prepareDone",
+      key,
+      result: {
+        reportId: "r",
+        category: "pothole",
+        lat: 42.44,
+        lng: 19.26,
+        address: null,
+        jurisdiction: { outcome: "no_rule", ruleId: null, institution: null, cc: null },
+        duplicate: null,
+        letter: null,
+      },
+    })
+    expect(canSend(s)).toBe(false)
+    s = flowReducer(flowReducer(s, { type: "upload", id: "a", status: "done" }), { type: "upload", id: "b", status: "done" })
+    expect(canSend(s)).toBe(true)
   })
 })

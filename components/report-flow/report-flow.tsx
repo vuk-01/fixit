@@ -1,14 +1,19 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useReducer, useRef } from "react"
+
+import { addReportPhoto } from "@/app/prijavi/actions"
 
 import { Progress } from "@/components/ui/progress"
 import { GEOLOCATION_OPTIONS, REPORT_FLOW_STEPS, REPORT_FLOW_TEXT } from "@/lib/constants"
 import { createClient } from "@/lib/supabase/client"
 
 import {
+  canSend,
   currentPrepare,
   draftId,
+  duplicateNotice,
   flowReducer,
   initialFlowState,
   inputFromKey,
@@ -26,16 +31,19 @@ import {
 import { CancelButton } from "./cancel-button"
 import { CategoryStep } from "./category-step"
 import { runClassification } from "./classify-client"
-import { ConfirmedStep } from "./confirmed-step"
 import { DuplicateStep } from "./duplicate-step"
 import { LocationStep } from "./location-step"
 import { PhotoStep } from "./photo-step"
 import { runPrepare } from "./prepare-client"
+import { ReviewStep, type ReviewAccount } from "./review-step"
 
 const STEP_INDEX: Record<FlowStep, number> = { photos: 0, location: 1, confirmed: 2 }
 
-// The report wizard (UI.md v2): photo → location → (review, #11). One primary button per step.
-export function ReportFlow() {
+// The report wizard (UI.md v2): photo → location → "Pregled prijave". One primary button per step.
+// `account` is the signed-in citizen's name, for "Dostavi moje ime i mejl instituciji" (never the
+// email: the account's email is not shown in the UI, ticket #11).
+export function ReportFlow({ account }: { account: ReviewAccount }) {
+  const router = useRouter()
   const [state, dispatch] = useReducer(flowReducer, initialFlowState)
   const geolocationStarted = useRef(false)
 
@@ -64,14 +72,46 @@ export function ReportFlow() {
     )
   }, [])
 
-  // FR-2: the 1600 px version goes straight from the browser to Storage, in the background
+  // FR-2: the 1600 px version goes straight from the browser to Storage, in the background.
+  // A photo added on the review (#11) is then saved to the draft with add_report_photo; a retry
+  // skips the upload that already worked (the bucket refuses the same path twice).
+  const stored = useRef(new Set<string>())
+  const stateForUpload = useRef(state)
+  useEffect(() => {
+    stateForUpload.current = state
+  }, [state])
   const upload = useCallback(async (photo: FlowPhoto) => {
     dispatch({ type: "upload", id: photo.id, status: "uploading" })
-    const { error } = await createClient()
-      .storage.from("report-photos")
-      .upload(photo.path, photo.full, { contentType: "image/jpeg", upsert: false })
-    dispatch({ type: "upload", id: photo.id, status: error ? "failed" : "done" })
+    if (!stored.current.has(photo.path)) {
+      const { error } = await createClient()
+        .storage.from("report-photos")
+        .upload(photo.path, photo.full, { contentType: "image/jpeg", upsert: false })
+      if (error) {
+        dispatch({ type: "upload", id: photo.id, status: "failed" })
+        return
+      }
+      stored.current.add(photo.path)
+    }
+    if (photo.origin === "added") {
+      const reportId = draftId(stateForUpload.current.analysis)
+      const saved = reportId ? await addReportPhoto({ reportId, path: photo.path }).catch(() => null) : null
+      if (!saved?.ok) {
+        dispatch({ type: "upload", id: photo.id, status: "failed" })
+        if (saved) dispatch({ type: "notice", notice: saved.error })
+        return
+      }
+    }
+    dispatch({ type: "upload", id: photo.id, status: "done" })
   }, [])
+
+  // "Dodaj fotografiju" on the review: no new model call (FR-5), only the attachment and the page
+  const onAddPhotos = useCallback(
+    (photos: FlowPhoto[], notice: string | null) => {
+      dispatch({ type: "photosAdded", photos, notice })
+      for (const photo of photos) void upload(photo)
+    },
+    [upload],
+  )
 
   // Ticket #9: classify starts as soon as the first photos are back, in parallel with the
   // upload and the pin; only these photos go to the model (FR-5, one call per report).
@@ -125,6 +165,7 @@ export function ReportFlow() {
 
   const prepare = currentPrepare(state)
   const duplicate = shownDuplicate(state)
+  const notice = duplicateNotice(state)
   const reportId = draftId(state.analysis)
   // the category is known but the draft never came back (classify gave up and none was found)
   const noDraft =
@@ -177,6 +218,7 @@ export function ReportFlow() {
       {showCategories && (
         <CategoryStep
           analysis={state.analysis}
+          changing={state.reviewOpened}
           onChoose={(category) => dispatch({ type: "chooseCategory", category })}
           cancel={cancel}
         />
@@ -190,19 +232,20 @@ export function ReportFlow() {
         />
       )}
       {state.step === "confirmed" && state.confirmed && !showCategories && !duplicate && (
-        <ConfirmedStep
-          point={state.confirmed}
-          photos={state.photos}
-          analysis={state.analysis}
-          category={state.category}
-          description={state.description}
+        <ReviewStep
+          state={state}
+          account={account}
           steps={visibleSteps(state)}
           prepare={prepare}
+          duplicate={notice}
+          canSend={canSend(state)}
           noDraft={noDraft}
-          onEdit={() => dispatch({ type: "editLocation" })}
-          onChangeCategory={() => dispatch({ type: "changeCategory" })}
-          onRetry={classify}
-          onRetryPrepare={() => dispatch({ type: "prepareRetry" })}
+          dispatch={dispatch}
+          onRetryAnalysis={classify}
+          onRetryUpload={upload}
+          onAddPhotos={onAddPhotos}
+          // ticket #12 replaces this with the "Prijava poslata" screen
+          onSent={(sent) => router.push(`/p/${sent.code}`)}
           cancel={cancel}
         />
       )}

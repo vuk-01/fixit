@@ -1,6 +1,6 @@
 // Ticket #9: "Odustani" deletes the draft with the citizen's session and only the files that
 // delete_draft returned, with the admin client. Ticket #10: "Podrži postojeću" the same way,
-// with support_existing_report.
+// with support_existing_report. Ticket #11: photos on the review and the sendReport stub.
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const m = vi.hoisted(() => ({
@@ -30,7 +30,7 @@ vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({ storage: { from: () => ({ remove: m.remove }) } }),
 }))
 
-import { cancelReport, supportExistingReport } from "./actions"
+import { addReportPhoto, cancelReport, removeReportPhoto, sendReport, supportExistingReport } from "./actions"
 
 const REPORT = "22222222-2222-4222-8222-222222222222"
 const A = "44444444-4444-4444-8444-444444444444.jpg"
@@ -123,5 +123,78 @@ describe("supportExistingReport (FR-9)", () => {
     m.claims = { sub: "u", is_anonymous: false }
     expect((await supportExistingReport({ draftId: "x", reportId: EXISTING })).ok).toBe(false)
     expect(m.rpc).not.toHaveBeenCalled()
+  })
+})
+
+describe("addReportPhoto (FR-2, review)", () => {
+  it("saves the uploaded path to the draft with the citizen's session", async () => {
+    m.rpc.mockResolvedValue({ data: "photo-id", error: null })
+    expect(await addReportPhoto({ reportId: REPORT, path: B })).toEqual({ ok: true })
+    expect(m.rpc).toHaveBeenCalledWith("add_report_photo", { p_report_id: REPORT, p_storage_path: B })
+  })
+
+  it("passes the fourth photo's photo_limit on as a message", async () => {
+    m.rpc.mockResolvedValue({ data: null, error: { message: "photo_limit" } })
+    expect(await addReportPhoto({ reportId: REPORT, path: B })).toEqual({
+      ok: false,
+      error: "Prijava može imati najviše 3 fotografije.",
+    })
+  })
+
+  it("rejects a bad path, a guest and an anonymous session", async () => {
+    expect((await addReportPhoto({ reportId: REPORT, path: "../x.jpg" })).ok).toBe(false)
+    m.claims = { sub: "u", is_anonymous: true }
+    expect((await addReportPhoto({ reportId: REPORT, path: B })).ok).toBe(false)
+    expect(m.rpc).not.toHaveBeenCalled()
+  })
+})
+
+describe("removeReportPhoto (FR-2, review)", () => {
+  beforeEach(() => {
+    m.lookup.mockResolvedValue({ data: { id: "photo-id" } })
+    m.rpc.mockResolvedValue({ data: B, error: null })
+  })
+
+  it("finds the photo by its path, removes the row, then only the returned file", async () => {
+    expect(await removeReportPhoto({ reportId: REPORT, path: B })).toEqual({ ok: true })
+    expect(m.rpc).toHaveBeenCalledWith("remove_report_photo", { p_photo_id: "photo-id" })
+    expect(m.remove).toHaveBeenCalledWith([B])
+  })
+
+  it("keeps the last photo (photos_required) and its file", async () => {
+    m.rpc.mockResolvedValue({ data: null, error: { message: "photos_required" } })
+    expect(await removeReportPhoto({ reportId: REPORT, path: B })).toEqual({
+      ok: false,
+      error: "Prijava mora imati bar jednu fotografiju.",
+    })
+    expect(m.remove).not.toHaveBeenCalled()
+  })
+
+  it("does nothing for a photo the citizen cannot see", async () => {
+    m.lookup.mockResolvedValue({ data: null })
+    expect((await removeReportPhoto({ reportId: REPORT, path: B })).ok).toBe(false)
+    expect(m.rpc).not.toHaveBeenCalled()
+    expect(m.remove).not.toHaveBeenCalled()
+  })
+})
+
+describe("sendReport (stub until #12)", () => {
+  const input = { reportId: REPORT, category: "pothole" as const, description: "Rupa.", shareContact: false }
+
+  it("answers that sending is not available yet, without writing anything", async () => {
+    expect(await sendReport(input)).toEqual({
+      ok: false,
+      error: "Slanje prijave još nije dostupno. Pokušajte ponovo kasnije.",
+      code: null,
+    })
+    expect(m.rpc).not.toHaveBeenCalled()
+    expect(m.remove).not.toHaveBeenCalled()
+  })
+
+  it("checks the input and the session first", async () => {
+    expect((await sendReport({ ...input, category: "parking" as never })).ok).toBe(false)
+    expect((await sendReport({ ...input, description: "x".repeat(1001) })).ok).toBe(false)
+    m.claims = null
+    expect(await sendReport(input)).toEqual({ ok: false, error: "Prijavite se da biste nastavili.", code: null })
   })
 })

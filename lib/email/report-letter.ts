@@ -8,7 +8,7 @@ import { CATEGORIES, PREPARE_TEXT } from "@/lib/constants"
 import { getServerEnv } from "@/lib/env"
 import type { Database } from "@/lib/supabase/database.types"
 
-import { renderLetter } from "./letter-template"
+import { renderLetter, type LetterParams } from "./letter-template"
 
 // Server side of the letter (Tech.md §3, §6): collects the report's data and calls the pure
 // template. The model only gave the description (FR-10); the recipient comes from the
@@ -27,7 +27,7 @@ export async function buildPreviewLetter(db: SupabaseClient<Database>, input: Le
     .maybeSingle()
   if (error || !data) throw new Error(`letter: report data not readable (${error?.code ?? "no_row"})`)
 
-  const letter = renderLetter({
+  const params: LetterParams = {
     kind: "initial",
     code: null,
     submittedAt: null,
@@ -45,6 +45,7 @@ export async function buildPreviewLetter(db: SupabaseClient<Database>, input: Le
     photoPositions: data.report_photos.map((p) => p.position).sort((a, b) => a - b),
     contact: null,
     siteUrl: getServerEnv().NEXT_PUBLIC_SITE_URL,
-  })
-  return { subject: letter.subject, body: letter.bodyText }
+  }
+  const letter = renderLetter(params)
+  return { subject: letter.subject, body: letter.bodyText, params }
 }

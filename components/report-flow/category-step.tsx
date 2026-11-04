@@ -12,21 +12,26 @@ import { AnalysisBanner } from "./analysis-banner"
 // picks the category and moves on. The model's description, if any, stays in the flow.
 export function CategoryStep({
   analysis,
+  changing = false,
   onChoose,
   cancel,
 }: {
   analysis: Analysis
+  // "Promijeni" on the review: the plain title, the model's doubt no longer matters
+  changing?: boolean
   onChoose: (category: ReportCategory) => void
   cancel: React.ReactNode
 }) {
   // the "not sure" sentence only when the model answered but was not sure (FR-7)
   const title =
-    analysis.status === "done" && needsCategoryChoice(analysis) ? CLASSIFY_TEXT.unsureTitle : CLASSIFY_TEXT.chooseTitle
+    !changing && analysis.status === "done" && needsCategoryChoice(analysis)
+      ? CLASSIFY_TEXT.unsureTitle
+      : CLASSIFY_TEXT.chooseTitle
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex flex-col gap-3 border-b bg-background px-4 py-3">
-        {analysis.status === "fallback" && <AnalysisBanner analysis={analysis} />}
+        {!changing && analysis.status === "fallback" && <AnalysisBanner analysis={analysis} />}
         <h1 className="font-heading text-xl font-semibold" data-testid="category-title">
           {title}
         </h1>
