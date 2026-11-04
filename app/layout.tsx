@@ -40,7 +40,8 @@ export default function RootLayout({
       className={cn("antialiased", fontMono.variable, "font-sans", dmSans.variable, outfitHeading.variable)}
     >
       <body className="min-h-svh bg-background text-foreground">
-        <ThemeProvider>
+        {/* light only in P0 (UI.md): the map tiles are light, and dark mode was hard to read */}
+        <ThemeProvider forcedTheme="light">
           <SiteHeader />
           {children}
         </ThemeProvider>

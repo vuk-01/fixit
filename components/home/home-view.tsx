@@ -51,11 +51,12 @@ export function HomeView({ reports: initialReports, failed }: { reports: MapRepo
         </div>
 
         <TabsContent value="mapa" className="relative min-h-0">
-          <div className="absolute inset-0">
+          {/* isolate: Leaflet's panes use z-index 400–1000; keep them below the header menu */}
+          <div className="absolute inset-0 isolate">
             <ReportMap reports={reports} />
           </div>
           {notice && (
-            <Card size="sm" className="absolute inset-x-4 bottom-8 z-[1000] px-4 text-center">
+            <Card size="sm" className="absolute inset-x-4 bottom-8 z-10 px-4 text-center">
               <p>{notice}</p>
             </Card>
           )}
