@@ -89,14 +89,16 @@ app/
   uloguj-se/, privatnost/            (`auth/callback` nije u P0: `Confirm email` je isključen, „Hosting i mejl")
   prijavi/page.tsx                  tok prijave
   prijavi/actions.ts                Server Actions: sendReport, dodavanje i uklanjanje fotografije, „Odustani", „Podrži postojeću"
-  panel/…, admin/…
+  panel/page.tsx, panel/prijave/[id]/  panel institucije; panel/actions.ts: promjena statusa (set_report_status)
+  admin/…
   api/agent/classify/route.ts       prepoznavanje (jedini poziv modela)
   api/agent/prepare/route.ts        nadležnost, duplikati, dopis (koraci kao SSE)
   api/geo/reverse/route.ts          adresa ispod pina (Nominatim preko servera)
 components/
   ui/                               shadcn komponente (pravi ih CLI)
   map/                              Leaflet komponente ('use client')
-  report/                           dijelovi javne stranice i mape (status, sažetak prijave)
+  report/                           dijelovi javne stranice i mape (status, sažetak prijave, vremenska linija)
+  panel/                            forma za promjenu statusa u panelu
   report-flow/                      čarobnjak na /prijavi: stanje toka (flow-state.ts), koraci fotografija i lokacija
 lib/
   constants.ts                      sav tekst za korisnika, nazivi i opisi vrsta, ograničenja, MAP_TILES
@@ -115,6 +117,8 @@ lib/
   email/send.ts                     JEDINO mjesto slanja mejla (guard za EMAIL_MODE)
   email/letter-template.ts          šablon dopisa (FR-10, FR-11) kao čista funkcija: bez `server-only`, bez aliasa `@/`, bez upita; koriste ga server, seed i testovi (tiket 22 Q6)
   email/report-letter.ts            serverski dio dopisa: skuplja podatke prijave i zove `letter-template.ts`
+  panel/                            pristup panelu, dozvoljeni prelazi službenika (čiste funkcije) i čitanje prijava za panel (server-only)
+  reports/timeline.ts               tekst vremenske linije iz `report_events` (čista funkcija, dijele je panel i javna stranica)
   photos/compress.ts                kompresija na klijentu (canvas)
 proxy.ts                            osvježavanje Supabase sesije
 supabase/

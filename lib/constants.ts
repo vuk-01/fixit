@@ -243,6 +243,8 @@ export const HEADER_TEXT = {
   subtitle: "Prijave u Podgorici",
   signIn: "Uloguj se",
   signOut: "Odjavi se",
+  // officials only (ticket #14)
+  panel: "Panel institucije",
 } as const
 
 // ---------------------------------------------------------------------------------------------
@@ -438,4 +440,112 @@ export const DUPLICATE_TEXT = {
   own: "Ovaj problem ste već prijavili.",
   openOwn: (code: string) => `Pogledaj prijavu ${code}`,
   supporting: "Podržavam…",
+} as const
+
+// ---------------------------------------------------------------------------------------------
+// Timeline (FR-18, GLOSSARY "Vremenska linija"): the text is built from the event, never stored
+// (DB.md §3)
+// ---------------------------------------------------------------------------------------------
+
+export type ReportEventKind = Database["public"]["Enums"]["report_event_kind"]
+export type EventActor = Database["public"]["Enums"]["event_actor"]
+export type ReportSeverity = Database["public"]["Enums"]["report_severity"]
+
+export const TIMELINE_TEXT = {
+  title: "Vremenska linija",
+  empty: "Još nema događaja.",
+  submitted: "Prijava poslata",
+  sentTo: (institution: string) => `Upućena instituciji: ${institution}`,
+  // DB.md §12.4, row 9: a report without a rule (FR-8)
+  routed: "Prijava primljena. Nadležnu instituciju određuje tim Fixit.",
+  // FR-23: manual assignment and redirect
+  assigned: (institution: string) => `Proslijeđeno: ${institution}`,
+  assignedNote: "Nadležnog je odredio administrator Fixita.",
+  redirected: (from: string, to: string) => `Preusmjereno: ${from} → ${to}`,
+  reopened: (status: string) => `Prijava je ponovo otvorena: ${status}`,
+  // FR-18: changes by the team are signed "Tim Fixit", never with a person's name
+  fixit: "Tim Fixit",
+  unknownInstitution: "institucija",
+} as const
+
+// ---------------------------------------------------------------------------------------------
+// Institution panel (/panel, ticket #14, PRD §4.3, FR-20–FR-23)
+// ---------------------------------------------------------------------------------------------
+
+// FR-6: shown only in the panel, never publicly and never in the letter
+export const SEVERITY_LABELS: Record<ReportSeverity, { label: string; description: string }> = {
+  low: { label: "Niska", description: "Estetski problem, ne ometa korišćenje." },
+  medium: { label: "Srednja", description: "Ometa korišćenje ili će se pogoršati." },
+  high: { label: "Visoka", description: "Ozbiljno ometa korišćenje ili može izazvati štetu." },
+}
+
+// a public message in the timeline; set_report_status trims it, report_events allows 1000
+export const STATUS_MESSAGE_MAX_LENGTH = 1000
+
+export const PANEL_TEXT = {
+  pageTitle: "Panel institucije",
+  listTitle: "Prijave institucije",
+  listDescription:
+    "Prijave čiji je primalac vaša institucija. Prijave u kojima je vaša institucija samo u kopiji ovdje se ne vide.",
+  empty: "Vaša institucija trenutno nema prijava.",
+  failed: "Prijave trenutno nije moguće učitati. Pokušajte ponovo za nekoliko minuta.",
+  count: (n: number) => `Ukupno: ${n}`,
+  columns: {
+    code: "Broj",
+    category: "Vrsta problema i adresa",
+    severity: "Ozbiljnost",
+    status: "Status",
+    days: "Brojač dana",
+    likes: "Podrške",
+  },
+  demo: "Demo prijava",
+  hidden: "Sakrivena sa javne stranice",
+  back: "Sve prijave",
+  // detail
+  detailsTitle: "Podaci o prijavi",
+  code: "Broj prijave",
+  submittedAt: "Poslata",
+  closedAt: "Zatvorena",
+  severity: "Ozbiljnost",
+  severityUnknown: "Nije procijenjena",
+  severityUnknownHint: "Vrsta i opis su uneseni ručno.",
+  immediateDanger: "Na fotografiji je uočena moguća neposredna opasnost.",
+  cc: "U kopiji",
+  likes: "Podrške građana",
+  photosTitle: "Fotografije",
+  noPhotos: "Prijava nema fotografiju.",
+  photoAlt: (n: number) => `Fotografija ${n}`,
+  photoUnavailable: "Fotografija trenutno nije dostupna.",
+  photoHidden: "Sakrivena sa javne stranice",
+  photoPersonalData: "Moguća lica ili tablice",
+  descriptionTitle: "Opis problema",
+  noDescription: "Prijava nema opis.",
+  locationTitle: "Lokacija",
+  noAddress: "Adresa nije pronađena.",
+  openMap: "Otvori na mapi",
+  letterTitle: "Dopis upućen instituciji",
+  letterSentAt: "Poslat",
+  noLetter: "Dopis nije dostupan.",
+  adminReadOnly: "Pregled kao administrator: otvaranje ne mijenja status prijave.",
+  // status change (FR-21; FR-18 transitions 8–10)
+  statusTitle: "Promjena statusa",
+  newStatus: "Novi status",
+  targets: {
+    in_progress: "Institucija radi na rješavanju problema.",
+    resolved: "Problem je riješen.",
+    rejected: "Prijava je neosnovana ili je duplikat. Obrazloženje je obavezno.",
+  },
+  messageOptional: "Poruka građanima (nije obavezna)",
+  messageRequired: "Obrazloženje (obavezno)",
+  messageHint:
+    "Poruka se javno vidi u vremenskoj liniji prijave, potpisana nazivom vaše institucije. Ne upisujte lične podatke.",
+  messageTooLong: `Poruka može imati najviše ${STATUS_MESSAGE_MAX_LENGTH} znakova.`,
+  chooseStatus: "Izaberite novi status.",
+  save: "Sačuvaj status",
+  saving: "Čuvam…",
+  saved: "Status je promijenjen.",
+  closed: "Prijava je zatvorena. Zatvorenu prijavu može ponovo otvoriti samo tim Fixit.",
+  notCompetent: "Prijava čeka da je tim Fixit preusmjeri.",
+  notFoundTitle: "Prijava nije pronađena",
+  notFound: "Prijava ne postoji ili nije upućena vašoj instituciji.",
 } as const
