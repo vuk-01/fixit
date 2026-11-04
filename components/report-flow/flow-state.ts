@@ -27,6 +27,8 @@ export type FlowPhoto = {
   full: Blob // 1600 px JPEG, uploaded
   model: Blob // 1024 px JPEG, only for the model (#9), never stored
   upload: UploadStatus
+  // initial: made with the draft (create_draft); added: on the review, saved with add_report_photo
+  origin: "initial" | "added"
 }
 
 export type PhotoSource = "camera" | "gallery"
@@ -74,6 +76,13 @@ export type FlowState = {
   prepare: Prepare
   // FR-9: the duplicate the citizen answered with "Ipak pošalji novu"
   dismissedDuplicate: string | null
+  // Ticket #11: the review has been shown; from then on a duplicate is a notice on the review
+  // (FR-5: no extra tap), not the duplicate screen
+  reviewOpened: boolean
+  // FR-11 "Dostavi moje ime i mejl instituciji": off on every new report, never remembered
+  shareContact: boolean
+  // §6 Privatnost: photos the model marked (faces or plates), by FlowPhoto id
+  flaggedPhotos: string[]
 }
 
 export const initialFlowState: FlowState = {
@@ -89,6 +98,9 @@ export const initialFlowState: FlowState = {
   description: "",
   prepare: { status: "idle" },
   dismissedDuplicate: null,
+  reviewOpened: false,
+  shareContact: false,
+  flaggedPhotos: [],
 }
 
 export type FlowAction =
@@ -112,6 +124,9 @@ export type FlowAction =
   | { type: "prepareError"; key: string; code: PrepareErrorCode }
   | { type: "prepareRetry" }
   | { type: "dismissDuplicate"; id: string }
+  | { type: "editDescription"; description: string }
+  | { type: "shareContact"; on: boolean }
+  | { type: "photoRemoved"; id: string }
 
 export function flowReducer(state: FlowState, action: FlowAction): FlowState {
   switch (action.type) {
@@ -152,6 +167,9 @@ export function flowReducer(state: FlowState, action: FlowAction): FlowState {
         analysis,
         // FR-7: the model's description stays even when the citizen picks the category
         description: action.result.description,
+        flaggedPhotos: action.result.personal_data_photos
+          .map((position) => state.photos[position - 1]?.id)
+          .filter((id): id is string => !!id),
         category: confident ? action.result.category : state.category,
         categorySource: confident ? "ai" : state.categorySource,
       }
@@ -179,7 +197,12 @@ export function flowReducer(state: FlowState, action: FlowAction): FlowState {
       }
     case "prepareDone":
       if (state.prepare.status !== "running" || state.prepare.key !== action.key) return state
-      return { ...state, prepare: { status: "done", key: action.key, steps: state.prepare.steps, result: action.result } }
+      return {
+        ...state,
+        prepare: { status: "done", key: action.key, steps: state.prepare.steps, result: action.result },
+        // without a duplicate the review opens right away; with one, after the duplicate screen
+        reviewOpened: state.reviewOpened || !action.result.duplicate,
+      }
     case "prepareError": {
       if (state.prepare.status !== "running" || state.prepare.key !== action.key) return state
       const prepare: Prepare = { status: "error", key: action.key, steps: state.prepare.steps, code: action.code }
@@ -191,7 +214,17 @@ export function flowReducer(state: FlowState, action: FlowAction): FlowState {
     case "prepareRetry":
       return { ...state, prepare: { status: "idle" } }
     case "dismissDuplicate":
-      return { ...state, dismissedDuplicate: action.id }
+      return { ...state, dismissedDuplicate: action.id, reviewOpened: true }
+    case "editDescription":
+      return { ...state, description: action.description }
+    case "shareContact":
+      return { ...state, shareContact: action.on }
+    case "photoRemoved":
+      return {
+        ...state,
+        photos: state.photos.filter((p) => p.id !== action.id),
+        flaggedPhotos: state.flaggedPhotos.filter((id) => id !== action.id),
+      }
   }
 }
 
@@ -251,10 +284,30 @@ export function currentPrepare(state: Pick<FlowState, "step" | "confirmed" | "ca
 }
 
 // FR-9: the duplicate screen shows until the citizen answers it
-export function shownDuplicate(state: Pick<FlowState, "step" | "confirmed" | "category" | "analysis" | "prepare" | "dismissedDuplicate">) {
+type DuplicateState = Pick<
+  FlowState,
+  "step" | "confirmed" | "category" | "analysis" | "prepare" | "dismissedDuplicate" | "reviewOpened"
+>
+
+// FR-9: the duplicate screen, only before the review was shown, until the citizen answers it
+export function shownDuplicate(state: DuplicateState) {
+  if (state.reviewOpened) return null
   const prepare = currentPrepare(state)
   if (prepare?.status !== "done" || !prepare.result.duplicate) return null
   return prepare.result.duplicate.id === state.dismissedDuplicate ? null : prepare.result.duplicate
+}
+
+// FR-5: after a new category on the review, a duplicate is a notice on the same screen
+export function duplicateNotice(state: DuplicateState) {
+  if (!state.reviewOpened) return null
+  const prepare = currentPrepare(state)
+  return prepare?.status === "done" ? prepare.result.duplicate : null
+}
+
+// "Pošalji prijavu" needs the prepared review and every photo stored (begin_submission checks
+// that each file exists, DB.md §8.3)
+export function canSend(state: Pick<FlowState, "step" | "confirmed" | "category" | "analysis" | "prepare" | "photos">) {
+  return currentPrepare(state)?.status === "done" && state.photos.length > 0 && state.photos.every((p) => p.upload === "done")
 }
 
 // FR-7: manual category choice when the model failed or timed out, is not sure (below 0.6) or
