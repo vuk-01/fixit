@@ -12,6 +12,7 @@ const m = vi.hoisted(() => ({
   userRpc: vi.fn(),
   draft: vi.fn(),
   duplicateRow: vi.fn(),
+  letterRow: vi.fn(),
   institutions: vi.fn(),
   // service key
   adminRpc: vi.fn(),
@@ -42,6 +43,7 @@ vi.mock("@/lib/supabase/server", () => ({
       query(async (columns) => {
         if (table === "institutions") return m.institutions()
         if (table === "reports" && columns.includes("report_private")) return m.draft()
+        if (table === "reports" && columns.includes("report_details")) return m.letterRow()
         if (table === "reports") return m.duplicateRow()
         throw new Error(`unexpected table ${table}`)
       }),
@@ -58,6 +60,7 @@ vi.mock("@/lib/supabase/admin", () => ({
   }),
 }))
 vi.mock("@/lib/geo/reverse", () => ({ reverseGeocode: m.reverse }))
+vi.mock("@/lib/env", () => ({ getServerEnv: () => ({ NEXT_PUBLIC_SITE_URL: "https://fixit-b73a.vercel.app" }) }))
 // the route must not even load the model SDK (AGENTS.md rule 1: no AI in jurisdiction)
 vi.mock("@anthropic-ai/sdk", () => {
   throw new Error("prepare must not import the Anthropic SDK")
@@ -116,6 +119,7 @@ const result = (list: Event[]) => list.find((e) => e.event === "result")?.data a
   jurisdiction: { outcome: string; ruleId: string | null; institution: { id: string; name: string } | null; cc: unknown }
   duplicate: Record<string, unknown> | null
   address: string | null
+  letter: { subject: string; body: string } | null
 }
 
 const runs = () => m.insert.mock.calls.map(([row]) => row as Record<string, unknown>)
@@ -144,6 +148,14 @@ beforeEach(() => {
     error: null,
   })
   m.duplicateRow.mockReset()
+  m.letterRow.mockReset().mockResolvedValue({
+    data: {
+      description: "Na kolovozu se vidi udarna rupa.",
+      report_details: { immediate_danger: false },
+      report_photos: [{ position: 2 }, { position: 1 }],
+    },
+    error: null,
+  })
   m.adminRpc.mockReset().mockResolvedValue({ data: null, error: null })
   m.insert.mockReset().mockResolvedValue({ error: null })
   m.sign.mockReset().mockResolvedValue({ data: { signedUrl: "https://signed.example/photo.jpg" }, error: null })
@@ -219,12 +231,13 @@ describe("POST /api/agent/prepare: the stream", () => {
     expect(res.headers.get("Content-Type")).toBe("text/event-stream; charset=utf-8")
     expect(res.headers.get("Cache-Control")).toContain("no-store")
     const list = await events(res)
-    // no letter step while lib/email/letter-template.ts is not in main
     expect(steps(list)).toEqual([
       "jurisdiction:started",
       "jurisdiction:done",
       "duplicates:started",
       "duplicates:done",
+      "letter:started",
+      "letter:done",
       "result",
     ])
   })
@@ -248,6 +261,7 @@ describe("POST /api/agent/prepare: the stream", () => {
     expect(runs().map((r) => [r.step, r.outcome])).toEqual([
       ["jurisdiction", "ok"],
       ["duplicates", "ok"],
+      ["letter", "ok"],
     ])
     for (const row of runs()) {
       expect(row).toMatchObject({ report_id: REPORT, user_id: USER, error_code: null })
@@ -437,9 +451,42 @@ describe("duplicates (FR-9)", () => {
       "jurisdiction:done",
       "duplicates:started",
       "duplicates:failed",
+      "letter:started",
+      "letter:done",
       "result",
     ])
     expect(result(list).duplicate).toBeNull()
     expect(runs()[1]).toMatchObject({ step: "duplicates", outcome: "error", error_code: "unknown" })
+  })
+})
+
+describe("the letter for the review (FR-10, FR-11)", () => {
+  it("comes from the template with the recipient from the rule and no number yet", async () => {
+    const list = await events(await POST(request(input())))
+    const letter = result(list).letter!
+    expect(letter.subject).toBe(
+      "Prijava komunalnog problema br. dodjeljuje se pri slanju – Oštećen kolovoz / rupa na putu, Bulevar Svetog Petra Cetinjskog 1, Podgorica",
+    )
+    expect(letter.body).toContain("nadležna institucija za ovu prijavu je: Sekretarijat za saobraćaj Glavnog grada Podgorice.")
+    expect(letter.body).toContain("Kopija ovog dopisa upućena je i instituciji: Putevi d.o.o. Podgorica.")
+    expect(letter.body).toContain("Opis: Na kolovozu se vidi udarna rupa.")
+    expect(letter.body).toContain("Datum i vrijeme prijave: dodjeljuje se pri slanju")
+    expect(letter.body).toContain("Prilog: 2 fotografije prijave (nazivi priloga: dodjeljuje se pri slanju)")
+    expect(letter.body.endsWith("S poštovanjem,\nTim Fixit\nhttps://fixit-b73a.vercel.app")).toBe(true)
+    // no email address at all: contact sharing is off in the preview
+    expect(letter.body).not.toMatch(/@/)
+  })
+
+  it("says the administrator will choose the institution for a category without a rule", async () => {
+    const list = await events(await POST(request(input({ category: "other" }))))
+    expect(result(list).letter!.body).toContain("Nadležnu instituciju za ovu prijavu odrediće administrator platforme Fixit.")
+  })
+
+  it("goes on without the preview when the report data cannot be read", async () => {
+    m.letterRow.mockResolvedValue({ data: null, error: { code: "PGRST116" } })
+    const list = await events(await POST(request(input())))
+    expect(steps(list).slice(-3)).toEqual(["letter:started", "letter:failed", "result"])
+    expect(result(list).letter).toBeNull()
+    expect(runs()[2]).toMatchObject({ step: "letter", outcome: "error", error_code: "unknown" })
   })
 })

@@ -4,6 +4,7 @@ import { z } from "zod"
 import { runPrepare, type PrepareDeps } from "@/lib/agent/prepare"
 import { encodeEvent, SSE_HEADERS, SSE_PADDING, type PrepareErrorCode } from "@/lib/agent/steps"
 import { CATEGORY_ORDER, type ReportCategory } from "@/lib/constants"
+import { buildPreviewLetter } from "@/lib/email/report-letter"
 import { roundCoordinate } from "@/lib/geo/address"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
@@ -61,7 +62,11 @@ export async function POST(request: Request) {
   if (draft.report_private?.reporter_id !== claims.sub) return error("not_allowed", 403)
   if (draft.status !== "draft") return error("invalid_state", 409)
 
-  const deps: PrepareDeps = { supabase, admin: createAdminClient(), buildLetter: null }
+  const deps: PrepareDeps = {
+    supabase,
+    admin: createAdminClient(),
+    buildLetter: (letterInput) => buildPreviewLetter(supabase, letterInput),
+  }
   const snapshot = { lat: draft.lat, lng: draft.lng, address: draft.address, addressSource: draft.address_source }
 
   const stream = new ReadableStream<Uint8Array>({

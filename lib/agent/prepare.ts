@@ -43,8 +43,8 @@ export type PrepareDeps = {
   supabase: Db
   // service key, only for update_draft, agent_runs and signing a photo URL (Tech.md §4)
   admin: Db
-  // the letter step (lib/email/report-letter.ts); null while the template is not there
-  buildLetter: ((input: LetterInput) => Promise<PreviewLetter>) | null
+  // the letter step (lib/email/report-letter.ts → letter-template.ts)
+  buildLetter: (input: LetterInput) => Promise<PreviewLetter>
 }
 
 export type LetterInput = {
@@ -128,9 +128,9 @@ export async function runPrepare(
     const duplicate = await step("duplicates", () => duplicatesStep(deps, input)).catch(() => null)
 
     const letterInput: LetterInput = { ...input, address, jurisdiction }
-    const letter = deps.buildLetter
-      ? await step("letter", async () => ({ value: await deps.buildLetter!(letterInput) }))
-      : null
+    // the preview is only shown under "Prikaži cijeli tekst"; sendReport renders the real letter,
+    // so a failed preview does not stop the report either
+    const letter = await step("letter", async () => ({ value: await deps.buildLetter(letterInput) })).catch(() => null)
 
     const result: PrepareResult = {
       reportId: input.reportId,

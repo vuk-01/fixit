@@ -39,6 +39,7 @@ export type PrepareResult = {
   address: string | null
   jurisdiction: JurisdictionResult
   duplicate: DuplicateReport | null
+  // null when the preview could not be made (the step then ends `failed`)
   letter: PreviewLetter | null
 }
 
