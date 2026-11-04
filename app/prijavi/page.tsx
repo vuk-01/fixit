@@ -1,17 +1,32 @@
 import type { Metadata } from "next"
 
+import { ReportFlow } from "@/components/report-flow/report-flow"
+import { Card, CardContent } from "@/components/ui/card"
 import { requireAccount } from "@/lib/auth"
+import { REPORT_FLOW_TEXT } from "@/lib/constants"
 
-export const metadata: Metadata = { title: "Prijavi problem" }
+export const metadata: Metadata = { title: REPORT_FLOW_TEXT.pageTitle }
 
-// Placeholder until the report flow (#8). Guests and anonymous sessions go to /uloguj-se
-// and come back here after signing in (FR-1).
+// Report flow (FR-1…FR-5). Guests and anonymous sessions go to /uloguj-se and come back here;
+// officials and admins cannot make reports (create_draft and the upload policy are for citizens).
 export default async function ReportPage() {
-  await requireAccount("/prijavi")
+  const account = await requireAccount("/prijavi")
+
+  if (account.role !== "citizen") {
+    return (
+      <main className="mx-auto w-full max-w-md p-4">
+        <Card>
+          <CardContent>
+            <p>{REPORT_FLOW_TEXT.citizensOnly}</p>
+          </CardContent>
+        </Card>
+      </main>
+    )
+  }
 
   return (
-    <main className="mx-auto flex w-full max-w-md flex-col gap-2 px-4 py-6">
-      <h1 className="font-heading text-2xl font-semibold">Prijavi problem</h1>
+    <main>
+      <ReportFlow />
     </main>
   )
 }

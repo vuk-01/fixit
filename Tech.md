@@ -96,7 +96,8 @@ app/
 components/
   ui/                               shadcn komponente (pravi ih CLI)
   map/                              Leaflet komponente ('use client')
-  report/                           dijelovi toka prijave i javne stranice
+  report/                           dijelovi javne stranice i mape (status, sažetak prijave)
+  report-flow/                      čarobnjak na /prijavi: stanje toka (flow-state.ts), koraci fotografija i lokacija
 lib/
   constants.ts                      sav tekst za korisnika, nazivi i opisi vrsta, ograničenja, MAP_TILES
   env.ts                            zod provjera serverskih env varijabli (server-only)
@@ -109,6 +110,7 @@ lib/
   agent/prompt.ts                   sistemski prompt (crnogorski)
   agent/steps.ts                    nazivi koraka i SSE pomoćne funkcije
   geo/reverse.ts                    Nominatim
+  geo/address.ts                    adresa iz Nominatim odgovora, zaokruživanje, ograničenje 1 zahtjev/s (čiste funkcije)
   geo/transliterate.ts              ćirilica → latinica
   email/send.ts                     JEDINO mjesto slanja mejla (guard za EMAIL_MODE)
   email/letter-template.ts          šablon dopisa (FR-10, FR-11) kao čista funkcija: bez `server-only`, bez aliasa `@/`, bez upita; koriste ga server, seed i testovi (tiket 22 Q6)
