@@ -384,3 +384,58 @@ export const CLASSIFY_TEXT = {
   retry: "Pokušaj ponovo",
   cancelling: "Odustajem…",
 } as const
+
+// ---------------------------------------------------------------------------------------------
+// Report flow: agent steps after the pin (ticket #10, FR-5 step 3, FR-8, FR-9, FR-10, FR-11)
+// ---------------------------------------------------------------------------------------------
+
+export type AgentStep = Database["public"]["Enums"]["agent_step"]
+// the steps of POST /api/agent/prepare, in order (Tech.md §6, point 2)
+export type PrepareStep = Extract<AgentStep, "jurisdiction" | "duplicates" | "letter">
+export const PREPARE_STEPS: readonly PrepareStep[] = ["jurisdiction", "duplicates", "letter"]
+// the client stops waiting for the steps after this (Nominatim alone may take 3 s, Tech.md §8);
+// the citizen then gets "Pokušaj ponovo"
+export const PREPARE_CLIENT_TIMEOUT_MS = 20_000
+
+export const PREPARE_TEXT = {
+  // FR-5 step 3, verbatim
+  steps: {
+    jurisdiction: "Određujem nadležnog…",
+    duplicates: "Provjeravam prijave u blizini…",
+    letter: "Pripremam prijavu…",
+  } satisfies Record<PrepareStep, string>,
+  stepsLabel: "Koraci pripreme prijave",
+  stepDone: "završeno",
+  stepFailed: "nije uspjelo",
+  stepRunning: "u toku",
+  stepWaiting: "čeka",
+  recipientLabel: "Nadležna institucija",
+  ccLabel: "U kopiji",
+  // FR-8, verbatim: no rule for the category, or the recipient has no verified email
+  noRecipient:
+    "Za ovu vrstu problema još nemamo provjerenog nadležnog. Administrator Fixita će ručno odrediti nadležnu instituciju i proslijediti prijavu.",
+  // Tech.md §8: Nominatim did not answer; the report goes on with the coordinates
+  coordinatesOnly: "Adresa nije pronađena, pa prijava ide sa koordinatama.",
+  letterReady: "Tekst prijave je spreman.",
+  showLetter: "Prikaži cijeli tekst",
+  hideLetter: "Sakrij tekst",
+  // FR-11, ticket 22 Q5: in the preview, where the report number, the date and time of the
+  // report and the number of earlier reports go (passed to the letter template as a parameter)
+  assignedAtSubmit: "dodjeljuje se pri slanju",
+  failed: "Priprema prijave nije uspjela.",
+  retry: "Pokušaj ponovo",
+  noDraft: "Nacrt prijave nije pronađen. Pokušajte ponovo.",
+} as const
+
+// FR-9: the nearest open report of the same category within DUPLICATE_RADIUS_M
+export const DUPLICATE_TEXT = {
+  title: "Ovaj problem je možda već prijavljen",
+  description: (distanceM: number) =>
+    `Otvorena prijava iste vrste postoji na oko ${Math.max(1, Math.round(distanceM))} m od izabrane lokacije. Možete je podržati umjesto da šaljete novu.`,
+  // FR-9, verbatim
+  support: "Podrži postojeću",
+  sendNew: "Ipak pošalji novu",
+  own: "Ovaj problem ste već prijavili.",
+  openOwn: (code: string) => `Pogledaj prijavu ${code}`,
+  supporting: "Podržavam…",
+} as const
