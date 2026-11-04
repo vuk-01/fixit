@@ -21,7 +21,8 @@ import {
 import type { MapReport } from "@/lib/reports/public-map"
 
 // Loaded only in the browser through next/dynamic with ssr: false (Tech.md §8).
-export function ReportMap({ reports }: { reports: MapReport[] }) {
+// On a laptop the list sidebar highlights the marker of the hovered card (`activeId`, ticket 32).
+export function ReportMap({ reports, activeId = null }: { reports: MapReport[]; activeId?: string | null }) {
   return (
     <MapContainer
       center={[PODGORICA_CENTER.lat, PODGORICA_CENTER.lng]}
@@ -31,7 +32,7 @@ export function ReportMap({ reports }: { reports: MapReport[] }) {
       <TileLayer url={MAP_TILES.url} attribution={MAP_TILES.attribution} maxZoom={MAP_TILES.maxZoom} />
       <FitToContainer />
       {reports.map((report) => (
-        <StatusMarker key={report.id} report={report} />
+        <StatusMarker key={report.id} report={report} active={report.id === activeId} />
       ))}
     </MapContainer>
   )
@@ -40,7 +41,7 @@ export function ReportMap({ reports }: { reports: MapReport[] }) {
 
 // divIcon with the status colour and icon (UI.md); the React icon is portalled into the
 // element Leaflet places on the map, so lucide icons work without rendering to a string.
-function StatusMarker({ report }: { report: MapReport }) {
+function StatusMarker({ report, active }: { report: MapReport; active: boolean }) {
   const [container] = useState(() => document.createElement("div"))
   const [icon] = useState(() =>
     L.divIcon({
@@ -58,6 +59,7 @@ function StatusMarker({ report }: { report: MapReport }) {
       <Marker
         position={[report.lat, report.lng]}
         icon={icon}
+        zIndexOffset={active ? 1000 : 0}
         title={`${CATEGORIES[report.category].label}, ${STATUS_LABELS[report.status].public}`}
       >
         {/* top-left padding keeps the opened popup clear of the zoom control */}
@@ -71,6 +73,7 @@ function StatusMarker({ report }: { report: MapReport }) {
             className={cn(
               "flex size-8 items-center justify-center rounded-full border-2 border-white shadow-md ring-1 ring-black/50",
               colorClass,
+              active && "scale-125 shadow-lg ring-4 ring-primary/60",
             )}
           >
             <Icon aria-hidden className="size-4" strokeWidth={2.5} />
