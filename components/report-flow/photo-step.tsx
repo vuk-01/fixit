@@ -6,10 +6,10 @@ import { useRef, useState } from "react"
 
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { MAX_PHOTOS_PER_REPORT, REPORT_FLOW_TEXT } from "@/lib/constants"
-import { compressPhoto, UnsupportedPhotoError } from "@/lib/photos/compress"
+import { REPORT_FLOW_TEXT } from "@/lib/constants"
 
 import type { FlowPhoto, PhotoSource } from "./flow-state"
+import { preparePhotos } from "./new-photos"
 
 // Step 1 (FR-3): "Fotografiši" (camera) and "Iz galerije"; the button decides the source.
 export function PhotoStep({
@@ -39,28 +39,8 @@ export function PhotoStep({
     input.value = "" // the same file can be picked again after an error
     if (files.length === 0) return
 
-    const room = MAX_PHOTOS_PER_REPORT - existing
-    let message: string | null = files.length > room ? REPORT_FLOW_TEXT.tooManyPhotos : null
-
     setBusy(true)
-    const photos: FlowPhoto[] = []
-    for (const file of files.slice(0, room)) {
-      try {
-        const { full, model } = await compressPhoto(file)
-        const id = crypto.randomUUID()
-        photos.push({
-          id,
-          path: `${id}.jpg`,
-          previewUrl: URL.createObjectURL(full),
-          full,
-          model,
-          upload: "uploading",
-        })
-      } catch (error) {
-        if (!(error instanceof UnsupportedPhotoError)) throw error
-        message = REPORT_FLOW_TEXT.unsupportedPhoto
-      }
-    }
+    const { photos, notice: message } = await preparePhotos(files, existing, "initial")
     setBusy(false)
 
     if (photos.length > 0) onPhotos(photos, message)

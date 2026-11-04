@@ -97,9 +97,9 @@ app/
 components/
   ui/                               shadcn komponente (pravi ih CLI)
   map/                              Leaflet komponente ('use client')
-  report/                           dijelovi javne stranice i mape (status, sažetak prijave, vremenska linija)
+  report/                           dijelovi javne stranice i mape (status, sažetak prijave, „Zašto ova institucija?", vremenska linija)
   panel/                            forma za promjenu statusa u panelu
-  report-flow/                      čarobnjak na /prijavi: stanje toka (flow-state.ts), koraci fotografija i lokacija
+  report-flow/                      čarobnjak na /prijavi: stanje toka (flow-state.ts), koraci fotografija, lokacija i „Pregled prijave" (review-step.tsx)
 lib/
   constants.ts                      sav tekst za korisnika, nazivi i opisi vrsta, ograničenja, MAP_TILES
   env.ts                            zod provjera serverskih env varijabli (server-only)
@@ -192,6 +192,7 @@ Agent nije pozadinski proces. To su dvije rute (Route Handler, Node runtime) koj
   - `resolve_municipality` i Nominatim idu paralelno, a `update_draft` i `resolve_jurisdiction` takođe. Za isti pin sa već sačuvanom adresom Nominatim se ne zove ponovo (npr. kad građanin promijeni vrstu).
   - Neuspjela provjera duplikata (`duplicates` → `failed`) ili dopisa za pregled (`letter` → `failed`, `letter: null` u `result`) ne zaustavlja prijavu: tok ide dalje bez ponude duplikata, odnosno bez teksta za „Prikaži cijeli tekst". Neuspjeh u koraku `jurisdiction` završava tok događajem `error`.
   - Šablon je `renderLetter(params: LetterParams): Letter` u `lib/email/letter-template.ts` (`{ subject, bodyText, attachmentNames }`). Pokriva sve tri vrste dopisa (`letter_kind`: `initial`, `assignment`, `redirect`); sve podatke dobija kao parametre, i nazive vrste i institucija i tekst „dodjeljuje se pri slanju". Kad je `code` `null` (pregled), broj, datum i vrijeme i red „Ranije prijave…" glase taj tekst. Pregled bez primaoca (FR-8) kaže da će nadležnu instituciju odrediti administrator.
+  - `result.letter` nosi i `params` šablona, pa „Pregled prijave" dopis ponovo renderuje u pregledaču (šablon je čista funkcija) sa izmijenjenim opisom, trenutnim brojem fotografija i prekidačem za dostavljanje podataka; umjesto mejla naloga tada stoji „[mejl vašeg naloga]", jer se mejl naloga ne prikazuje u UI-ju (tiket 11). Broj, datum i broj ranijih prijava u pregledu uvijek glase „dodjeljuje se pri slanju" [tiket 11].
   - Red u `agent_runs` se upisuje kad se korak završi (`started_at`, `finished_at`, `duration_ms`, `outcome`, `error_code`, `meta` bez ličnih podataka: `jurisdiction_outcome`, `address_found`, `address_reused`, `duplicate_count`).
   - Kod `outside_area` klijent vraća građanina na mapu, a poruka iz FR-4 stoji ispod pina dok se mapa ne pomjeri, isto kao kod provjere na „Potvrdi lokaciju".
 

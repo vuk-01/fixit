@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest"
 
-import { dayCounterText, dayWord, errorMessage, ERROR_MESSAGES, likeCountText } from "./constants"
+import {
+  dayCounterText,
+  dayWord,
+  errorMessage,
+  ERROR_MESSAGES,
+  formatDay,
+  likeCountText,
+  REVIEW_TEXT,
+  sourceTypeText,
+} from "./constants"
 
 // 6. 11. 2026, 10:00 in Podgorica (CET, UTC+1)
 const now = new Date("2026-11-06T09:00:00Z")
@@ -87,5 +96,28 @@ describe("errorMessage", () => {
   it("falls back for anything else", () => {
     expect(errorMessage(new Error("connection reset"))).toBe("Nešto nije u redu. Pokušajte ponovo.")
     expect(errorMessage(null)).toBe("Nešto nije u redu. Pokušajte ponovo.")
+  })
+})
+
+describe("Zašto ova institucija? (ticket #11)", () => {
+  it("shows a phone confirmation as the weaker source (GLOSSARY)", () => {
+    expect(sourceTypeText("phone_confirmation")).toBe("slabiji izvor (potvrda telefonom)")
+    expect(sourceTypeText("official_page")).toBe("Zvanična stranica institucije")
+    expect(sourceTypeText("written_confirmation")).toBe("Pisana potvrda institucije")
+  })
+
+  it("writes the check date the Montenegrin way", () => {
+    expect(formatDay("2026-11-02")).toBe("2. 11. 2026.")
+  })
+})
+
+describe("review notes are verbatim from the PRD (ticket #11)", () => {
+  it("has the FR-6, §6 and FR-11 texts", () => {
+    expect(REVIEW_TEXT.danger).toBe("Ako je neko u opasnosti, pozovite 112.")
+    expect(REVIEW_TEXT.flaggedPhoto).toBe("Na fotografiji su možda vidljiva lica ili tablice. Fotografija će biti javna.")
+    expect(REVIEW_TEXT.descriptionPublic).toBe(
+      "Opis je javan i vidi se uz fotografiju. Ne upisujte ime, broj telefona, mejl ni druge lične podatke.",
+    )
+    expect(REVIEW_TEXT.shareContact).toBe("Dostavi moje ime i mejl instituciji")
   })
 })

@@ -26,7 +26,7 @@ export default async function ReportPage() {
 
   return (
     <main>
-      <ReportFlow />
+      <ReportFlow account={{ firstName: account.firstName, lastName: account.lastName }} />
     </main>
   )
 }

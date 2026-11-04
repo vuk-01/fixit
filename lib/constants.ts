@@ -347,9 +347,6 @@ export const REPORT_FLOW_TEXT = {
   mapLabel: "Mapa za izbor lokacije problema",
   confirmLocation: "Potvrdi lokaciju",
   confirming: "Provjeravam lokaciju…",
-  confirmedTitle: "Lokacija je potvrđena",
-  confirmedNext: "Pregled prijave dolazi u sljedećem koraku.",
-  changeLocation: "Promijeni lokaciju",
   cancel: "Odustani",
   citizensOnly: "Prijave šalju građani. Ulogujte se nalogom građanina da biste prijavili problem.",
 } as const
@@ -379,10 +376,6 @@ export const CLASSIFY_TEXT = {
   // manual flow and "Promijeni": the same picker without the "not sure" sentence
   chooseTitle: "Izaberite vrstu problema.",
   categoryListLabel: "Vrste problema",
-  categoryLabel: "Vrsta problema",
-  descriptionLabel: "Opis problema",
-  noDescription: "Opis ćete moći da upišete na pregledu prijave.",
-  changeCategory: "Promijeni vrstu",
   retry: "Pokušaj ponovo",
   cancelling: "Odustajem…",
 } as const
@@ -411,16 +404,11 @@ export const PREPARE_TEXT = {
   stepFailed: "nije uspjelo",
   stepRunning: "u toku",
   stepWaiting: "čeka",
-  recipientLabel: "Nadležna institucija",
-  ccLabel: "U kopiji",
   // FR-8, verbatim: no rule for the category, or the recipient has no verified email
   noRecipient:
     "Za ovu vrstu problema još nemamo provjerenog nadležnog. Administrator Fixita će ručno odrediti nadležnu instituciju i proslijediti prijavu.",
   // Tech.md §8: Nominatim did not answer; the report goes on with the coordinates
   coordinatesOnly: "Adresa nije pronađena, pa prijava ide sa koordinatama.",
-  letterReady: "Tekst prijave je spreman.",
-  showLetter: "Prikaži cijeli tekst",
-  hideLetter: "Sakrij tekst",
   // FR-11, ticket 22 Q5: in the preview, where the report number, the date and time of the
   // report and the number of earlier reports go (passed to the letter template as a parameter)
   assignedAtSubmit: "dodjeljuje se pri slanju",
@@ -441,6 +429,88 @@ export const DUPLICATE_TEXT = {
   openOwn: (code: string) => `Pogledaj prijavu ${code}`,
   supporting: "Podržavam…",
 } as const
+
+// ---------------------------------------------------------------------------------------------
+// Report flow: the review screen "Pregled prijave" (ticket #11, FR-5 step 6, FR-11)
+// ---------------------------------------------------------------------------------------------
+
+export const REVIEW_TEXT = {
+  title: "Pregled prijave",
+  photosTitle: (n: number) => `Fotografije (${n} od ${MAX_PHOTOS_PER_REPORT})`,
+  addPhoto: "Dodaj fotografiju",
+  removePhoto: (n: number) => `Ukloni fotografiju ${n}`,
+  removingPhoto: "Uklanjam fotografiju…",
+  // PRD §6 "Privatnost", verbatim: under a photo the model marked
+  flaggedPhoto: "Na fotografiji su možda vidljiva lica ili tablice. Fotografija će biti javna.",
+  // FR-6, verbatim: when the model marked an immediate danger
+  danger: "Ako je neko u opasnosti, pozovite 112.",
+  categoryLabel: "Vrsta problema",
+  changeCategory: "Promijeni",
+  recipientLabel: "Prijavu dobija",
+  ccLabel: "Kopija",
+  addressLabel: "Adresa",
+  descriptionLabel: "Opis problema",
+  // PRD §6 "Privatnost", verbatim
+  descriptionPublic:
+    "Opis je javan i vidi se uz fotografiju. Ne upisujte ime, broj telefona, mejl ni druge lične podatke.",
+  // FR-11, verbatim; off on every report
+  shareContact: "Dostavi moje ime i mejl instituciji",
+  // the account's email is never shown in the UI (ticket #11, Ivana 4. 11.): only the name
+  shareContactOn: (name: string) => `Instituciji se dostavljaju vaše ime i prezime (${name}) i mejl vašeg naloga.`,
+  contactEmailPlaceholder: "[mejl vašeg naloga]",
+  letterTitle: "Tekst prijave",
+  showLetter: "Prikaži cijeli tekst",
+  hideLetter: "Sakrij cijeli tekst",
+  // FR-11: what "Pošalji prijavu" confirms
+  confirmNote: "Slanjem potvrđujete da su podaci tačni i da prijava može biti poslata nadležnoj instituciji.",
+  send: "Pošalji prijavu",
+  sending: "Šaljem prijavu…",
+  waitingForPhotos: "Sačekajte da se fotografije otpreme.",
+} as const
+
+// sendReport is ticket #12; until then the action answers with this
+export const SEND_TEXT = {
+  notImplemented: "Slanje prijave još nije dostupno. Pokušajte ponovo kasnije.",
+} as const
+
+// "Zašto ova institucija?" (PRD "Pravila nadležnosti", GLOSSARY "Izvor pravila", "Slabiji izvor")
+export type SourceType = Database["public"]["Enums"]["source_type"]
+
+export const SOURCE_TYPE_LABELS: Record<SourceType, string> = {
+  official_document: "Zvanični dokument",
+  official_page: "Zvanična stranica institucije",
+  written_confirmation: "Pisana potvrda institucije",
+  phone_confirmation: "Telefonska potvrda",
+}
+
+export const WHY_INSTITUTION_TEXT = {
+  link: "Zašto ova institucija?",
+  hide: "Sakrij objašnjenje",
+  intro:
+    "Nadležnu instituciju određuje provjerena tabela pravila Fixita, prema vrsti problema i opštini. Ne određuje je vještačka inteligencija.",
+  institution: "Institucija",
+  cc: "Kopija",
+  source: "Izvor",
+  openSource: "Otvori izvor",
+  verified: (date: string) => `Provjereno: ${date}`,
+  // GLOSSARY "Slabiji izvor", verbatim
+  weaker: "slabiji izvor (potvrda telefonom)",
+  // PRD "Pravila nadležnosti": a report the administrator assigned
+  manual: "Nadležnog je ručno odredio administrator Fixita.",
+  loading: "Učitavam izvor…",
+  failed: "Izvor trenutno nije dostupan. Pokušajte ponovo.",
+} as const
+
+// GLOSSARY "Slabiji izvor": a phone confirmation is shown as the weaker source, the rest by type
+export function sourceTypeText(type: SourceType): string {
+  return type === "phone_confirmation" ? WHY_INSTITUTION_TEXT.weaker : SOURCE_TYPE_LABELS[type]
+}
+
+// "2026-11-02" (a date column) → "2. 11. 2026."
+export function formatDay(isoDate: string): string {
+  const [y, m, d] = isoDate.split("-").map(Number)
+  return `${d}. ${m}. ${y}.`
+}
 
 // ---------------------------------------------------------------------------------------------
 // Timeline (FR-18, GLOSSARY "Vremenska linija"): the text is built from the event, never stored

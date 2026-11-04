@@ -1,6 +1,7 @@
 import "server-only"
 
 import type { PrepareStep, ReportCategory } from "@/lib/constants"
+import type { LetterParams } from "@/lib/email/letter-template"
 import type { Database } from "@/lib/supabase/database.types"
 import type { MapReport } from "@/lib/reports/public-map"
 
@@ -28,7 +29,10 @@ export type JurisdictionResult = {
 // public fields as a map card; is_own → "Ovaj problem ste već prijavili."
 export type DuplicateReport = MapReport & { distanceM: number; isOwn: boolean }
 
-export type PreviewLetter = { subject: string; body: string }
+// The letter for the review: the rendered text plus the template parameters, so the review can
+// render it again in the browser with the edited description, the current photos and the
+// contact toggle (lib/email/letter-template.ts is a pure function, ticket #11).
+export type PreviewLetter = { subject: string; body: string; params: LetterParams }
 
 export type PrepareResult = {
   reportId: string
