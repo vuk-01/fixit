@@ -4,10 +4,11 @@ import "leaflet/dist/leaflet.css"
 
 import { cn } from "cn"
 import L from "leaflet"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { createPortal } from "react-dom"
-import { MapContainer, Marker, Popup, TileLayer, useMap } from "react-leaflet"
+import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet"
 
+import { FitToContainer } from "@/components/map/fit-to-container"
 import { ReportPopupContent } from "@/components/report/report-summary"
 import {
   CATEGORIES,
@@ -36,18 +37,6 @@ export function ReportMap({ reports }: { reports: MapReport[] }) {
   )
 }
 
-// Leaflet measures its container once; on a phone the tab panel settles its height after
-// the map mounts (and changes on rotation or when the address bar hides), which leaves grey,
-// half-loaded tiles. Re-measure whenever the container's size changes.
-function FitToContainer() {
-  const map = useMap()
-  useEffect(() => {
-    const observer = new ResizeObserver(() => map.invalidateSize())
-    observer.observe(map.getContainer())
-    return () => observer.disconnect()
-  }, [map])
-  return null
-}
 
 // divIcon with the status colour and icon (UI.md); the React icon is portalled into the
 // element Leaflet places on the map, so lucide icons work without rendering to a string.

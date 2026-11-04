@@ -288,3 +288,66 @@ export const AUTH_ERRORS = {
   noSession: "Nalog je napravljen, ali ulogovanje nije uspjelo. Ulogujte se.",
   unknown: "Ulogovanje trenutno nije moguće. Pokušajte ponovo.",
 } as const
+
+// ---------------------------------------------------------------------------------------------
+// Report flow: photos and location (/prijavi, FR-2, FR-3, FR-4, FR-5)
+// ---------------------------------------------------------------------------------------------
+
+// FR-2: stored and attached version, and the one sent to the model (Tech.md §5)
+export const PHOTO_FULL_MAX_PX = 1600
+export const PHOTO_MODEL_MAX_PX = 1024
+export const PHOTO_JPEG_QUALITY = 0.8
+
+// FR-3: device location, requested on the first tap, in parallel with the camera or gallery
+export const GEOLOCATION_OPTIONS = {
+  enableHighAccuracy: true,
+  maximumAge: 60_000,
+  timeout: 10_000,
+} as const
+// FR-3: worse than this, the citizen is asked to check the pin
+export const LOW_ACCURACY_M = 50
+export const LOCATION_ZOOM = 17
+// without a device location the map starts on the centre of Podgorica (FR-3)
+export const LOCATION_FALLBACK_ZOOM = 15
+
+// Tech.md §8: address under the pin once the map has settled, at most 1 request/s per user
+export const REVERSE_GEOCODE_DEBOUNCE_MS = 800
+export const REVERSE_GEOCODE_MIN_INTERVAL_MS = 1000
+export const REVERSE_GEOCODE_TIMEOUT_MS = 3000
+export const COORDINATE_DECIMALS = 5
+
+export const REPORT_FLOW_STEPS = ["Fotografija", "Lokacija", "Pregled prijave"] as const
+
+export const REPORT_FLOW_TEXT = {
+  pageTitle: "Prijavi problem",
+  stepOf: (step: number, total: number) => `Korak ${step} od ${total}`,
+  photoTitle: "Fotografišite problem",
+  photoDescription: `Dodajte do ${MAX_PHOTOS_PER_REPORT} fotografije istog problema.`,
+  takePhoto: "Fotografiši",
+  fromGallery: "Iz galerije",
+  // PRD §6 "Obavještenje", ticket 22 Q11: shown on every report, not remembered per account
+  privacyHint: "Izbjegavajte lica i registarske tablice na fotografiji.",
+  tooManyPhotos: `Možete dodati najviše ${MAX_PHOTOS_PER_REPORT} fotografije.`,
+  unsupportedPhoto: "Ovaj format fotografije nije podržan. Izaberite drugu fotografiju.",
+  preparingPhotos: "Pripremam fotografije…",
+  photoAlt: (n: number) => `Fotografija ${n}`,
+  uploading: "Otpremam…",
+  uploaded: "Otpremljeno",
+  uploadFailed: "Otprema nije uspjela.",
+  retryUpload: "Pokušaj ponovo",
+  locationTitle: "Gdje je problem?",
+  locationDescription: "Pomjerite mapu tako da pin bude tačno na mjestu problema.",
+  locationUnavailable: "Lokacija nije dostupna. Pomjerite mapu tako da pin bude na mjestu problema.",
+  checkPin: "Provjerite da li je pin na mjestu problema i pomjerite mapu ako nije.",
+  locating: "Tražim vašu lokaciju…",
+  addressLoading: "Tražim adresu…",
+  addressUnavailable: "Adresa nije dostupna. Tačka na mapi je ipak zapamćena.",
+  mapLabel: "Mapa za izbor lokacije problema",
+  confirmLocation: "Potvrdi lokaciju",
+  confirming: "Provjeravam lokaciju…",
+  confirmedTitle: "Lokacija je potvrđena",
+  confirmedNext: "Pregled prijave dolazi u sljedećem koraku.",
+  changeLocation: "Promijeni lokaciju",
+  cancel: "Odustani",
+  citizensOnly: "Prijave šalju građani. Ulogujte se nalogom građanina da biste prijavili problem.",
+} as const
