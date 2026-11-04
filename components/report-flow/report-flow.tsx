@@ -6,7 +6,18 @@ import { Progress } from "@/components/ui/progress"
 import { GEOLOCATION_OPTIONS, REPORT_FLOW_STEPS, REPORT_FLOW_TEXT } from "@/lib/constants"
 import { createClient } from "@/lib/supabase/client"
 
-import { flowReducer, initialFlowState, type FlowPhoto, type FlowStep, type PhotoSource } from "./flow-state"
+import {
+  draftId,
+  flowReducer,
+  initialFlowState,
+  showCategoryPicker,
+  type FlowPhoto,
+  type FlowStep,
+  type PhotoSource,
+} from "./flow-state"
+import { CancelButton } from "./cancel-button"
+import { CategoryStep } from "./category-step"
+import { runClassification } from "./classify-client"
 import { ConfirmedStep } from "./confirmed-step"
 import { LocationStep } from "./location-step"
 import { PhotoStep } from "./photo-step"
@@ -52,13 +63,39 @@ export function ReportFlow() {
     dispatch({ type: "upload", id: photo.id, status: error ? "failed" : "done" })
   }, [])
 
+  // Ticket #9: classify starts as soon as the first photos are back, in parallel with the
+  // upload and the pin; only these photos go to the model (FR-5, one call per report).
+  // `analysis` resolves with the draft id once the flow knows how to go on ("Odustani" waits).
+  const analysis = useRef<Promise<string | null> | null>(null)
+  const modelPhotos = useRef<FlowPhoto[]>([])
+  const classify = useCallback(() => {
+    analysis.current = runClassification(modelPhotos.current, dispatch)
+  }, [])
+
   const onPhotos = useCallback(
     (photos: FlowPhoto[], notice: string | null) => {
       dispatch({ type: "photosAdded", photos, notice })
       for (const photo of photos) void upload(photo)
+      if (!analysis.current && photos.length > 0) {
+        modelPhotos.current = photos
+        classify()
+      }
     },
-    [upload],
+    [upload, classify],
   )
+
+  const stateRef = useRef(state)
+  useEffect(() => {
+    stateRef.current = state
+  }, [state])
+  const draft = useCallback(async () => {
+    const known = draftId(stateRef.current.analysis)
+    if (known || !analysis.current) return known
+    return analysis.current
+  }, [])
+  const cancel = <CancelButton draft={draft} photoPaths={state.photos.map((p) => p.path)} />
+
+  const showCategories = showCategoryPicker(state)
 
   // thumbnails are object URLs; free them when the flow goes away
   const photosRef = useRef(state.photos)
@@ -98,14 +135,29 @@ export function ReportFlow() {
         <LocationStep
           state={state}
           onRetryUpload={upload}
+          onRetryAnalysis={classify}
           onConfirm={(point) => dispatch({ type: "confirm", point })}
+          cancel={cancel}
         />
       )}
-      {state.step === "confirmed" && state.confirmed && (
+      {showCategories && (
+        <CategoryStep
+          analysis={state.analysis}
+          onChoose={(category) => dispatch({ type: "chooseCategory", category })}
+          cancel={cancel}
+        />
+      )}
+      {state.step === "confirmed" && state.confirmed && !showCategories && (
         <ConfirmedStep
           point={state.confirmed}
           photos={state.photos}
+          analysis={state.analysis}
+          category={state.category}
+          description={state.description}
           onEdit={() => dispatch({ type: "editLocation" })}
+          onChangeCategory={() => dispatch({ type: "changeCategory" })}
+          onRetry={classify}
+          cancel={cancel}
         />
       )}
     </div>
