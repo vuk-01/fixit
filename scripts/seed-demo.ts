@@ -1,10 +1,12 @@
-// pnpm db:seed-demo: demo accounts (DB.md §12.3). One mode, no options, safe to run again:
-// accounts that do not exist are created, existing ones are left alone (no new password).
-// Demo reports (DB.md §12.4) are added to this script later (#16).
+// pnpm db:seed-demo: demo accounts (DB.md §12.3) and demo reports (DB.md §12.4). One mode, no
+// options, safe to run again: accounts that do not exist are created, existing ones are left
+// alone (no new password); demo reports are created only while citizen-seed has no report.
 // Plain Node 24 runs this file: no `@/` alias and no syntax beyond type annotations (Tech.md §11).
 import { createClient } from "@supabase/supabase-js"
 
 import type { Database } from "../lib/supabase/database.types"
+
+import { seedDemoReports } from "./seed-demo-reports.ts"
 
 type Role = Database["public"]["Enums"]["user_role"]
 
@@ -106,6 +108,7 @@ async function main() {
   }
 
   const summary: { handle: string; email: string; role: Role; result: string }[] = []
+  const accountIds = new Map<string, string>()
 
   for (const account of ACCOUNTS) {
     const email = demoEmail(account.handle)
@@ -149,11 +152,15 @@ async function main() {
     if (!updated?.length) throw new Error(`${account.handle}: no profile row (sign-up trigger?)`)
 
     summary.push({ handle: account.handle, email, role: account.role, result })
+    accountIds.set(account.handle, userId)
   }
 
   console.table(summary)
   console.log("Šifra za sve naloge je DEMO_PASSWORD iz .env.local.")
-  console.log("Demo prijave (DB.md §12.4) još nisu u skripti (#16).")
+
+  const reporterId = accountIds.get("citizen-seed")
+  if (!reporterId) throw new Error("citizen-seed: account missing")
+  await seedDemoReports(supabase, reporterId)
 }
 
 main().catch((error) => {

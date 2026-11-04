@@ -122,6 +122,8 @@ supabase/
   migrations/                       samo preko `supabase migration new`; referentni podaci (granica, institucije, pravila) su migracije, `seed.sql` ne postoji (DB.md §12)
 scripts/
   seed-demo.ts                      demo nalozi i demo prijave (`pnpm db:seed-demo`, servisni ključ)
+  seed-demo-reports.ts              upis demo prijava (poziva ga seed-demo.ts): provjere, otprema fotografija, redovi, dopisi
+  demo-plan.ts                      plan demo prijava kao čiste funkcije: tabela iz `DB.md` §12.4, datumi od petka 6. 11., redovi za upis (testovi u `demo-plan.test.ts`)
   clear-demo.ts                     brisanje demo podataka (`pnpm db:clear-demo`, FR-25)
   demo-photos/                      8 fotografija demo prijava, po 2 za `pothole`, `street_light`, `illegal_dump`, `manhole` (Wikimedia Commons; 1600 px JPEG, bez EXIF-a) i `CREDITS.md` (autori i licence); tiket 21, `DB.md` §12.4
 vercel.json                         { "regions": ["cdg1"] }
@@ -274,9 +276,9 @@ Skripte u `package.json` (na njih se poziva `AGENTS.md`):
 | `pnpm test` | `vitest run` |
 | `pnpm db:types` | `supabase gen types typescript --remote --schema public > lib/supabase/database.types.ts` |
 | `pnpm db:seed-demo` | `node --env-file=.env.local scripts/seed-demo.ts` (demo nalozi i prijave; jedan način rada, bez opcija: dopunjava naloge koji nedostaju, a prijave pravi samo ako ih još nema; smije se pokrenuti više puta; `DB.md` §12, §12.3–12.4) |
-| `pnpm db:clear-demo` | `node --env-file=.env.local scripts/clear-demo.ts` (FR-25; uz `-- --accounts` briše i demo naloge; `DB.md` §12.5) |
+| `pnpm db:clear-demo` | `node --env-file=.env.local scripts/clear-demo.ts` (FR-25; uz `-- --accounts` briše i demo naloge; prije brisanja traži da se upiše „obriši"; `DB.md` §12.5) |
 
-Skripte iz `scripts/` Node 24 izvršava kao TypeScript bez nove zavisnosti, ali samo ako ne koriste alias `@/` ni sintaksu koja nije samo tip (npr. `enum`); provjeriti pri prvom pokretanju. Isto važi za svaki fajl iz `lib/` koji skripta uvozi: seed uvozi `lib/email/letter-template.ts` (i nazive vrsta iz `lib/constants.ts`) relativnom putanjom sa nastavkom `.ts`, jer Node bez nastavka ne nalazi fajl, a ti fajlovi nemaju uvoz vrijednosti preko `@/` (`import type` je dozvoljen, Node ga briše). Ako `pnpm typecheck` odbije uvoz sa nastavkom `.ts`, u `tsconfig.json` se dodaje `allowImportingTsExtensions` (uz `noEmit`, koji Next.js već postavlja).
+Skripte iz `scripts/` Node 24 izvršava kao TypeScript bez nove zavisnosti, ali samo ako ne koriste alias `@/` ni sintaksu koja nije samo tip (npr. `enum`); provjeriti pri prvom pokretanju. Isto važi za svaki fajl iz `lib/` koji skripta uvozi: seed uvozi `lib/email/letter-template.ts` (i nazive vrsta iz `lib/constants.ts`) relativnom putanjom sa nastavkom `.ts`, jer Node bez nastavka ne nalazi fajl, a ti fajlovi nemaju uvoz vrijednosti preko `@/` (`import type` je dozvoljen, Node ga briše). Zato `tsconfig.json` ima `allowImportingTsExtensions` (uz `noEmit`, koji Next.js već postavlja; tiket 16).
 
 Inicijalizacija (jednom, Ivana, utorak 3. 11.):
 1. `pnpm dlx shadcn@latest init --preset b2xaqzSRuK --template next` u korijenu repoa (pravi Next.js projekat sa presetom; `UI.md`).
