@@ -1,9 +1,9 @@
 import type { Metadata } from "next"
-import Link from "next/link"
 
+import { RowLinkCell } from "@/components/report/row-link-cell"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { getRoutingReports, requireAdmin } from "@/lib/admin/reports"
 import { ADMIN_TEXT, CATEGORIES, dayCounterText, likeCountText } from "@/lib/constants"
 
@@ -43,35 +43,40 @@ export default async function AdminPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {reports.map((report) => (
-                  <TableRow key={report.id} className="relative">
-                    <TableCell className="font-medium whitespace-nowrap">
-                      <Link
-                        href={`/admin/prijave/${report.id}`}
-                        className="inline-flex min-h-11 items-center text-primary underline-offset-4 after:absolute after:inset-0 hover:underline"
+                {reports.map((report) => {
+                  const href = `/admin/prijave/${report.id}`
+                  return (
+                    <TableRow key={report.id}>
+                      <RowLinkCell
+                        href={href}
+                        primary
+                        className="font-medium whitespace-nowrap"
+                        linkClassName="text-primary underline-offset-4 hover:underline"
                       >
                         {report.code}
-                      </Link>
-                    </TableCell>
-                    <TableCell className="min-w-56 whitespace-normal">
-                      <p className="font-medium">{CATEGORIES[report.category].label}</p>
-                      {report.address && <p className="text-muted-foreground">{report.address}</p>}
-                      {(report.is_demo || report.is_hidden) && (
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {report.is_demo && <Badge variant="outline">{ADMIN_TEXT.demo}</Badge>}
-                          {report.is_hidden && <Badge variant="secondary">{ADMIN_TEXT.hidden}</Badge>}
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell className="hidden whitespace-normal md:table-cell">
-                      {report.routingReason ? ADMIN_TEXT.routingReason[report.routingReason] : null}
-                    </TableCell>
-                    <TableCell className="whitespace-normal">{dayCounterText({ ...report, status: "routing", closed_at: null })}</TableCell>
-                    <TableCell className="hidden text-right whitespace-nowrap lg:table-cell">
-                      {likeCountText(report.like_count)}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </RowLinkCell>
+                      <RowLinkCell href={href} className="min-w-56 whitespace-normal">
+                        <p className="font-medium">{CATEGORIES[report.category].label}</p>
+                        {report.address && <p className="text-muted-foreground">{report.address}</p>}
+                        {(report.is_demo || report.is_hidden) && (
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {report.is_demo && <Badge variant="outline">{ADMIN_TEXT.demo}</Badge>}
+                            {report.is_hidden && <Badge variant="secondary">{ADMIN_TEXT.hidden}</Badge>}
+                          </div>
+                        )}
+                      </RowLinkCell>
+                      <RowLinkCell href={href} className="hidden whitespace-normal md:table-cell">
+                        {report.routingReason ? ADMIN_TEXT.routingReason[report.routingReason] : null}
+                      </RowLinkCell>
+                      <RowLinkCell href={href} className="whitespace-normal">
+                        {dayCounterText({ ...report, status: "routing", closed_at: null })}
+                      </RowLinkCell>
+                      <RowLinkCell href={href} className="hidden text-right whitespace-nowrap lg:table-cell">
+                        {likeCountText(report.like_count)}
+                      </RowLinkCell>
+                    </TableRow>
+                  )
+                })}
               </TableBody>
             </Table>
           )}
