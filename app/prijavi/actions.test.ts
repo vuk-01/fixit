@@ -1,26 +1,36 @@
 // Ticket #9: "Odustani" deletes the draft with the citizen's session and only the files that
-// delete_draft returned, with the admin client.
+// delete_draft returned, with the admin client. Ticket #10: "Podrži postojeću" the same way,
+// with support_existing_report.
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const m = vi.hoisted(() => ({
   claims: null as Record<string, unknown> | null,
   rpc: vi.fn(),
   lookup: vi.fn(),
+  report: vi.fn(),
   remove: vi.fn(),
 }))
+
+// a query builder: filters return the builder; report_photos → lookup, reports → report
+function query(table: string) {
+  const builder: Record<string, unknown> = {}
+  for (const name of ["select", "in", "eq", "neq", "limit"]) builder[name] = () => builder
+  builder.maybeSingle = () => (table === "reports" ? m.report() : m.lookup())
+  return builder
+}
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
     auth: { getClaims: async () => ({ data: m.claims ? { claims: m.claims } : null }) },
     rpc: m.rpc,
-    from: () => ({ select: () => ({ in: () => ({ limit: () => ({ maybeSingle: m.lookup }) }) }) }),
+    from: query,
   }),
 }))
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({ storage: { from: () => ({ remove: m.remove }) } }),
 }))
 
-import { cancelReport } from "./actions"
+import { cancelReport, supportExistingReport } from "./actions"
 
 const REPORT = "22222222-2222-4222-8222-222222222222"
 const A = "44444444-4444-4444-8444-444444444444.jpg"
@@ -30,6 +40,7 @@ beforeEach(() => {
   m.claims = { sub: "u", is_anonymous: false }
   m.rpc.mockReset().mockResolvedValue({ data: [A], error: null })
   m.lookup.mockReset().mockResolvedValue({ data: { report_id: REPORT } })
+  m.report.mockReset().mockResolvedValue({ data: { code: "FX-2026-00007" } })
   m.remove.mockReset().mockResolvedValue({ error: null })
 })
 
@@ -72,6 +83,45 @@ describe("cancelReport", () => {
 
   it("rejects paths that are not <uuid>.jpg", async () => {
     expect((await cancelReport({ reportId: REPORT, photoPaths: ["../x.jpg"] })).ok).toBe(false)
+    expect(m.rpc).not.toHaveBeenCalled()
+  })
+})
+
+describe("supportExistingReport (FR-9)", () => {
+  const EXISTING = "66666666-6666-4666-8666-666666666666"
+
+  beforeEach(() => {
+    m.rpc.mockResolvedValue({ data: [{ like_count: 4, removed_paths: [A, B] }], error: null })
+  })
+
+  it("supports the report and deletes the draft in one call, then only the returned files", async () => {
+    expect(await supportExistingReport({ draftId: REPORT, reportId: EXISTING })).toEqual({ ok: true, code: "FX-2026-00007" })
+    expect(m.rpc).toHaveBeenCalledWith("support_existing_report", { p_draft_id: REPORT, p_report_id: EXISTING })
+    expect(m.remove).toHaveBeenCalledWith([A, B])
+  })
+
+  it("keeps everything when the database refuses (own report, closed report)", async () => {
+    m.rpc.mockResolvedValue({ data: null, error: { message: "own_report" } })
+    expect(await supportExistingReport({ draftId: REPORT, reportId: EXISTING })).toEqual({
+      ok: false,
+      error: "Ne možete podržati svoju prijavu.",
+    })
+    expect(m.remove).not.toHaveBeenCalled()
+  })
+
+  it("does not call the function for a report that is not public", async () => {
+    m.report.mockResolvedValue({ data: null })
+    expect((await supportExistingReport({ draftId: REPORT, reportId: EXISTING })).ok).toBe(false)
+    expect(m.rpc).not.toHaveBeenCalled()
+  })
+
+  it("rejects a guest, an anonymous session and ids that are not uuids", async () => {
+    m.claims = null
+    expect((await supportExistingReport({ draftId: REPORT, reportId: EXISTING })).ok).toBe(false)
+    m.claims = { sub: "u", is_anonymous: true }
+    expect((await supportExistingReport({ draftId: REPORT, reportId: EXISTING })).ok).toBe(false)
+    m.claims = { sub: "u", is_anonymous: false }
+    expect((await supportExistingReport({ draftId: "x", reportId: EXISTING })).ok).toBe(false)
     expect(m.rpc).not.toHaveBeenCalled()
   })
 })
