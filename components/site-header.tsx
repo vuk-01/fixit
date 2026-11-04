@@ -20,7 +20,13 @@ export async function SiteHeader() {
         {account ? (
           <UserMenu
             name={`${account.firstName} ${account.lastName}`}
-            links={account.role === "official" ? [{ href: "/panel", label: HEADER_TEXT.panel }] : undefined}
+            links={
+              account.role === "official"
+                ? [{ href: "/panel", label: HEADER_TEXT.panel }]
+                : account.role === "admin"
+                  ? [{ href: "/admin", label: HEADER_TEXT.admin }]
+                  : undefined
+            }
           />
         ) : (
           <Link href="/uloguj-se" className={cn(buttonVariants({ variant: "ghost" }), "h-11 px-3")}>
