@@ -75,6 +75,7 @@ Indeks: `gist (boundary)`.
 | `id` | `uuid` PK | |
 | `slug` | `text not null unique` | stabilan ključ za seed i pravila, npr. `pg-sekretarijat-saobracaj` |
 | `name` | `text not null unique` | zvaničan naziv, npr. „Sekretarijat za saobraćaj Glavnog grada Podgorice" |
+| `short_name` | `text null` | kratak naziv za UI (meni naloga službenika), bez „d.o.o." i „Glavnog grada Podgorice"; `null` = prikazuje se `name`; CHECK: nije prazan string [tiket 54, migracija 11] |
 | `municipality_id` | `uuid null` FK | `null` za državne organe (u P0 ih nema) |
 | `email` | `text null` | prava javna institucionalna adresa; `null` = nema provjeren mejl |
 | `email_source_url` | `text null` | gdje je adresa objavljena |
@@ -736,6 +737,7 @@ Iz tabela tiketa 14 („Tabela pravila za seed", „Institucije za seed"), bez i
 - **10 pravila** za Podgoricu (`pothole`, `sidewalk`, `traffic_sign`, `street_light`, `traffic_light`, `manhole`, `water_leak`, `illegal_dump`, `waste_container`, `greenery`), sa `source_type`, `source_url`, `source_title`, `source_excerpt` i `verified_at` iz tabele tiketa 14; `verified_by = 'nalaz 02'` dok ne prođe ponovna provjera, zatim ime osobe iz tima. Za rasvjetu i semafor upisati samo onaj URL sa kog je citat (14, „Za provjeru").
 - **Nijedno pravilo** za `graffiti` i `other` (`other` to i ne može, CHECK). Provjera poslije migracije: `select count(*) from jurisdiction_rules` = 10, i `resolve_jurisdiction('graffiti', <Podgorica>)` vraća `no_rule`.
 - Ne ulaze: Služba za građane, Uprava za saobraćaj, CEDIS, „Deponija" d.o.o. (tiket 14).
+- **Kratki nazivi (`short_name`, migracija 11, tiket 54):** Sekretarijat za saobraćaj, Putevi, Komunalne usluge, Vodovod i kanalizacija, Čistoća, Zelenilo, Komunalna policija, Inspekcijski poslovi (redom kao u tabeli iznad). Prikazuju se u meniju naloga službenika; dopis i javne stranice i dalje koriste `name`.
 - **Ponovna provjera (3. 11. 2026, migracija 10):** svih 8 adresa stoji nepromijenjeno na stranicama institucija na podgorica.me (`email_source_url`), a svi citati na izvorima pravila; PDF Programa „Puteva" 2026 je dostupan (citati na str. 2 i 10). Za rasvjetu i semafor citat je sa `https://www.komunalneusluge.me/`, pa je to jedini `source_url` tih pravila. Konačni nazivi institucija i tekstovi izvora su u migraciji 10.
 
 ### 12.3 Demo nalozi (`pnpm db:seed-demo`)
@@ -828,6 +830,7 @@ pa PR samo sa migracijom i tipovima, merge odmah. Ne koristiti `db push` bez `--
 | 8 | `realtime` | `reports` u `supabase_realtime` |
 | 9 | `seed_podgorica_boundary` | jedan red u `municipalities` (sekcija 12.1) |
 | 10 | `seed_institutions_and_rules` | 8 institucija i 10 pravila (sekcija 12.2) |
+| 11 | `institution_short_name` | kolona `institutions.short_name` i kratki nazivi za 8 institucija (sekcija 12.2; tiket 54) |
 
 - Politike koriste helpere iz sekcije 7, a helperi čitaju tabele; zato se tabele u koracima 3 i 4 prave sa uključenim RLS-om bez politika (= sve zatvoreno), a politike se dodaju u koraku 5, odmah poslije helpera. Između koraka baza je zatvorena, nikad otvorena.
 - Podešavanja koja nisu u migracijama (Ivana, Supabase dashboard): Anonymous Sign-Ins uključen; limit anonimnih prijavljivanja ostaje 30/h po IP-u (PRD §6); `Confirm email` isključen (Tech.md, „Hosting i mejl", „Registracija"; tiket 16); region `eu-west-3` (Pariz) [Ivana].

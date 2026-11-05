@@ -146,6 +146,7 @@ export type Database = {
           is_active: boolean
           municipality_id: string | null
           name: string
+          short_name: string | null
           slug: string
           updated_at: string
         }
@@ -158,6 +159,7 @@ export type Database = {
           is_active?: boolean
           municipality_id?: string | null
           name: string
+          short_name?: string | null
           slug: string
           updated_at?: string
         }
@@ -170,6 +172,7 @@ export type Database = {
           is_active?: boolean
           municipality_id?: string | null
           name?: string
+          short_name?: string | null
           slug?: string
           updated_at?: string
         }
