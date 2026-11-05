@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { createThrottle, formatAddress, roundCoordinate } from "./address"
+import { createThrottle, formatAddress, MUNICIPALITY_NAME, placeLabel, roundCoordinate } from "./address"
 import { transliterate } from "./transliterate"
 
 describe("transliterate", () => {
@@ -52,6 +52,33 @@ describe("formatAddress", () => {
 
   it("returns null without an address object", () => {
     expect(formatAddress(undefined, 42.44, 19.26)).toBeNull()
+  })
+})
+
+describe("placeLabel", () => {
+  it("keeps a street address as it is", () => {
+    expect(placeLabel("Bulevar Svetog Petra Cetinjskog 12, Podgorica")).toBe(
+      "Bulevar Svetog Petra Cetinjskog 12, Podgorica",
+    )
+    expect(placeLabel("Vaka Đurovića, Podgorica")).toBe("Vaka Đurovića, Podgorica")
+  })
+
+  it("drops the coordinates formatAddress adds without a street", () => {
+    expect(placeLabel("Stara varoš, Podgorica, 42.44110, 19.26360")).toBe("Stara varoš, Podgorica")
+    expect(placeLabel(formatAddress({ county: "Glavni grad Podgorica" }, 42.5, 19.3))).toBe(
+      "Glavni grad Podgorica",
+    )
+  })
+
+  it("keeps house numbers and other numbers that are not a coordinate pair", () => {
+    expect(placeLabel("Crnogorskih serdara 20, Podgorica")).toBe("Crnogorskih serdara 20, Podgorica")
+    expect(placeLabel("Ulica 13. jula 4, Podgorica")).toBe("Ulica 13. jula 4, Podgorica")
+  })
+
+  it("falls back to the municipality without an address or with coordinates only", () => {
+    expect(placeLabel(null)).toBe(MUNICIPALITY_NAME)
+    expect(placeLabel("")).toBe(MUNICIPALITY_NAME)
+    expect(placeLabel("42.44110, 19.26360")).toBe(MUNICIPALITY_NAME)
   })
 })
 

@@ -17,6 +17,7 @@ import {
   likeCountText,
   OPEN_STATUSES,
 } from "@/lib/constants"
+import { placeLabel } from "@/lib/geo/address"
 import type { MapReport } from "@/lib/reports/public-map"
 import { cn } from "@/lib/utils"
 
@@ -151,7 +152,7 @@ export function ReportListCard({
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-1.5 p-3">
           <p className="line-clamp-2 text-[15.5px] leading-snug font-bold">{CATEGORIES[report.category].label}</p>
-          {report.address && <p className="truncate text-[13px] text-muted-foreground">{report.address}</p>}
+          <p className="truncate text-[13px] text-muted-foreground">{placeLabel(report.address)}</p>
           <div className="flex flex-wrap items-center gap-1.5">
             <StatusBadge status={report.status} />
             {report.is_demo && <Badge variant="outline">{REPORT_SUMMARY_TEXT.demo}</Badge>}
@@ -164,8 +165,10 @@ export function ReportListCard({
         </div>
         {/* straight inner edge like the day column: Card rounds a last-child <img> at the bottom
             (*:[img:last-child]:rounded-b-xl), so the photo opts out and the card's own clip rounds only
-            its outer corners; a missing photo shows just its icon at this width */}
-        <ReportPhoto report={report} className="w-20 shrink-0 self-stretch rounded-none! [&>span]:hidden" />
+            its outer corners. Only size and corners go here: the same classes land on the <img>,
+            where padding would show the muted background as strips beside the photo. Without a
+            photo the column holds NoPhoto, whose label is set smaller through its span. */}
+        <ReportPhoto report={report} className="w-20 shrink-0 self-stretch rounded-none! [&>span]:text-[11px]" />
       </Card>
     </Link>
   )

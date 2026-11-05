@@ -3,7 +3,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { LikeButton } from "@/components/report/like-button"
-import { REPORT_SUMMARY_TEXT } from "@/components/report/report-summary"
+import { NoPhoto, REPORT_SUMMARY_TEXT } from "@/components/report/report-summary"
 import { ReportTimeline } from "@/components/report/report-timeline"
 import { ShareReportButton } from "@/components/report/share-report-button"
 import { StatusBadge } from "@/components/report/status-badge"
@@ -178,16 +178,9 @@ function Photos({
   category: string
 }) {
   if (report.photos.length === 0) {
+    // only demo reports have no photo (DB.md §12.4); a short note, not a photo-sized box
     return (
-      <PhotoNote
-        icon="none"
-        compact
-        text={
-          report.is_demo
-            ? REPORT_SUMMARY_TEXT.demoNoPhoto
-            : REPORT_SUMMARY_TEXT.noPhoto
-        }
-      />
+      <NoPhoto className="min-h-24 w-full gap-2 rounded-2xl p-4 text-sm" />
     )
   }
 
@@ -216,7 +209,7 @@ function Photos({
         ) : (
           <PhotoNote
             key={photo.position}
-            icon="none"
+            icon="unavailable"
             text={PUBLIC_REPORT_TEXT.photoUnavailable}
           />
         )
@@ -225,21 +218,14 @@ function Photos({
   )
 }
 
-function PhotoNote({
-  icon,
-  text,
-  compact = false,
-}: {
-  icon: "hidden" | "none"
-  text: string
-  // a report without any photo gets a short note instead of a photo-sized box
-  compact?: boolean
-}) {
+// a photo that exists but is not shown keeps its place: hidden by an administrator (PRD §6
+// "Privatnost") or its URL could not be signed
+function PhotoNote({ icon, text }: { icon: "hidden" | "unavailable"; text: string }) {
   const Icon = icon === "hidden" ? EyeOff : ImageOff
   return (
     <div
-      className={`flex ${compact ? "min-h-24" : "aspect-[4/3]"} w-full flex-col items-center justify-center gap-2 rounded-2xl bg-muted p-4 text-center text-sm text-muted-foreground`}
-      data-testid={icon === "hidden" ? "photo-hidden" : "photo-none"}
+      className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 rounded-2xl bg-muted p-4 text-center text-sm text-muted-foreground"
+      data-testid={icon === "hidden" ? "photo-hidden" : "photo-unavailable"}
     >
       <Icon aria-hidden className="size-6" />
       <span>{text}</span>

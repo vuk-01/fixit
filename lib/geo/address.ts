@@ -50,6 +50,20 @@ export function formatAddress(address: NominatimAddress | undefined, lat: number
   return transliterate(text)
 }
 
+// The only municipality in P0 (PRD): a report outside its boundary is rejected (FR-4)
+export const MUNICIPALITY_NAME = "Podgorica"
+
+// a trailing "lat, lng" pair, as formatAddress appends it when there is no street
+const TRAILING_COORDINATES = /(?:^|,)\s*-?\d{1,3}\.\d+\s*,\s*-?\d{1,3}\.\d+\s*$/
+
+// The place for the list and the marker popup: the address without the coordinates formatAddress
+// adds when there is no street (they stay on the report page), or the municipality when nothing
+// else is left.
+export function placeLabel(address: string | null): string {
+  const place = address?.replace(TRAILING_COORDINATES, "").trim()
+  return place || MUNICIPALITY_NAME
+}
+
 // At most one call per interval per key. In memory, so per serverless instance: enough to
 // keep one phone from hammering Nominatim in P0.
 export function createThrottle(intervalMs: number, now: () => number = Date.now) {
