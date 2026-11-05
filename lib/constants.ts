@@ -136,7 +136,7 @@ export const OPEN_STATUSES: readonly ReportStatus[] = [
 // ---------------------------------------------------------------------------------------------
 
 export const ERROR_MESSAGES = {
-  not_authenticated: "Prijavite se da biste nastavili.",
+  not_authenticated: "Uloguj se da nastaviš.",
   not_allowed: "Nemate dozvolu za ovu radnju.",
   not_found: "Prijava nije pronađena.",
   invalid_state: "Ova radnja trenutno nije moguća. Osvježite stranicu i pokušajte ponovo.",
@@ -289,10 +289,8 @@ export const NAME_MAX_LENGTH = 50
 
 export const AUTH_TEXT = {
   pageTitle: "Uloguj se",
-  signInTab: "Ulogovanje",
-  signUpTab: "Registracija",
-  signInTitle: "Ulogujte se",
-  signInDescription: "Mejlom i šifrom vašeg naloga.",
+  signInTab: "Uloguj se",
+  signUpTab: "Registruj se",
   signUpTitle: "Napravite nalog",
   signUpDescription: "Ime i prezime su obavezni i ne prikazuju se javno.",
   firstName: "Ime",
@@ -301,7 +299,7 @@ export const AUTH_TEXT = {
   password: "Šifra",
   passwordHint: `Najmanje ${PASSWORD_MIN_LENGTH} znakova.`,
   signInSubmit: "Uloguj se",
-  signUpSubmit: "Napravi nalog",
+  signUpSubmit: "Registruj se",
   pending: "Sačekajte…",
   // PRD §6 "Obavještenje", verbatim
   privacyNotice:
@@ -317,11 +315,11 @@ export const AUTH_ERRORS = {
   passwordRequired: "Unesite šifru.",
   passwordTooShort: `Šifra mora imati najmanje ${PASSWORD_MIN_LENGTH} znakova.`,
   invalidCredentials: "Pogrešan mejl ili šifra.",
-  emailTaken: "Nalog sa ovim mejlom već postoji. Ulogujte se.",
+  emailTaken: "Nalog sa ovim mejlom već postoji. Uloguj se.",
   weakPassword: "Šifra je preslaba. Izaberite dužu šifru.",
   rateLimited: "Previše pokušaja. Pokušajte ponovo za nekoliko minuta.",
-  noSession: "Nalog je napravljen, ali ulogovanje nije uspjelo. Ulogujte se.",
-  unknown: "Ulogovanje trenutno nije moguće. Pokušajte ponovo.",
+  noSession: "Nalog je napravljen. Uloguj se.",
+  unknown: "Nešto nije uspjelo. Pokušajte ponovo.",
 } as const
 
 // ---------------------------------------------------------------------------------------------
@@ -381,7 +379,7 @@ export const REPORT_FLOW_TEXT = {
   confirmLocation: "Potvrdi lokaciju",
   confirming: "Provjeravam lokaciju…",
   cancel: "Odustani",
-  citizensOnly: "Prijave šalju građani. Ulogujte se nalogom građanina da biste prijavili problem.",
+  citizensOnly: "Prijave šalju građani. Uloguj se nalogom građanina da prijaviš problem.",
 } as const
 
 // ---------------------------------------------------------------------------------------------

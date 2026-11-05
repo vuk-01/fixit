@@ -64,10 +64,6 @@ function SignInForm({ next }: { next: string }) {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>{AUTH_TEXT.signInTitle}</CardTitle>
-        <CardDescription>{AUTH_TEXT.signInDescription}</CardDescription>
-      </CardHeader>
       <CardContent>
         <form action={formAction}>
           <input type="hidden" name="next" value={next} />

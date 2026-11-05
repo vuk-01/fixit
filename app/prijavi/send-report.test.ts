@@ -374,7 +374,7 @@ describe("sendReport: input and session", () => {
     expect((await sendReport({ ...input, category: "parking" as never })).ok).toBe(false)
     expect((await sendReport({ ...input, description: "x".repeat(1001) })).ok).toBe(false)
     m.claims = null
-    expect(await sendReport(input)).toEqual({ ok: false, error: "Prijavite se da biste nastavili.", code: null })
+    expect(await sendReport(input)).toEqual({ ok: false, error: "Uloguj se da nastaviš.", code: null })
     m.claims = { sub: USER, is_anonymous: true }
     expect((await sendReport(input)).ok).toBe(false)
     expect(m.calls).toEqual([])
