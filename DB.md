@@ -608,7 +608,7 @@ Službenik nikad ne vraća status unazad i ne otvara zatvorenu prijavu. Građani
 1a. Klijent na „Potvrdi lokaciju": `supabase.rpc('resolve_municipality', { p_lat, p_lng })` sa sesijom građanina; `null` = poruka iz FR-4 i građanin ostaje na mapi, a `prepare` se ne zove (tiket 19 Q6). Provjera u `prepare` i trigger ostaju kao druga i treća brava.
 2. Ruta `prepare`: `resolve_municipality` (van Podgorice: `outside_area`) → `update_draft` → `resolve_jurisdiction` → `find_nearby_open_reports` → dopis za pregled (ne čuva se). Promjena vrste na pregledu ponavlja `update_draft`, `resolve_jurisdiction` i `find_nearby_open_reports`.
 3. `sendReport`: `begin_submission` → (`routing`: kraj) → `count_previous_reports` + šablon dopisa → `start_dispatch` → `lib/email/send.ts` → `complete_dispatch`. Ako slanje ne uspije, „Pokušaj ponovo" ponavlja cijeli niz; kod ostaje isti.
-4. `/admin`, „Pošalji dopis": `start_dispatch(assignment)` → `lib/email/send.ts` → `complete_dispatch`.
+4. `/admin`, „Proslijedi instituciji": `start_dispatch(assignment)` → `lib/email/send.ts` → `complete_dispatch`.
 
 ## 9. RLS politike
 

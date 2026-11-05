@@ -1,4 +1,4 @@
-// Ticket #15: "Pošalji dopis" on /admin (FR-23 manual assignment, FR-18 transition 6). The whole
+// Ticket #15: "Proslijedi instituciji" on /admin (FR-23 manual assignment, FR-18 transition 6). The whole
 // chain runs: assignReport → lib/email/report-letter.ts → lib/email/dispatch.ts → lib/email/send.ts,
 // with Supabase replaced by a small in-memory fake and Resend mocked (Tech.md §12).
 import { beforeEach, describe, expect, it, vi } from "vitest"

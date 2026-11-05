@@ -11,7 +11,7 @@ import { completeDispatchArgs, emailModeOf, sendLetter, type EmailAttachment, ty
 
 // Steps 3–5 of sending a letter (Tech.md §6 point 3, DB.md §8.5 points 3 and 4):
 // start_dispatch → photos from Storage → lib/email/send.ts → complete_dispatch.
-// sendReport uses it with kind `initial`; /admin "Pošalji dopis" (#15) with kind `assignment`.
+// sendReport uses it with kind `initial`; /admin "Proslijedi instituciji" (#15) with kind `assignment`.
 
 export type DispatchLetterInput = {
   reportId: string

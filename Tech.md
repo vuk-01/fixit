@@ -99,7 +99,7 @@ components/
   map/                              Leaflet komponente ('use client')
   report/                           dijelovi javne stranice i mape (status, sažetak prijave, „Zašto ova institucija?", vremenska linija)
   panel/                            forma za promjenu statusa u panelu
-  admin/                            forma za ručno raspoređivanje na /admin: izbor institucije, dopis, „Pošalji dopis" [tiket 15]
+  admin/                            forma za ručno raspoređivanje na /admin: izbor institucije, tekst prijave (dopis), „Proslijedi instituciji" [tiket 15]
   report-flow/                      čarobnjak na /prijavi: stanje toka (flow-state.ts), koraci fotografija, lokacija i „Pregled prijave" (review-step.tsx)
   sign-in/                          animacija oko forme na /uloguj-se (UI.md „Sign-in page"): repair-scene.tsx (sloj i mjerenje), repair-scene-art.tsx (SVG crteži), repair-scene-plan.ts (raspored i redoslijed, čiste funkcije uz test), repair-scene.module.css (keyframes) [tiket 32]
 lib/
@@ -210,10 +210,10 @@ Agent nije pozadinski proces. To su dvije rute (Route Handler, Node runtime) koj
 4. `lib/email/send.ts`, sa fotografijama u prilogu (čita ih admin klijent).
 5. `complete_dispatch`: tek nakon uspjeha status postaje `sent`; neuspjeh ostavlja nacrt sa kodom, a „Pokušaj ponovo" ponavlja cijeli niz.
 
-`/admin` („Pošalji dopis", ručno raspoređivanje) koristi korake 3–5 sa `start_dispatch(assignment)`. Prelaze statusa upisuju samo RPC funkcije, nikad klijent (`DB.md`).
+`/admin` („Proslijedi instituciji", ručno raspoređivanje) koristi korake 3–5 sa `start_dispatch(assignment)`. Prelaze statusa upisuju samo RPC funkcije, nikad klijent (`DB.md`).
 
 Detalji [tiket 15]:
-- `/admin` je lista prijava u `routing` (najstarije prvo), a `/admin/prijave/[id]` stranica jedne prijave sa izborom institucije (samo `email is not null and is_active`), dopisom i „Pošalji dopis". Pristup samo ulozi `admin`: gost i anonimna sesija idu na `/uloguj-se?next=…`, ostali na `/`. Administrator u meniju zaglavlja ima „Administracija".
+- `/admin` je lista prijava u `routing` (najstarije prvo), a `/admin/prijave/[id]` stranica jedne prijave sa izborom institucije (samo `email is not null and is_active`), dopisom i „Proslijedi instituciji". Pristup samo ulozi `admin`: gost i anonimna sesija idu na `/uloguj-se?next=…`, ostali na `/`. Administrator u meniju zaglavlja ima „Administracija".
 - Server Action `assignReport` (`app/admin/actions.ts`): `getClaims()` (preko `getAccount`) i uloga `admin`, pa servisnim ključem provjera institucije i statusa `routing`, dopis `buildAssignmentLetter` (`lib/email/report-letter.ts`: pravi kod, `submitted_at`, `count_previous_reports`, broj podrški, bez kopije i bez pravila) i `dispatchLetter` sa `kind: 'assignment'`, `ruleId: null`. Ne piše ni u jednu tabelu direktno i nikad ne dira `jurisdiction_rules` (zlatno pravilo 1).
 - Pregled dopisa na `/admin` se renderuje u pregledaču istim šablonom za svaki izbor institucije; ime prijavioca se vidi samo ako je uključio dostavljanje podataka, a umjesto mejla naloga stoji „[mejl naloga prijavioca]". Server pri slanju dopis pravi ponovo iz baze.
 - Prijava bez fotografije (samo demo prijave 9 i 10, `DB.md` §12.4) ne može dobiti dopis: dugme je onemogućeno, a akcija je odbija prije `start_dispatch`, pa ne nastaje ni dopis ni pokušaj slanja.

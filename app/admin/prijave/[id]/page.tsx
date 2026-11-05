@@ -26,7 +26,7 @@ export const metadata: Metadata = { title: ADMIN_TEXT.pageTitle }
 
 // One report on /admin (ticket #15): what the administrator needs to choose the institution
 // (photos, description, address, why it waits, the reporter's name), the institution picker, the
-// letter preview and "Pošalji dopis" (FR-23 manual assignment). A report that already has a
+// letter preview and "Proslijedi instituciji" (FR-23 manual assignment). A report that already has a
 // recipient shows it and the letter sent. Full details stay on /panel/prijave/[id] (read-only).
 export default async function AdminReportPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params

@@ -83,7 +83,7 @@ Prioriteti: **P0** = mora raditi na demou; **P1** = radimo ako P0 bude gotov do 
 ### 4.4 Administracija i demo
 - **P0** Seed podaci (sve samo za Glavni grad Podgoricu): granica Podgorice, institucije, pravila nadležnosti, ~10 demo prijava u Podgorici, demo nalozi. Dio demo prijava ima unazad postavljene datume i istoriju statusa (npr. „14 dana bez rješenja", „Riješeno za 6 dana"), da bi video mogao pokazati kako se prijava razvija. Demo nalozi i demo prijave postoje unaprijed: nalozi od prvog dana (tim se njima uloguje, a služe i za video), prijave čim je seed za njih gotov. Prikazuju se iste prijave na probi, u videu i na ocjenjivanju, bez brisanja i ponovnog seed-a (tiket 22 Q1, Q4; `DB.md` §12). Registracija novog naloga radi (FR-1), ali se u videu ne prikazuje.
 - **P0** Video od 1 minuta za prezentaciju (vidi §9): prikazuje samo perspektivu građanina, i to kako se pravi jedna prijava i šta se s njom dalje dešava. Detaljan plan snimanja Ivana daje posebno; tiketi za izradu prave aplikaciju koja radi, ne video (tiket 22 Q4).
-- **P0** Minimalna administratorska stranica `/admin`: lista prijava u `routing`, izbor institucije (samo one sa provjerenim mejlom) i dugme „Pošalji dopis" (isti šablon i isto slanje kao FR-11; status prelazi u `sent`).
+- **P0** Minimalna administratorska stranica `/admin`: lista prijava u `routing`, izbor institucije (samo one sa provjerenim mejlom) i dugme „Proslijedi instituciji" (isti šablon i isto slanje kao FR-11; status prelazi u `sent`).
 - **P1** Moderacija na `/admin`: pregled označenih fotografija i sakrivanje fotografije ili prijave (tiket 19 Q2). Do tada, u hitnom slučaju, Ivana sakriva prijavu ili fotografiju u Supabase Table Editoru (`hidden_at`).
 - **P1** Admin stranica za institucije i pravila nadležnosti (CRUD).
 - **P1** Javna statistika po instituciji (prosječno vrijeme reakcije), ključni argument za EU priču.
@@ -273,7 +273,7 @@ Zaglavlje svih stranica: ulogovan nalog (ne anonimna sesija) ima meni sa „Odja
 ### Administrator
 | Ruta | Namjena |
 |---|---|
-| `/admin` | **P0:** lista prijava u `routing` (bez nadležnog), izbor institucije i dugme „Pošalji dopis" (ručno raspoređivanje; vidi „Pravila nadležnosti" u §5.2). **P1:** prijave označene kao `not_competent`; pregled fotografija sa vidljivim licima ili tablicama i sakrivanje fotografije ili cijele prijave (moderacija, §4.4 i §6 Privatnost; tiket 19 Q2). |
+| `/admin` | **P0:** lista prijava u `routing` (bez nadležnog), izbor institucije i dugme „Proslijedi instituciji" (ručno raspoređivanje; vidi „Pravila nadležnosti" u §5.2). **P1:** prijave označene kao `not_competent`; pregled fotografija sa vidljivim licima ili tablicama i sakrivanje fotografije ili cijele prijave (moderacija, §4.4 i §6 Privatnost; tiket 19 Q2). |
 | `/admin/institucije` | CRUD institucija (P1). |
 | `/admin/pravila` | CRUD pravila nadležnosti (P1). |
 | `/admin/korisnici` | Nalozi službenika (P1; do tada preko seed skripte). |

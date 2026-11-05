@@ -32,7 +32,7 @@ const DISPATCH_ERRORS: Record<string, string> = {
 }
 
 /**
- * "Pošalji dopis" on /admin: manual assignment of a report in `routing` (FR-23, FR-18 transition 6,
+ * "Proslijedi instituciji" on /admin: manual assignment of a report in `routing` (FR-23, FR-18 transition 6,
  * Tech.md §6 point 3, DB.md §8.5 point 4). getClaims() (through getAccount) and the `admin` role,
  * then with the service key: the institution must have a verified email and be active, the report
  * must be in `routing` and have photos; the letter from the same template (kind `assignment`, no
