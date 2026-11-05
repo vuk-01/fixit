@@ -102,9 +102,10 @@ export function MapLegend() {
   )
 }
 
-// A report in the list (UI.md "Report card"): the day count leads like a departure time (navy for an
-// open report, its number amber from 7 days; muted for a closed one), then category, address, status
-// and supports, and the photo on the right with a straight inner edge.
+// A report in the list (UI.md "Report card"): the day count leads like a departure time (blue
+// `report-day` with off-white figures for every report but a resolved one, which is light green as a
+// whole card with dark figures), then category, address, status and supports, and the photo on the
+// right with a straight inner edge. The status badge keeps its own colour, icon and text.
 export function ReportListCard({
   report,
   onActiveChange,
@@ -117,7 +118,7 @@ export function ReportListCard({
     new Date(report.submitted_at),
     report.closed_at ? new Date(report.closed_at) : new Date(),
   )
-  const open = OPEN_STATUSES.includes(report.status)
+  const resolved = report.status === "resolved"
 
   return (
     <Link
@@ -128,23 +129,23 @@ export function ReportListCard({
       onFocus={onActiveChange && (() => onActiveChange(report.id))}
       onBlur={onActiveChange && (() => onActiveChange(null))}
     >
-      <Card className="h-full flex-row items-stretch gap-0 overflow-hidden rounded-2xl p-0 shadow-[0_1px_2px_rgb(23_33_47/0.08)] ring-border lg:transition-shadow lg:group-hover/report:ring-2 lg:group-hover/report:ring-highlight">
+      <Card
+        className={cn(
+          "h-full flex-row items-stretch gap-0 overflow-hidden rounded-2xl p-0 shadow-[0_1px_2px_rgb(23_33_47/0.08)] ring-border lg:transition-shadow lg:group-hover/report:ring-2 lg:group-hover/report:ring-highlight",
+          resolved && "bg-report-resolved",
+        )}
+      >
         <div
           aria-hidden
           className={cn(
             "flex w-18 shrink-0 flex-col items-center justify-center gap-1",
-            open ? "bg-primary text-primary-foreground" : "bg-muted text-foreground",
+            resolved ? "bg-report-resolved-day text-foreground" : "bg-report-day text-report-day-foreground",
           )}
         >
-          <span
-            className={cn(
-              "font-mono text-[30px] leading-none font-semibold tabular-nums",
-              open && days >= 7 && "text-highlight",
-            )}
-          >
+          <span className="font-mono text-[30px] leading-none font-semibold tabular-nums">
             {days}
           </span>
-          <span className="text-[11px] leading-none font-bold tracking-[0.08em] uppercase opacity-80">
+          <span className="text-[11px] leading-none font-bold tracking-[0.08em] uppercase">
             {dayWord(days)}
           </span>
         </div>

@@ -31,14 +31,16 @@ Chosen by Vuk from home-page prototypes (ticket 32; the prototype branch is `32-
 
 | Token (Tailwind) | Value | Use | Never |
 |---|---|---|---|
-| `primary` / `primary-foreground` | navy `#17212f` / white | header, active tab pill, day column of an open report, marker day count and needle, zoom buttons, default buttons, links, focus ring | — |
-| `highlight` / `highlight-foreground` | amber `#ffb400` / navy | **the one main action of a screen** (`Button` variant `highlight`), the logo, icons inside navy (active tab icon, „Uloguj se" icon), a day count of 7+ days on navy, text selection | amber text or amber thin lines on white (1.9:1, fails AA); two amber buttons competing on one screen |
+| `primary` / `primary-foreground` | navy `#17212f` / white | header, active tab pill, marker day count and needle, zoom buttons, default buttons, links, focus ring | — |
+| `highlight` / `highlight-foreground` | amber `#ffb400` / navy | **the one main action of a screen** (`Button` variant `highlight`), the logo, icons inside navy (active tab icon, „Uloguj se" icon), text selection | amber text or amber thin lines on white (1.9:1, fails AA); two amber buttons competing on one screen |
 | `ground` | `#eef0f3` | page ground behind white cards (lists, sidebars' list area) | as a card colour |
 | `background`, `card`, `popover` | white | bars (bottom navigation, laptop sidebar head), cards, popups, menus | — |
 | `foreground` | navy `#17212f` | text | — |
-| `muted` / `muted-foreground` | `#e7eaee` / `#4b5563` | closed report's day column, photo placeholders, stat tiles; secondary text (addresses, counts, inactive tab labels) | — |
+| `muted` / `muted-foreground` | `#e7eaee` / `#4b5563` | photo placeholders, stat tiles; secondary text (addresses, counts, inactive tab labels) | — |
 | `border`, `input` | `#d9dde3` | card rings, bar borders, inputs | — |
 | `status-*` | see "Status colours and icons" | status badges and markers only | for anything that is not a status |
+| `report-day` / `report-day-foreground` | dark navy blue `#1f3352` / off-white `#f1f5f9` | day column of a report card in the list (every status but `resolved`) | amber figures on it |
+| `report-resolved` / `report-resolved-day` | light green `#eef7f1` / `#d6ecdd` | a resolved report card: the whole card / its day column, figures in `foreground` | as a status colour (the badge stays `status-resolved`) |
 | `highlight-shade` | `#e09e00` | darker amber details on the sign-in scene's worker (hard hat ridge, vest seam) | for UI |
 | `scene-*` (`hole`, `stone`, `steel`, `skin`, `wood`, `straw`, `cardboard`, `check`) | see `app/globals.css` | the sign-in repair scene's drawing only (see "Sign-in page"), used as `var(--scene-…)` in its SVG | for UI; `scene-check` is the scene's ✓ and is not a status colour |
 
@@ -65,7 +67,7 @@ Chosen by Vuk from home-page prototypes (ticket 32; the prototype branch is `32-
 | Legend | 12.5 px / 600 |
 | Badge | 12 px / 500 |
 | Day count (card) | Overpass Mono 30 px / 600 / 1, tabular |
-| Day word under it („DAN", „DANA") | 11 px / 700 / 1, uppercase, tracking 0.08em, 80 % opacity |
+| Day word under it („DAN", „DANA") | 11 px / 700 / 1, uppercase, tracking 0.08em, same colour as the number |
 | Marker day count | Overpass Mono 13 px / 600 / 1, tabular |
 
 ### Header (`components/site-header.tsx`, every page)
@@ -102,7 +104,7 @@ The phone home page ends in a white bar: `border-t`, padding 6 px top, 8 px side
 The reusable way to show one report in a list (home now; „Moje prijave", panel and admin lists later):
 
 - `Card` as a row (`flex-row`, `p-0`, `gap-0`, `overflow-hidden`), the whole card one link to `/p/[code]`.
-- **Day column** on the left, 72 px wide, full height: the number of days since the report (Overpass Mono 30 px) over „DAN"/„DANA". Open report: navy with white figures, and the number turns **amber from 7 days**. Closed report (`resolved`, `rejected`): `muted` with navy figures. The column is `aria-hidden`; the full counter text („9 dana bez rješenja") is in an `sr-only` span in the body.
+- **Day column** on the left, 72 px wide, full height: the number of days since the report (Overpass Mono 30 px) over „DAN"/„DANA". **Colours** [ticket 32, 5. 11. 2026; variant A of four prototypes, Danijela]: every report but a resolved one — `routing`, `sent`, `acknowledged`, `in_progress`, `not_competent`, `rejected` — has a `report-day` column (dark navy blue, a touch bluer than the header) with off-white figures, never amber, also after 7 days. A **resolved** report is light green as a whole card (`report-resolved`) with a slightly deeper green column (`report-resolved-day`) and `foreground` figures. The status badge keeps its own colour, icon and text („Odbijena" stays red), so the status is never told by the card colour alone. Contrast (WCAG AA): figures 11.6:1 on blue, 13.1:1 on green; secondary text 6.9:1 on the green card; the „Riješena" badge 4.6:1 against the green card. The column is `aria-hidden`; the full counter text („9 dana bez rješenja") is in an `sr-only` span in the body.
 - **Body**: category (2 lines max), address (one line, truncated), status badge + „Demo prijava" badge, supports with the `HeartHandshake` icon.
 - **Photo** on the right, 80 px wide, full height, `object-cover`, with **square corners** (`rounded-none!`: `Card` rounds a last-child `<img>` at the bottom); the card's own clip rounds the outer corners. Without a photo, the placeholder shows only its icon.
 - On a laptop, hover/focus gives the card a 2 px amber ring and highlights its marker.
