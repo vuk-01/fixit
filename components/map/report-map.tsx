@@ -5,7 +5,7 @@ import "leaflet/dist/leaflet.css"
 import { cn } from "cn"
 import L from "leaflet"
 import { Minus, Plus } from "lucide-react"
-import { useState } from "react"
+import { useCallback, useState } from "react"
 import { createPortal } from "react-dom"
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet"
 
@@ -32,7 +32,8 @@ export const MAP_TEXT = {
 // Loaded only in the browser through next/dynamic with ssr: false (Tech.md §8). UI.md "Map": the
 // zoom buttons are ours (navy squares), the markers are status chips stuck into the map on a needle,
 // and the popup is `.report-popup` (globals.css). On a laptop the list sidebar highlights the marker of
-// the hovered card (`activeId`, ticket 32).
+// the hovered card (`activeId`, ticket 32). The marker whose popup is open is selected: it hops once,
+// stays larger with the amber ring and sits in front of all other markers (ticket 32).
 export function ReportMap({
   reports,
   activeId = null,
@@ -44,6 +45,11 @@ export function ReportMap({
   zoomClassName: string
 }) {
   const [map, setMap] = useState<L.Map | null>(null)
+  // follows the open popup: closing it (×, Escape, a tap on the map) or opening another marker's popup
+  // moves or clears the selection, so at most one marker is selected
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const select = useCallback((id: string) => setSelectedId(id), [])
+  const deselect = useCallback((id: string) => setSelectedId((current) => (current === id ? null : current)), [])
 
   return (
     <div className="relative size-full">
@@ -57,7 +63,14 @@ export function ReportMap({
         <TileLayer url={MAP_TILES.url} attribution={MAP_TILES.attribution} maxZoom={MAP_TILES.maxZoom} />
         <FitToContainer />
         {reports.map((report) => (
-          <StatusMarker key={report.id} report={report} active={report.id === activeId} />
+          <StatusMarker
+            key={report.id}
+            report={report}
+            active={report.id === activeId}
+            selected={report.id === selectedId}
+            onSelect={select}
+            onDeselect={deselect}
+          />
         ))}
       </MapContainer>
       {map && <ZoomButtons map={map} className={zoomClassName} />}
@@ -85,12 +98,28 @@ function ZoomButtons({ map, className }: { map: L.Map; className: string }) {
 // Leaflet places on the map, so lucide icons work without rendering to a string. The icon box is
 // 72 × 46 px and its anchor is the needle's point (36, 42): the chip (status square + days since the
 // report) on top, a 3 × 14 px navy needle, and a soft shadow where it enters the map.
-function StatusMarker({ report, active }: { report: MapReport; active: boolean }) {
+// Leaflet positions the marker with a transform on the icon's root element, so the hover/selected scale
+// and the hop are on the inner element, from the needle's point (50 % 91 %): the pin stays on its spot.
+// The root is focusable (Leaflet: tabindex 0, role button, Enter opens the popup); its focus ring is
+// drawn on the chip, navy, so it is not mistaken for the amber selected ring.
+function StatusMarker({
+  report,
+  active,
+  selected,
+  onSelect,
+  onDeselect,
+}: {
+  report: MapReport
+  active: boolean
+  selected: boolean
+  onSelect: (id: string) => void
+  onDeselect: (id: string) => void
+}) {
   const [container] = useState(() => document.createElement("div"))
   const [icon] = useState(() =>
     L.divIcon({
       html: container,
-      className: "",
+      className: "group/marker outline-none",
       iconSize: [72, 46],
       iconAnchor: [36, 42],
       popupAnchor: [0, -40],
@@ -107,7 +136,13 @@ function StatusMarker({ report, active }: { report: MapReport; active: boolean }
       <Marker
         position={[report.lat, report.lng]}
         icon={icon}
-        zIndexOffset={active ? 1000 : 0}
+        // Leaflet stacks markers by their screen y + this offset: the selected one is in front of every
+        // other marker, also of the one highlighted from the list
+        zIndexOffset={selected ? 10000 : active ? 1000 : 0}
+        eventHandlers={{
+          popupopen: () => onSelect(report.id),
+          popupclose: () => onDeselect(report.id),
+        }}
         title={`${CATEGORIES[report.category].label}, ${STATUS_LABELS[report.status].public}`}
       >
         <Popup
@@ -129,14 +164,18 @@ function StatusMarker({ report, active }: { report: MapReport; active: boolean }
       {createPortal(
         <span
           className={cn(
-            "flex h-[46px] w-[72px] origin-[50%_91%] flex-col items-center transition-transform duration-150",
-            active && "scale-115",
+            "flex h-[46px] w-[72px] origin-[50%_91%] flex-col items-center transition-transform duration-150 motion-reduce:transition-none",
+            (active || selected) && "scale-115",
+            // one hop when it becomes selected; with reduced motion only the larger pin and the ring
+            selected && "motion-safe:animate-pin-hop",
           )}
         >
           <span
             className={cn(
               "flex items-stretch overflow-hidden rounded-lg shadow-[0_3px_8px_rgb(23_33_47/0.35)] ring-2 ring-white",
-              active && "ring-highlight",
+              "group-focus-visible/marker:outline-[3px] group-focus-visible/marker:outline-offset-2 group-focus-visible/marker:outline-primary",
+              (active || selected) && "ring-highlight",
+              selected && "ring-[3px]",
             )}
           >
             <span className={cn("flex size-7 items-center justify-center", colorClass)}>

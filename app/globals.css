@@ -162,6 +162,21 @@
     --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* Selected map marker (UI.md "Map"): one short hop of the pin's inner element. It animates `translate`,
+   so it combines with the `scale` of the selected state; skipped with prefers-reduced-motion. */
+@theme {
+    --animate-pin-hop: pin-hop 300ms cubic-bezier(0.3, 0.7, 0.4, 1);
+    @keyframes pin-hop {
+        0%,
+        100% {
+            translate: 0 0;
+        }
+        45% {
+            translate: 0 -9px;
+        }
+    }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
