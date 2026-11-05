@@ -12,7 +12,7 @@ export type Account = {
   lastName: string
   role: Database["public"]["Enums"]["user_role"]
   institutionId: string | null
-  // for the header's account menu: the sign-in mail and the official's institution (`institutions.name`)
+  // for the header's account menu: the sign-in mail and the official's institution (its `short_name`, else `name`; DB.md §12.2)
   email: string | null
   institutionName: string | null
 }
@@ -27,7 +27,7 @@ export async function getAccount(): Promise<Account | null> {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("first_name, last_name, role, institution_id, institutions(name)")
+    .select("first_name, last_name, role, institution_id, institutions(short_name, name)")
     .eq("id", claims.sub)
     .maybeSingle()
   if (!profile) return null
@@ -39,7 +39,7 @@ export async function getAccount(): Promise<Account | null> {
     role: profile.role,
     institutionId: profile.institution_id,
     email: typeof claims.email === "string" ? claims.email : null,
-    institutionName: profile.institutions?.name ?? null,
+    institutionName: profile.institutions?.short_name ?? profile.institutions?.name ?? null,
   }
 }
 
