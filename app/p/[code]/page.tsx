@@ -43,7 +43,7 @@ export default async function PublicReportPage({ params }: Props) {
   const category = CATEGORIES[report.category].label
 
   return (
-    <div className="min-h-[calc(100svh-4rem-1px)] bg-muted/50">
+    <div className="min-h-[calc(100svh-var(--header-height))] bg-muted/50">
       {/* the header's container (max-w-5xl px-4); from lg up the photo and description sit
           next to the institution, supports and timeline instead of one stretched column (#32) */}
       <main className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] wrap-break-word">

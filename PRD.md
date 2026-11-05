@@ -160,7 +160,7 @@ Pravilo u `jurisdiction_rules` je jedini izvor nadležnosti (zlatno pravilo 1). 
 - **Izmjene pravila** u P0 idu samo kroz migraciju ili seed; administratorski CRUD je P1.
 
 ### 5.3 Mapa, podrške i statusi
-- **FR-14** Javna mapa prikazuje sve prijave osim `draft` i sakrivenih, sa bojom i ikonom po statusu i nazivom statusa tekstom; boje (tokeni iz preseta) i ikone su u tabeli u `UI.md` (tiket 22 Q10).
+- **FR-14** Javna mapa prikazuje sve prijave osim `draft` i sakrivenih, sa bojom i ikonom po statusu i nazivom statusa tekstom; boje (tokeni teme) i ikone su u tabeli u `UI.md` (tiket 22 Q10).
 - **FR-15** Brojač dana se računa od `submitted_at` (podnošenje: trenutak kad je prijava otišla u `sent` ili u `routing`), a ne od slanja kasnijih dopisa. Broj dana {n} je razlika kalendarskih dana po vremenu u Podgorici (`Europe/Podgorica`). Tekst po statusu:
   - otvorena prijava (`routing`, `sent`, `acknowledged`, `in_progress`, `not_competent`): „{n} dana bez rješenja" (do danas); za n = 0 „Prijavljeno danas";
   - `resolved`: „Riješeno za {n} dana" (do `closed_at`); za n = 0 „Riješeno istog dana";

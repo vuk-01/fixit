@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
 // An unknown code, a draft and a hidden report give this same page (ticket #13).
 export default function PublicReportNotFound() {
   return (
-    <div className="min-h-[calc(100svh-4rem-1px)] bg-muted/50">
+    <div className="min-h-[calc(100svh-var(--header-height))] bg-muted/50">
       <main className="mx-auto w-full max-w-2xl px-4 py-6">
         <Card>
           <CardHeader>

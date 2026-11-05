@@ -13,7 +13,7 @@ Fixit je PWA u kojoj građanin fotografiše svakodnevni problem, a AI agent prep
 | `/PRD.md` | Šta gradimo: uloge, funkcije (P0/P1/P2), zahtjevi FR-x, šta nije u scope-u, stranice. |
 | `/Tech.md` | Kako: stack, dozvoljene zavisnosti i verzije, struktura foldera, agent tok, env varijable, `pnpm` skripte. |
 | `/DB.md` | Šema, RPC funkcije, RLS, storage, Realtime, demo podaci, redoslijed migracija. Čitaj prije svakog upita ili upisa u bazu. |
-| `/UI.md` | Izgled: shadcn/ui komponente, preset, Tailwind. Čitaj prije svakog ekrana ili komponente. |
+| `/UI.md` | Izgled: Fixit dizajn (boje, tipografija, zaglavlje, kartice, mapa), shadcn/ui, Tailwind. Čitaj prije svakog ekrana ili komponente. |
 | `/GLOSSARY.md` | Pojmovi: naziv u UI-ju i njegov identifikator u kodu (npr. „podrška" = `like`, „vrsta problema" = `category`). Čitaj prije imenovanja tabele, kolone, rute ili labele. |
 
 Prije zadatka pročitaj relevantne sekcije. Ako zadatak traži nešto što se kosi sa dokumentima, **stani i pitaj**. Ako se odluka promijeni, ažuriraj dokument u istom PR-u.
