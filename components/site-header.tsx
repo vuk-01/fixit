@@ -39,7 +39,8 @@ export async function SiteHeader() {
             }
           />
         ) : (
-          <Link href="/uloguj-se" className={HEADER_PILL}>
+          // hidden on /uloguj-se itself, which marks its <main> with data-page="sign-in"
+          <Link href="/uloguj-se" className={`${HEADER_PILL} [body:has([data-page=sign-in])_&]:hidden`}>
             <LogIn aria-hidden className="size-[18px] text-highlight" strokeWidth={2.5} />
             {HEADER_TEXT.signIn}
           </Link>

@@ -31,6 +31,17 @@
     --highlight-foreground: #17212f;
     /* page ground behind white cards */
     --ground: #eef0f3;
+    /* the darker amber of the worker's hard hat and vest seams in the sign-in scene */
+    --highlight-shade: #e09e00;
+    /* sign-in repair scene illustration only (UI.md "Sign-in page"), never for UI */
+    --scene-hole: #0d141d;
+    --scene-stone: #9aa4b1;
+    --scene-steel: #6b7280;
+    --scene-skin: #e8b98f;
+    --scene-wood: #8b5a2b;
+    --scene-straw: #d4a24c;
+    --scene-cardboard: #b7834a;
+    --scene-check: #15803d;
     --chart-1: oklch(0.837 0.128 66.29);
     --chart-2: oklch(0.705 0.213 47.604);
     --chart-3: oklch(0.646 0.222 41.116);

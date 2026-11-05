@@ -39,6 +39,8 @@ Chosen by Vuk from home-page prototypes (ticket 32; the prototype branch is `32-
 | `muted` / `muted-foreground` | `#e7eaee` / `#4b5563` | closed report's day column, photo placeholders, stat tiles; secondary text (addresses, counts, inactive tab labels) | — |
 | `border`, `input` | `#d9dde3` | card rings, bar borders, inputs | — |
 | `status-*` | see "Status colours and icons" | status badges and markers only | for anything that is not a status |
+| `highlight-shade` | `#e09e00` | darker amber details on the sign-in scene's worker (hard hat ridge, vest seam) | for UI |
+| `scene-*` (`hole`, `stone`, `steel`, `skin`, `wood`, `straw`, `cardboard`, `check`) | see `app/globals.css` | the sign-in repair scene's drawing only (see "Sign-in page"), used as `var(--scene-…)` in its SVG | for UI; `scene-check` is the scene's ✓ and is not a status colour |
 
 `--radius` is `0.75rem`: `rounded-lg` 12 px, `rounded-xl` 16.8 px, `rounded-2xl` 21.6 px, `rounded-4xl` 31.2 px (pills).
 
@@ -71,6 +73,7 @@ Chosen by Vuk from home-page prototypes (ticket 32; the prototype branch is `32-
 - Navy (`bg-primary`), height `--header-height` = **4.75rem (76 px)**, no bottom border, sticky. Full-height screens use `h-[calc(100svh-var(--header-height))]`, never a hard-coded rem value.
 - Left: the logo (`/fixit-logo.svg`, 44 × 44, `alt=""`; the link carries „Fixit, početna"), 12 px gap, „Fixit" over „Prijave u Podgorici".
 - Right: **one pill control** (`HEADER_PILL` in `components/header-styles.ts`): 44 px tall, `rounded-full`, `bg-white/10` with a `white/25` inner ring, white 15 px / 700 label, an 18 px amber icon before it (`LogIn` for „Uloguj se", `UserRound` + the account's name for the account menu), `-mr-1`. The account menu is the same pill; the menu itself is the shadcn `DropdownMenu`.
+- **„Uloguj se" is hidden on `/uloguj-se` itself** [ticket 32, 5. 11. 2026]: a link to the page you are on is noise, and the right side of the header stays empty there. The page marks its `<main>` with `data-page="sign-in"` and the pill carries `[body:has([data-page=sign-in])_&]:hidden` (the header is a Server Component in the shared layout and does not know the route). The account menu never shows on that page: a signed-in visitor is redirected away from it.
 - Container `max-w-5xl px-4`; on the laptop home page (`data-header="wide"`) it spans the screen.
 - The browser bar is navy too (`viewport.themeColor`).
 
@@ -125,6 +128,19 @@ The reusable way to show one report in a list (home now; „Moje prijave", panel
 - Hex colours in components; new colours without a token here.
 - Status colours for decoration.
 
+## Sign-in page `/uloguj-se` (ticket 32, 5. 11. 2026) [Danijela]
+
+Chosen from prototypes (commit `f451db1` on `32-animacija-uloguj-se`; three placements of a tap-to-fix scene with a counter were dropped first, for one automatic scene around the form).
+
+- **Layout:** the tabs („Ulogovanje" / „Registracija"), the form card and the privacy notice are one group, `max-w-md`, centred vertically in the screen below the header (a `min-h-[calc(100svh-var(--header-height))]` flex column, the group `my-auto`). On a short phone (360 × 640) the group starts at the top and the page scrolls; nothing is cut off. Below `md` the group has 64 px padding above and below it, the scene's bands.
+- **Repair scene** (`components/sign-in/repair-scene.tsx`): decorative and automatic, no taps, no counter. Problems appear one at a time — a pothole, an open manhole, a flickering street light, an illegal dump; an original worker in an amber hard hat and vest runs in from the nearer screen edge, fixes it with its tool (shovel, wrench, screwdriver, broom), a ✓ pops above the spot, the problem fades and the worker runs off; after the last one a 2.6 s pause and the loop repeats (about 25 s a loop).
+  - From `md`: pothole left of the card, manhole right, street light top right, dump bottom left; the drawing grows with the free space beside the card.
+  - Below `md`: pothole, manhole and street light in the band above the tabs; the dump in the band below the notice only when that band is on the first screen (393 × 852 has four problems, 360 × 640 three).
+  - It never covers the tabs, the card or the notice, and never makes the page scroll sideways (the wrapper is `overflow-x: clip`).
+  - The layer is `aria-hidden`, `pointer-events: none`, under the content by z-index (`z-0` vs `relative z-10`).
+  - `prefers-reduced-motion: reduce`: a static scene (the pothole already fixed, the worker beside it with the ✓), no movement and no flicker.
+  - Colours are tokens only (`highlight-shade` and `scene-*`, see "Colour tokens"); the motion is CSS keyframes and transitions in `repair-scene.module.css`, timed by `repair-scene-plan.ts` (pure functions, with tests). No animation library.
+
 ## Light theme only (P0) [Claude, 4. 11. 2026]
 
 The app is always light (`ThemeProvider forcedTheme="light"` in `app/layout.tsx`), even when the phone is in dark mode. On Ivana's phone in dark mode the tabs, buttons and cards were hard to read next to the light map tiles. The `.dark` block in `app/globals.css` still holds the old preset's values and is not maintained; dark mode can come back after P0, with Fixit dark tokens, once every screen is checked in it.
@@ -168,5 +184,5 @@ Every page works at 360, 390 and 430 px (phone), 768 px (tablet) and 1280–1440
 - **Home `/` below `lg`:** header, map or list, bottom navigation (see "Bottom navigation"). The list is one column on a phone and two from `md`, inside the container.
 - **Home `/` from `lg` (Ivana's pick, ticket 32):** no tabs, no bottom bar. A white list sidebar on the left (400 px, 420 px from `xl`) with the heading „Sve prijave", three counts (Ukupno / Otvorene / Riješene, mono numbers on `ground` tiles), the 48 px „Prijavi problem" (`highlight`) across the sidebar, and the report cards on `ground` scrolling below; the map fills the rest of the screen with the legend top-left and the zoom buttons bottom-right. Hovering or focusing a card highlights its marker. The header spans the screen edges on this page only (`data-header="wide"`).
 - **`/p/[code]` from `lg`:** two columns, photo and description on the left (3fr), institution, supports and timeline on the right (2fr). On a phone it is the same single column as before.
-- **Single-task pages stay narrow and centred:** `/prijavi` is one `max-w-2xl` column with side borders from `md`; `/uloguj-se` (`max-w-md`) and `/privatnost` (`max-w-2xl`).
+- **Single-task pages stay narrow and centred:** `/prijavi` is one `max-w-2xl` column with side borders from `md`; `/uloguj-se` (`max-w-md`, centred vertically too, see "Sign-in page") and `/privatnost` (`max-w-2xl`).
 - **Long text never widens a page:** grid columns are `grid-cols-1` / `minmax(0, …)` with `min-w-0` children, detail pages carry `wrap-break-word`, and letters (`<pre>`, `whitespace-pre-wrap`) add `wrap-anywhere` so the map URL wraps.

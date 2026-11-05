@@ -101,6 +101,7 @@ components/
   panel/                            forma za promjenu statusa u panelu
   admin/                            forma za ručno raspoređivanje na /admin: izbor institucije, dopis, „Pošalji dopis" [tiket 15]
   report-flow/                      čarobnjak na /prijavi: stanje toka (flow-state.ts), koraci fotografija, lokacija i „Pregled prijave" (review-step.tsx)
+  sign-in/                          animacija oko forme na /uloguj-se (UI.md „Sign-in page"): repair-scene.tsx (sloj i mjerenje), repair-scene-art.tsx (SVG crteži), repair-scene-plan.ts (raspored i redoslijed, čiste funkcije uz test), repair-scene.module.css (keyframes) [tiket 32]
 lib/
   constants.ts                      sav tekst za korisnika, nazivi i opisi vrsta, ograničenja, MAP_TILES
   env.ts                            zod provjera serverskih env varijabli (server-only)
