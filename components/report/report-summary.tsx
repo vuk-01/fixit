@@ -1,4 +1,4 @@
-import { ImageOff } from "lucide-react"
+import { CalendarClock, HeartHandshake, ImageOff, MapPin } from "lucide-react"
 import Link from "next/link"
 
 import { Badge } from "@/components/ui/badge"
@@ -6,6 +6,7 @@ import { buttonVariants } from "@/components/ui/button"
 import { StatusBadge } from "@/components/report/status-badge"
 import { CATEGORIES, dayCounterText, likeCountText } from "@/lib/constants"
 import type { MapReport } from "@/lib/reports/public-map"
+import { cn } from "@/lib/utils"
 
 export const REPORT_SUMMARY_TEXT = {
   demo: "Demo prijava",
@@ -15,23 +16,47 @@ export const REPORT_SUMMARY_TEXT = {
   photoAlt: "Fotografija problema",
 } as const
 
-// Content of a map marker popup (FR-14): category, status in text, day counter, supports,
-// photo or the demo note, demo badge and a link to the public page.
+// Content of a map marker popup (FR-14, UI.md "Map"): photo, status in text, demo badge, category,
+// address, day counter, supports and a link to the public page. A fixed 240 px column (the
+// `.report-popup` CSS in globals.css matches it), with the photo in a fixed 240 × 180 frame that clips
+// it, so no browser can size the photo wider than the column.
 export function ReportPopupContent({ report }: { report: MapReport }) {
   return (
     // [&_p]:m-0! undoes Leaflet's unlayered `.leaflet-popup-content p` margins
-    <div className="flex w-full flex-col gap-2 font-sans text-sm text-foreground [&_p]:m-0!">
-      <ReportPhoto report={report} className="aspect-video w-full rounded-lg" />
-      <div className="flex flex-wrap items-center gap-1.5">
-        <StatusBadge status={report.status} />
-        {report.is_demo && <Badge variant="outline">{REPORT_SUMMARY_TEXT.demo}</Badge>}
+    <div className="flex w-[240px] min-w-0 flex-col gap-2.5 font-sans text-sm text-foreground [&_p]:m-0!">
+      <div className="relative h-[180px] w-[240px] shrink-0 overflow-hidden rounded-xl bg-muted">
+        <ReportPhoto report={report} className="absolute inset-0 size-full max-w-none" />
       </div>
-      <p className="font-heading text-base leading-snug font-medium">{CATEGORIES[report.category].label}</p>
-      {report.address && <p className="text-muted-foreground">{report.address}</p>}
-      <ReportCounters report={report} />
+      <div className="flex flex-col gap-2 px-1">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <StatusBadge status={report.status} />
+          {report.is_demo && <Badge variant="outline">{REPORT_SUMMARY_TEXT.demo}</Badge>}
+        </div>
+        <p className="text-[17px] leading-snug font-bold">{CATEGORIES[report.category].label}</p>
+        {report.address && (
+          <p className="flex items-start gap-1.5 text-[13px] leading-snug text-muted-foreground">
+            <MapPin aria-hidden className="mt-px size-3.5 shrink-0" />
+            {report.address}
+          </p>
+        )}
+        <div className="flex flex-col gap-1 text-[13px] font-semibold">
+          <span className="inline-flex items-center gap-1.5">
+            <CalendarClock aria-hidden className="size-3.5 shrink-0" />
+            {dayCounterText(report)}
+          </span>
+          <span className="inline-flex items-center gap-1.5">
+            <HeartHandshake aria-hidden className="size-3.5 shrink-0" />
+            {likeCountText(report.like_count)}
+          </span>
+        </div>
+      </div>
+      {/* !text-…: Leaflet colours every link inside the map (.leaflet-container a) */}
       <Link
         href={`/p/${report.code}`}
-        className={buttonVariants({ className: "h-11 w-full !text-primary-foreground" })}
+        className={cn(
+          buttonVariants({ variant: "highlight" }),
+          "h-11 w-full rounded-xl text-[15px] !text-highlight-foreground",
+        )}
       >
         {REPORT_SUMMARY_TEXT.open}
       </Link>

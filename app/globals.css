@@ -4,25 +4,33 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Fixit theme (UI.md "Fixit design", Vuk, 5. 11. 2026): replaces preset b2xaqzSRuK. Navy and amber are
+   the two colours of the logo (public/fixit-logo.svg). Light theme only (P0). */
 :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.148 0.004 228.8);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.148 0.004 228.8);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.148 0.004 228.8);
-    --primary: oklch(0.488 0.243 264.376);
-    --primary-foreground: oklch(0.97 0.014 254.604);
-    --secondary: oklch(0.967 0.001 286.375);
-    --secondary-foreground: oklch(0.21 0.006 285.885);
-    --muted: oklch(0.963 0.002 197.1);
-    --muted-foreground: oklch(0.56 0.021 213.5);
-    --accent: oklch(0.963 0.002 197.1);
-    --accent-foreground: oklch(0.218 0.008 223.9);
+    --background: #ffffff;
+    --foreground: #17212f;
+    --card: #ffffff;
+    --card-foreground: #17212f;
+    --popover: #ffffff;
+    --popover-foreground: #17212f;
+    /* navy: structure and state (header, active tab, day column, links, focus) */
+    --primary: #17212f;
+    --primary-foreground: #ffffff;
+    --secondary: #e7eaee;
+    --secondary-foreground: #17212f;
+    --muted: #e7eaee;
+    --muted-foreground: #4b5563;
+    --accent: #e7eaee;
+    --accent-foreground: #17212f;
     --destructive: oklch(0.577 0.245 27.325);
-    --border: oklch(0.925 0.005 214.3);
-    --input: oklch(0.925 0.005 214.3);
-    --ring: oklch(0.723 0.014 214.4);
+    --border: #d9dde3;
+    --input: #d9dde3;
+    --ring: #17212f;
+    /* amber: the one main action of a screen (Button variant "highlight"); never text on white */
+    --highlight: #ffb400;
+    --highlight-foreground: #17212f;
+    /* page ground behind white cards */
+    --ground: #eef0f3;
     --chart-1: oklch(0.837 0.128 66.29);
     --chart-2: oklch(0.705 0.213 47.604);
     --chart-3: oklch(0.646 0.222 41.116);
@@ -35,15 +43,19 @@
     --status-in-progress: #f59e0b;
     --status-resolved: #15803d;
     --status-rejected: #b91c1c;
-    --radius: 0.875rem;
-    --sidebar: oklch(0.987 0.002 197.1);
-    --sidebar-foreground: oklch(0.148 0.004 228.8);
-    --sidebar-primary: oklch(0.546 0.245 262.881);
-    --sidebar-primary-foreground: oklch(0.97 0.014 254.604);
-    --sidebar-accent: oklch(0.963 0.002 197.1);
-    --sidebar-accent-foreground: oklch(0.218 0.008 223.9);
-    --sidebar-border: oklch(0.925 0.005 214.3);
-    --sidebar-ring: oklch(0.723 0.014 214.4);
+    --radius: 0.75rem;
+    /* SiteHeader height; full-height screens use calc(100svh - var(--header-height)) */
+    --header-height: 4.75rem;
+    --font-overpass: "Overpass", ui-sans-serif, system-ui, sans-serif;
+    --font-overpass-mono: "Overpass Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sidebar: #ffffff;
+    --sidebar-foreground: #17212f;
+    --sidebar-primary: #17212f;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #e7eaee;
+    --sidebar-accent-foreground: #17212f;
+    --sidebar-border: #d9dde3;
+    --sidebar-ring: #17212f;
 }
 
 .dark {
@@ -88,8 +100,12 @@
 }
 
 @theme inline {
-    --font-sans: var(--font-sans);
-    --font-heading: var(--font-heading);
+    --font-sans: var(--font-overpass);
+    --font-heading: var(--font-overpass);
+    --font-mono: var(--font-overpass-mono);
+    --color-highlight: var(--highlight);
+    --color-highlight-foreground: var(--highlight-foreground);
+    --color-ground: var(--ground);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -145,4 +161,115 @@
   html {
     @apply font-sans;
     }
+  ::selection {
+    background: var(--highlight);
+    color: var(--highlight-foreground);
+    }
+}
+
+/* Overpass and Overpass Mono (SIL OFL 1.1, public/fonts/OFL.txt), self-hosted, Latin and Latin Extended.
+   The font's own metrics (ascent 88.3 %, descent 38.3 %, cap height 70.3 % of the em) put its capitals
+   0.10 em above the centre of the line box, so a label sat high next to its icon and inside its pill.
+   The overrides move ascent and descent so that ascent - descent = cap height (98.45 - 28.15 = 70.3),
+   keeping their sum (126.6 %) and therefore every line height unchanged: capitals are centred in every
+   button, badge, tab and chip, with no per-component nudges (UI.md "Typography"). */
+@font-face {
+  font-family: "Overpass";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  ascent-override: 98.45%;
+  descent-override: 28.15%;
+  line-gap-override: 0%;
+  src: url("/fonts/overpass-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Overpass";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  ascent-override: 98.45%;
+  descent-override: 28.15%;
+  line-gap-override: 0%;
+  src: url("/fonts/overpass-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Overpass Mono";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  ascent-override: 98.45%;
+  descent-override: 28.15%;
+  line-gap-override: 0%;
+  src: url("/fonts/overpass-mono-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Overpass Mono";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  ascent-override: 98.45%;
+  descent-override: 28.15%;
+  line-gap-override: 0%;
+  src: url("/fonts/overpass-mono-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* Single-line controls (UI.md "Typography"): the line box is the font's own content area, so the browser
+   has no half-leading to split. Chrome rounds an odd split up (e.g. 3.75 px → 1 px above, 2.75 px below),
+   which put a label up to 1 px above its icon even with the overrides above. Unlayered, so it wins over
+   the text-* utilities' line heights; buttons and badges never wrap (whitespace-nowrap). */
+:where(.group\/button, .group\/badge) {
+  line-height: normal;
+}
+
+/* Report popup on the public map (UI.md "Map"): Leaflet's own popup CSS is unlayered and pads the content
+   20 px left / 24 px right, so it beats Tailwind utilities. These rules (also unlayered) give even
+   padding, a fixed 240 px column that nothing can widen, and a round close button over the photo whose
+   hit area is 44 px while the visible circle is 32 px. The close-button rules carry .leaflet-container,
+   because leaflet.css (same specificity) loads after this file. */
+.report-popup .leaflet-popup-content-wrapper {
+  padding: 0;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  box-shadow: 0 12px 32px -8px rgb(23 33 47 / 0.45);
+}
+.report-popup .leaflet-popup-content {
+  box-sizing: content-box;
+  width: 240px !important;
+  min-width: 240px;
+  max-width: 240px;
+  margin: 12px;
+  overflow: hidden;
+}
+.report-popup .leaflet-popup-tip {
+  box-shadow: none;
+}
+.leaflet-container .report-popup a.leaflet-popup-close-button {
+  top: 14px;
+  right: 14px;
+  display: flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 0;
+}
+.leaflet-container .report-popup a.leaflet-popup-close-button span {
+  display: none;
+}
+.leaflet-container .report-popup a.leaflet-popup-close-button::before {
+  content: "";
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  background: rgb(255 255 255 / 0.92) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2317212f' stroke-width='3' stroke-linecap='round'%3E%3Cpath d='M18 6 6 18'/%3E%3Cpath d='m6 6 12 12'/%3E%3C/svg%3E") center / 16px no-repeat;
+  box-shadow: 0 2px 6px rgb(23 33 47 / 0.3);
+}
+.leaflet-container .report-popup a.leaflet-popup-close-button:hover::before {
+  background-color: #ffffff;
 }

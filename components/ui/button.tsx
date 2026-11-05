@@ -8,6 +8,8 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/80",
+        // the one main action of a screen, amber with navy text (UI.md "Fixit design")
+        highlight: "bg-highlight text-highlight-foreground hover:bg-highlight/90",
         outline:
           "border-border bg-input/30 hover:bg-input/50 hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground",
         secondary:

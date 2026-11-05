@@ -1,20 +1,14 @@
 import type { Metadata, Viewport } from "next"
-import { DM_Sans, Geist_Mono, Outfit } from "next/font/google"
+import { preload } from "react-dom"
 
 import "./globals.css"
 import { SiteHeader } from "@/components/site-header"
 import { ThemeProvider } from "@/components/theme-provider"
 import { APP_DESCRIPTION, APP_NAME } from "@/lib/constants"
-import { cn } from "@/lib/utils"
 
-const outfitHeading = Outfit({ subsets: ["latin", "latin-ext"], variable: "--font-heading" })
-
-const dmSans = DM_Sans({ subsets: ["latin", "latin-ext"], variable: "--font-sans" })
-
-const fontMono = Geist_Mono({
-  subsets: ["latin", "latin-ext"],
-  variable: "--font-mono",
-})
+// Overpass is self-hosted with metric overrides in globals.css (UI.md "Typography"); preload the Latin
+// subset the first screen always uses
+const FONT_PRELOADS = ["/fonts/overpass-latin.woff2", "/fonts/overpass-mono-latin.woff2"]
 
 export const metadata: Metadata = {
   title: { default: APP_NAME, template: `%s · ${APP_NAME}` },
@@ -26,6 +20,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  // the browser bar takes the navy of the header
+  themeColor: "#17212f",
 }
 
 export default function RootLayout({
@@ -33,12 +29,12 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  for (const href of FONT_PRELOADS) {
+    preload(href, { as: "font", type: "font/woff2", crossOrigin: "anonymous" })
+  }
+
   return (
-    <html
-      lang="sr-Latn-ME"
-      suppressHydrationWarning
-      className={cn("antialiased", fontMono.variable, "font-sans", dmSans.variable, outfitHeading.variable)}
-    >
+    <html lang="sr-Latn-ME" suppressHydrationWarning className="font-sans antialiased">
       <body className="min-h-svh bg-background text-foreground">
         {/* light only in P0 (UI.md): the map tiles are light, and dark mode was hard to read */}
         <ThemeProvider forcedTheme="light">

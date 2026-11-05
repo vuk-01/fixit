@@ -1,13 +1,13 @@
 # Tech.md — Fixit
 
-*Kako gradimo: stack, verzije, struktura foldera, tokovi i komande. Odluke iz tiketa 17 (3. 11. 2026), na osnovu nalaza 03, 04 i 07. Šema, RPC, RLS i storage politike su u `DB.md`, pravila rada u `AGENTS.md`, pravila za UI i shadcn preset u `UI.md`, a hosting i mejl u posljednjoj sekciji ovog fajla.*
+*Kako gradimo: stack, verzije, struktura foldera, tokovi i komande. Odluke iz tiketa 17 (3. 11. 2026), na osnovu nalaza 03, 04 i 07. Šema, RPC, RLS i storage politike su u `DB.md`, pravila rada u `AGENTS.md`, pravila za UI i temu (Fixit dizajn) u `UI.md`, a hosting i mejl u posljednjoj sekciji ovog fajla.*
 
 ## 1. Stack ukratko
 
 | Sloj | Izbor |
 |---|---|
 | Aplikacija | Next.js 16 (App Router, Node runtime), React 19, TypeScript `strict`, pnpm |
-| UI | Tailwind CSS 4 + shadcn/ui (preset i pravila u `UI.md`) |
+| UI | Tailwind CSS 4 + shadcn/ui (tema i pravila u `UI.md`); fontovi Overpass i Overpass Mono su u `public/fonts/` (SIL OFL), bez `next/font` |
 | Baza, auth, fotografije, realtime | Supabase: Postgres + PostGIS, Auth (mejl + šifra; anonimne sesije samo za podršku), Storage (privatni bucket), Realtime. Region `eu-west-3` (Pariz) [Ivana]. |
 | AI | Claude API preko `@anthropic-ai/sdk`, model `claude-haiku-5-5`, strukturisan izlaz preko `zod` |
 | Mejl | Resend, isključivo kroz `lib/email/send.ts` |
@@ -135,6 +135,7 @@ scripts/
   demo-plan.ts                      plan demo prijava kao čiste funkcije: tabela iz `DB.md` §12.4, datumi od petka 6. 11., redovi za upis (testovi u `demo-plan.test.ts`)
   clear-demo.ts                     brisanje demo podataka (`pnpm db:clear-demo`, FR-25)
   demo-photos/                      8 fotografija demo prijava, po 2 za `pothole`, `street_light`, `illegal_dump`, `manhole` (Wikimedia Commons; 1600 px JPEG, bez EXIF-a) i `CREDITS.md` (autori i licence); tiket 21, `DB.md` §12.4
+public/                             fixit-logo.svg (logo, i `app/icon.svg`), fonts/ (Overpass i Overpass Mono, woff2 + OFL.txt; `UI.md`, „Typography")
 vercel.json                         { "regions": ["cdg1"] }
 .mcp.json                           shadcn MCP (UI.md)
 .env.example                        sve varijable, bez vrijednosti
@@ -258,7 +259,7 @@ Podešavanja i rokovi:
 ## 8. Mapa i adresa
 
 - **Biblioteka:** `leaflet` + `react-leaflet` (oko 46 KB gzip). Mapa je klijentska komponenta u `components/map/`, učitana sa `next/dynamic(() => import(…), { ssr: false })` iz druge klijentske komponente (u Server Component-i `ssr: false` nije dozvoljen). CSS: `import 'leaflet/dist/leaflet.css'`.
-- **Markeri:** `L.divIcon` sa bojom **i** ikonom statusa (statusi se ne razlikuju samo bojom, PRD §6); boja (token iz preseta) i ikona za svaki status su u tabeli u `UI.md` („Status colours and icons"). Tako se izbjegava i poznat problem sa putanjama podrazumijevane Leaflet ikone u bundleru.
+- **Markeri:** `L.divIcon` sa bojom **i** ikonom statusa (statusi se ne razlikuju samo bojom, PRD §6): pločica sa statusom i brojem dana od prijave, zabodena u mapu iglom (`UI.md`, „Map"); boja (token teme) i ikona za svaki status su u tabeli u `UI.md` („Status colours and icons"). Tako se izbjegava i poznat problem sa putanjama podrazumijevane Leaflet ikone u bundleru.
 - **Tile-ovi:** OSM standard, `https://tile.openstreetmap.org/{z}/{x}/{y}.png`, sa uvijek vidljivom atribucijom „© OpenStreetMap" (link na stranicu o autorskim pravima). URL i atribucija su u jednoj konstanti `MAP_TILES` u `lib/constants.ts`, da se provajder mijenja bez diranja komponenti.
   - OSM pravila: bez restriktivnog `Referrer-Policy` (npr. `no-referrer`), service worker ne kešira tile-ove i ništa se ne preuzima unaprijed.
   - Rezerva: CARTO Voyager/Positron raster (besplatan ključ, atribucija OSM + CARTO). Tek tada se uvodi `NEXT_PUBLIC_MAP_TILE_KEY`; taj ključ nije tajna.

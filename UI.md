@@ -1,84 +1,172 @@
 # UI rules for this project
 
-## shadcn/ui setup (ticket 17, 3. 11. 2026)
+Every screen follows **"Fixit design"** below. Read it whole before building or changing any screen or component; when a screen needs something it does not cover, extend it in the same grammar and add the rule here in the same PR.
 
-- **Preset: `b2xaqzSRuK`** (Ivana's choice). The project is created once, in the repo root, with:
+## shadcn/ui setup (ticket 17, 3. 11. 2026; theme replaced 5. 11. 2026)
 
-  ```
-  pnpm dlx shadcn@latest init --preset b2xaqzSRuK --template next
-  ```
-
-- `components.json` has **no `preset` field**. A preset is a short code that `init` spreads across the fields of `components.json` (`style`, `tailwind.baseColor`, `iconLibrary`, `menuColor`, `menuAccent`, …) and the CSS variables in `app/globals.css` (theme, radius, fonts). "Use the preset" therefore means: keep those generated values and do not edit them by hand. `style`, `tailwind.baseColor` and `tailwind.cssVariables` cannot be changed after `init`.
-- To check which preset the project currently matches: `pnpm exec shadcn preset resolve`. To see what a code contains: `pnpm exec shadcn preset decode b2xaqzSRuK`. If the preset ever changes, record the new code here and apply it with `shadcn apply`.
-- Component base: shadcn now defaults to Base UI (Radix only with `-b radix`). We use whatever base the preset sets up. After `init`, record it here (the `style` prefix in `components.json`, e.g. `base-…` or `radix-…`) and never mix the two bases.
-  - Base after `init`: **Base UI** (`"style": "base-maia"` in `components.json`, `@base-ui/react`; ticket 1, 3. 11. 2026). `shadcn preset resolve` reports `b2xaqzSRuK`: style `maia`, baseColor `mist`, theme `blue`, chartColor `orange`, lucide icons, fonts DM Sans / Outfit, radius `large`.
-- The CLI is pinned: `shadcn` 4.23.0 as a devDependency (`Tech.md`). Use `pnpm exec shadcn add <component>`, not `@latest`, so agents do not pull a different version mid-week. Only the one-time `init` above uses `@latest`.
-- shadcn MCP for Claude Code: `.mcp.json` in the repo root, then restart Claude Code and check with `/mcp` (needs a valid `components.json`):
-
-  ```json
-  { "mcpServers": { "shadcn": { "command": "npx", "args": ["shadcn@4.23.0", "mcp"] } } }
-  ```
+- The project was created from **preset `b2xaqzSRuK`** (Ivana's choice) with `pnpm dlx shadcn@latest init --preset b2xaqzSRuK --template next`. On 5. 11. 2026 the preset's theme (colours, fonts, radius) was replaced by the Fixit theme below [Vuk, 5. 11. 2026; Ivana approves in the PR]. The structure the preset chose stays: `components.json` (`"style": "base-maia"`, Base UI, lucide icons, `baseColor` mist) is unchanged and is not edited by hand.
+- **Never run `shadcn init`, `shadcn apply` or `shadcn preset …` again**: they rewrite the theme tokens in `app/globals.css`. Theme tokens change only by hand, in `app/globals.css`, together with this file.
+- Component base: **Base UI** (`"style": "base-maia"`, `@base-ui/react`). Never mix in Radix components.
+- The CLI is pinned: `shadcn` 4.23.0 as a devDependency (`Tech.md`). Add components with `pnpm exec shadcn add <component>`, not `@latest`. New components pick up the Fixit theme through the same tokens (`bg-primary`, `text-muted-foreground`, …).
+- shadcn MCP for Claude Code: `.mcp.json` in the repo root (`{ "mcpServers": { "shadcn": { "command": "npx", "args": ["shadcn@4.23.0", "mcp"] } } }`), then restart Claude Code and check with `/mcp`.
 
 ## Rules
 
 - When adding components, use the shadcn MCP to check what's available, then add them with the pinned CLI.
-- Never hand-edit the preset values in `components.json` or the theme variables in `app/globals.css`; brand and accent colours come from the preset. The "Prijavi problem" button uses the default (primary) `Button` variant, not a custom colour.
-- Always use shadcn/ui components and patterns for UI when possible.  
-- Prefer existing components from `@/components/ui/*` before creating custom UI.
-- Follow ui.shadcn.com component structure, composition, and naming.
-- Do not invent custom button, input, dialog, select, table, or form primitives if shadcn/ui already provides them.
-- Keep styling in Tailwind CSS.
-- Reuse shadcn variants instead of writing ad-hoc styles.
+- Always use shadcn/ui components and patterns for UI when possible; prefer `@/components/ui/*` before creating custom UI. Do not invent custom button, input, dialog, select, table, or form primitives if shadcn/ui already provides them. A shadcn component may get a new **variant** (e.g. `highlight` on `Button`) when the design needs one; its base classes are not rewritten.
+- Keep styling in Tailwind CSS and the theme tokens; no raw hex values in components (the only hex values live in `app/globals.css`).
+- Merge classes with `cn` (it merges Tailwind conflicts): `cn(buttonVariants({ variant: "highlight" }), "h-14 px-5")`. Do not pass overrides through `buttonVariants({ className })`: cva only concatenates, and which conflicting class wins is then an accident of CSS order.
 - For forms, prefer shadcn form patterns and accessible labels/errors.
-- Before adding a new UI primitive, check whether shadcn/ui already has that component.
-- The map is the one exception: Leaflet components live in `components/map/` (`Tech.md` §8). Controls, panels and sheets around the map are still shadcn.
+- The map is the one exception: Leaflet components live in `components/map/` (`Tech.md` §8). Controls, panels and sheets around the map are still shadcn or follow the rules below.
 - Project requirements that apply to every screen (PRD §6, AGENTS.md rule 6):
   - citizen pages work at 360 px width (mobile-first); the panel is desktop-first but usable on a tablet;
   - touch targets at least 44 × 44 px; WCAG AA contrast; statuses are never shown by colour alone (colour + icon/text);
   - all user-facing text is Montenegrin, Latin script, ijekavian, and lives in `lib/constants.ts` or next to the component.
+
+## Fixit design [Vuk, 5. 11. 2026]
+
+Chosen by Vuk from home-page prototypes (ticket 32; the prototype branch is `32-prototip-pocetna`, variant D). The world is a **departure board**: navy panels carry structure and state, one amber lamp marks the action, and figures are tabular — the day counter of a report leads the way a departure time does. Navy and amber are the two colours of the logo (`public/fixit-logo.svg`).
+
+### Colour tokens (`app/globals.css`)
+
+| Token (Tailwind) | Value | Use | Never |
+|---|---|---|---|
+| `primary` / `primary-foreground` | navy `#17212f` / white | header, active tab pill, day column of an open report, marker day count and needle, zoom buttons, default buttons, links, focus ring | — |
+| `highlight` / `highlight-foreground` | amber `#ffb400` / navy | **the one main action of a screen** (`Button` variant `highlight`), the logo, icons inside navy (active tab icon, „Uloguj se" icon), a day count of 7+ days on navy, text selection | amber text or amber thin lines on white (1.9:1, fails AA); two amber buttons competing on one screen |
+| `ground` | `#eef0f3` | page ground behind white cards (lists, sidebars' list area) | as a card colour |
+| `background`, `card`, `popover` | white | bars (bottom navigation, laptop sidebar head), cards, popups, menus | — |
+| `foreground` | navy `#17212f` | text | — |
+| `muted` / `muted-foreground` | `#e7eaee` / `#4b5563` | closed report's day column, photo placeholders, stat tiles; secondary text (addresses, counts, inactive tab labels) | — |
+| `border`, `input` | `#d9dde3` | card rings, bar borders, inputs | — |
+| `status-*` | see "Status colours and icons" | status badges and markers only | for anything that is not a status |
+
+`--radius` is `0.75rem`: `rounded-lg` 12 px, `rounded-xl` 16.8 px, `rounded-2xl` 21.6 px, `rounded-4xl` 31.2 px (pills).
+
+### Typography
+
+- **Overpass** for everything, **Overpass Mono** for figures that are data (day counts, the legend sample, stat numbers). Both are self-hosted in `public/fonts/` (SIL OFL, `public/fonts/OFL.txt`), Latin + Latin Extended, declared with `@font-face` in `app/globals.css` and preloaded in `app/layout.tsx`. Tailwind: `font-sans`, `font-heading` (same face), `font-mono`.
+- **Vertical centring is solved in the font, once.** Overpass places its capitals 0.10 em above the centre of the line box, so a label sat high next to its icon and inside its pill. The `@font-face` rules carry `ascent-override: 98.45%; descent-override: 28.15%` (ascent − descent = cap height, sum unchanged, so line heights are unchanged), and single-line controls (`Button`, `Badge`, the header pill) use `line-height: normal` so the browser has no half-leading to round. **Never nudge a label with `translate-y`, `pt-px` or similar to centre it**; if something looks off-centre, fix the cause here.
+- Scale in use (size / weight / line height):
+
+| Role | Style |
+|---|---|
+| Header title „Fixit" | 26 px / 800 / 1, tracking −0.01em |
+| Header subtitle | 13.5 px / 400 / 1.25, `text-white/75`, 4 px under the title |
+| Page heading (laptop sidebar „Sve prijave") | 22 px / 800, tracking −0.01em |
+| Popup title (category) | 17 px / 700 / 1.375 |
+| Card title (category) | 15.5 px / 700 / 1.375, at most 2 lines |
+| Main action label | 16.5 px / 500 (phone bar), 16 px / 500 (sidebar) |
+| Header pill label | 15 px / 700 |
+| Popup button label | 15 px / 500 |
+| Meta text (address, supports, counters) | 13 px / 400, `text-muted-foreground`; in the popup counters 13 px / 600 in `foreground` |
+| Bottom-bar tab label | 13 px / 700 |
+| Legend | 12.5 px / 600 |
+| Badge | 12 px / 500 |
+| Day count (card) | Overpass Mono 30 px / 600 / 1, tabular |
+| Day word under it („DAN", „DANA") | 11 px / 700 / 1, uppercase, tracking 0.08em, 80 % opacity |
+| Marker day count | Overpass Mono 13 px / 600 / 1, tabular |
+
+### Header (`components/site-header.tsx`, every page)
+
+- Navy (`bg-primary`), height `--header-height` = **4.75rem (76 px)**, no bottom border, sticky. Full-height screens use `h-[calc(100svh-var(--header-height))]`, never a hard-coded rem value.
+- Left: the logo (`/fixit-logo.svg`, 44 × 44, `alt=""`; the link carries „Fixit, početna"), 12 px gap, „Fixit" over „Prijave u Podgorici".
+- Right: **one pill control** (`HEADER_PILL` in `components/header-styles.ts`): 44 px tall, `rounded-full`, `bg-white/10` with a `white/25` inner ring, white 15 px / 700 label, an 18 px amber icon before it (`LogIn` for „Uloguj se", `UserRound` + the account's name for the account menu), `-mr-1`. The account menu is the same pill; the menu itself is the shadcn `DropdownMenu`.
+- Container `max-w-5xl px-4`; on the laptop home page (`data-header="wide"`) it spans the screen.
+- The browser bar is navy too (`viewport.themeColor`).
+
+### Bottom navigation (phone and tablet, below `lg`)
+
+The phone home page ends in a white bar: `border-t`, padding 6 px top, 8 px sides, `max(8px, safe-area)` bottom, 77 px tall in all. Three columns `[1fr_auto_1fr]`, items aligned to the bottom:
+
+- **Tabs** at the left and right edge (shadcn `Tabs`; the `TabsList` is `display: contents`): each 60 px tall, icon above label, 2 px apart. The icon (24 px lucide) sits in a 60 × 28 px pill; the **active** tab's pill is navy with an amber icon and its label is navy; inactive tabs are `muted-foreground` with no pill.
+- **The main action** in the middle, raised 14 px above the bar (`-translate-y-3.5`, `mb-1.5`): `Button` variant `highlight`, 56 px tall, `px-5`, `rounded-4xl` (pill), 24 px icon + 16.5 px label 10 px apart, a 4 px white ring that separates it from the map, shadow `0 8px 18px rgb(23 33 47 / .28)`.
+- A screen with more sections reuses this bar; it never gets a second amber button.
+
+### Main action button
+
+- Exactly one per screen, `Button` variant **`highlight`** (amber, navy label, `font-medium`). Everything else is the navy default, `outline`, `secondary` or `ghost`.
+- Sizes: 56 px in the phone bottom bar, 48 px full width in a sidebar or card (`h-12`, 16 px label, 22 px icon, shadow `0 4px 12px rgb(23 33 47 / .18)`), 44 px inside a popup or card footer (`h-11`, `rounded-xl`, 15 px label).
+- „Prijavi problem" always has the `Camera` icon (stroke 2.5).
+
+### Surfaces, cards and spacing
+
+- Lists sit on `bg-ground` with 16 px padding and **10 px gaps** (`gap-2.5`); cards are white (`Card`), `rounded-2xl`, the `border` colour as their 1 px ring and shadow `0 1px 2px rgb(23 33 47 / .08)`. No nested cards.
+- Grids of cards are `grid-cols-1` (two columns from `md`) with `min-w-0` items, so a long address never widens a column.
+- Inside a card: 12 px padding, 6 px between rows.
+
+### Report card (`ReportListCard` in `components/home/home-parts.tsx`)
+
+The reusable way to show one report in a list (home now; „Moje prijave", panel and admin lists later):
+
+- `Card` as a row (`flex-row`, `p-0`, `gap-0`, `overflow-hidden`), the whole card one link to `/p/[code]`.
+- **Day column** on the left, 72 px wide, full height: the number of days since the report (Overpass Mono 30 px) over „DAN"/„DANA". Open report: navy with white figures, and the number turns **amber from 7 days**. Closed report (`resolved`, `rejected`): `muted` with navy figures. The column is `aria-hidden`; the full counter text („9 dana bez rješenja") is in an `sr-only` span in the body.
+- **Body**: category (2 lines max), address (one line, truncated), status badge + „Demo prijava" badge, supports with the `HeartHandshake` icon.
+- **Photo** on the right, 80 px wide, full height, `object-cover`, with **square corners** (`rounded-none!`: `Card` rounds a last-child `<img>` at the bottom); the card's own clip rounds the outer corners. Without a photo, the placeholder shows only its icon.
+- On a laptop, hover/focus gives the card a 2 px amber ring and highlights its marker.
+
+### Map (`components/map/report-map.tsx`)
+
+- **Markers** are status chips stuck into the map on a needle: a 28 px square in the status colour with the status icon, joined to a navy tag with the day count (min 28 px wide), the chip `rounded-lg` with a 2 px white ring and shadow `0 3px 8px rgb(23 33 47 / .35)`; under it a 3 × 14 px navy needle and a soft shadow ellipse where it enters the map. The anchor is the needle's point. Status is never colour alone: the icon is in the chip and the marker's `title` names the status. Active marker (laptop hover): scale 1.15 from the needle's point and an amber ring.
+- **Legend** top-left over the map: white pill (95 %), a navy mono sample „14" and „Broj na oznaci: dani od prijave".
+- **Zoom**: our own two navy 44 px squares (`rounded-lg`, 4 px apart) at the right; Leaflet's zoom control is off. Labels „Uvećaj mapu" / „Umanji mapu".
+- **Popup** (`.report-popup` in `globals.css`, content `ReportPopupContent`): white, `border-radius` 20 px, shadow `0 12px 32px -8px rgb(23 33 47 / .45)`, 12 px padding all round, a fixed 240 px column; photo 240 × 180 in a clipping frame (`rounded-xl`); then status + demo badges, category, address with `MapPin`, day counter and supports with icons, and „Otvori prijavu" (`highlight`, 44 px). The close button is a 32 px white circle with a navy X over the photo's corner (44 px hit area), labelled „Zatvori pregled prijave". Leaflet's popup CSS is unlayered: override it in `globals.css` with at least `.leaflet-container .report-popup …`, never with Tailwind utilities.
+- Leaflet's attribution stays visible; where a raised button overlaps the map's bottom edge, lift `.leaflet-bottom` (`[&_.leaflet-bottom]:bottom-7!`).
+- The map's container is `isolate` (Leaflet panes use z-index 400–1000), and so is any overlay layer on top of it (legend, notices), so the header's menu always opens above them.
+
+### Badges
+
+- Status: `StatusBadge` (`components/report/status-badge.tsx`) — colour, icon and text from `STATUS_STYLE`; 20 px tall pill. „Demo prijava": `Badge variant="outline"`. Status badge first, demo badge after it, 6 px apart.
+
+### Do not
+
+- Amber text or thin amber lines on white; amber for anything but the main action and accents on navy.
+- A second amber button on a screen.
+- Per-component nudges to centre text (`translate-y`, extra 1 px padding); see "Typography".
+- Hex colours in components; new colours without a token here.
+- Status colours for decoration.
+
 ## Light theme only (P0) [Claude, 4. 11. 2026]
 
-The app is always light (`ThemeProvider forcedTheme="light"` in `app/layout.tsx`), even when the phone is in dark mode. On Ivana's phone in dark mode the tabs, buttons and cards were hard to read next to the light map tiles. Dark mode can come back after P0, once every screen is checked in it.
+The app is always light (`ThemeProvider forcedTheme="light"` in `app/layout.tsx`), even when the phone is in dark mode. On Ivana's phone in dark mode the tabs, buttons and cards were hard to read next to the light map tiles. The `.dark` block in `app/globals.css` still holds the old preset's values and is not maintained; dark mode can come back after P0, with Fixit dark tokens, once every screen is checked in it.
 
 ## Status colours and icons (ticket 22 Q10; colours changed by Ivana, 4. 11. 2026)
 
-One mapping for every place a status is shown (map marker, public report page, panel). Icons come from the preset's icon library (lucide). Keep the mapping in one `Record<report_status, …>` next to the status labels (`STATUS_STYLE` in `lib/constants.ts`), so a missing status breaks `pnpm typecheck`.
+One mapping for every place a status is shown (map marker, public report page, panel). Icons come from lucide. Keep the mapping in one `Record<report_status, …>` next to the status labels (`STATUS_STYLE` in `lib/constants.ts`), so a missing status breaks `pnpm typecheck`.
 
-**Status colours are our own tokens, not the preset's chart palette** [Ivana, 4. 11.]: the preset's chart colours are all orange, so four statuses looked alike and „Riješena" looked like a warning. The tokens are `--status-*` in `app/globals.css` (same value in light and dark mode, because markers sit on the light map tiles), used as Tailwind classes such as `bg-status-sent`. `routing` and `not_competent` keep the preset's `muted`.
+**Status colours are our own tokens, not a chart palette** [Ivana, 4. 11.]: four orange chart colours looked alike and „Riješena" looked like a warning. The tokens are `--status-*` in `app/globals.css` (same value in light and dark mode, because markers sit on the light map tiles), used as Tailwind classes such as `bg-status-sent`. `routing` and `not_competent` use `muted`.
 
 | Status | Label (public) | Colour | Icon / text colour | Contrast | Icon |
 |---|---|---|---|---|---|
-| `routing` | Određuje se nadležni | `muted` (grey) | `foreground` | 17.7 (dark 14.3) | `CircleHelp` |
+| `routing` | Određuje se nadležni | `muted` (grey) | `foreground` | ≥ 12 | `CircleHelp` |
 | `sent` | Poslata | `status-sent`, blue `#1d4ed8` | white | 6.7 | `Send` |
 | `acknowledged` | Primljena | `status-acknowledged`, violet `#6d28d9` | white | 7.1 | `Eye` |
 | `in_progress` | U radu | `status-in-progress`, amber `#f59e0b` | black | 9.8 | `Wrench` |
 | `resolved` | Riješena | `status-resolved`, green `#15803d` | white | 5.0 | `CircleCheck` |
-| `not_competent` | Preusmjerava se (panel: „Nije naša nadležnost") | `muted` (grey) | `foreground` | 17.7 (dark 14.3) | `ArrowLeftRight` |
+| `not_competent` | Preusmjerava se (panel: „Nije naša nadležnost") | `muted` (grey) | `foreground` | ≥ 12 | `ArrowLeftRight` |
 | `rejected` | Odbijena | `status-rejected`, red `#b91c1c` | white | 6.5 | `CircleX` |
 
 - `draft` is never shown publicly and has no entry here.
-- A status is always shown as text as well, never by colour alone (PRD §6, accessibility); the icon is a second cue, not a replacement for the label.
-- Every icon/text pair passes WCAG AA for text (≥ 4.5:1). Markers have a white border and a dark ring, so the grey and amber ones stay visible on the map tiles.
-- A new status colour is a new `--status-*` token plus a row here; do not reuse the chart palette for statuses.
+- A status is always shown as text as well, never by colour alone (PRD §6, accessibility); the icon is a second cue, not a replacement for the label. On a map marker the text is the marker's `title` and the popup.
+- Every icon/text pair passes WCAG AA for text (≥ 4.5:1). Markers have a white ring and a dark shadow, so the grey and amber ones stay visible on the map tiles.
+- A new status colour is a new `--status-*` token plus a row here.
 
-## Layout direction: prototype v2 (Ivana, 3. 11. 2026)
+## Layout direction (Ivana, 3. 11. 2026; restyled 5. 11. 2026)
 
-Ivana chose **direction v2 ("lista i kartice")** out of three prototypes; the other two are discarded. Reference: [.scratch/prototypes/v2-lista-kartice.html](.scratch/prototypes/v2-lista-kartice.html), open it in a browser (it is a throwaway mock with fake data, not code to copy). Build the real screens with shadcn components in this direction:
+Ivana chose **direction v2 ("lista i kartice")** out of three prototypes ([.scratch/prototypes/v2-lista-kartice.html](.scratch/prototypes/v2-lista-kartice.html), a throwaway mock). Its structure stays; its look is replaced by "Fixit design" [Vuk, 5. 11. 2026]:
 
-- **Home `/`:** a header (Fixit, „Prijave u Podgorici") with two tabs, **Mapa | Lista**. **Mapa is the default tab** when the app opens (Ivana's change to v2); Lista shows the same reports as cards (photo, category, status with icon + text, day counter, support count). A primary button „Prijavi problem" sits at the bottom: full width on a phone, a fixed 320 px (`md:w-80`) on the right of the bar from `md` (Ivana, ticket 32). From `lg` the home page is the list sidebar + map described under "Page widths".
-- **Cards everywhere:** content sits in white cards (`Card`) on a light neutral background; one blue primary colour (the preset's `primary`, preset is maia/mist/blue).
-- **Report flow `/prijavi`:** a wizard with a progress bar and step titles (photo → location with live agent steps → „Pregled prijave"), matching the screen order and tap budget in PRD FR-5 and ticket 15. Each step is one screen with one primary button at the bottom.
+- **Home `/`:** the header, then **Mapa** (default tab) or **Lista**, switched in the bottom navigation; „Prijavi problem" raised in the middle of that bar. From `lg` the list sidebar + map described under "Page widths".
+- **Cards everywhere:** content sits in white cards on the `ground` colour.
+- **Report flow `/prijavi`:** a wizard with a progress bar and step titles (photo → location with live agent steps → „Pregled prijave"), matching the screen order and tap budget in PRD FR-5 and ticket 15. Each step is one screen with one main action at the bottom.
 - **Public report page `/p/[code]`:** stacked cards (photo, public description, category/status/institution, day counter, „Podržavam" with live count, timeline).
-- The dev overlay in the prototype (tap counter, test-mode caption) is a prototype tool only; it is not part of the app.
 
-## Page widths (ticket 32, 4. 11. 2026) [Claude]
+## Page widths (ticket 32, 4. 11. 2026; updated 5. 11. 2026) [Claude, Vuk]
 
 Every page works at 360, 390 and 430 px (phone), 768 px (tablet) and 1280–1440 px (laptop), with no horizontal page scroll; a wide table scrolls only inside its own card.
 
-- **One container:** the header, home bars (Mapa | Lista, „Prijavi problem"), the list, `/p/[code]`, `/panel` and `/admin` pages use `mx-auto max-w-5xl px-4`, so the logo and account name line up with the content. The ghost buttons at the edges (account menu, „Uloguj se", back links) pull back by their padding (`-mr-3` / `-ml-3`).
-- **Map:** full width between the bars on every screen below `lg`.
-- **Home `/` from `lg` (Ivana's pick, ticket 32):** no Mapa | Lista tabs. A list sidebar on the left (400 px, 420 px from `xl`) with the heading „Sve prijave", three counts (Ukupno / Otvorene / Riješene), the „Prijavi problem" button across the sidebar and the report cards scrolling below; the map fills the rest of the screen. Hovering or focusing a card highlights its marker. The header spans the screen edges on this page only (`data-header="wide"`), so the logo lines up with the sidebar. Below `lg` the phone layout (tabs, bottom bar) is unchanged.
-- **Lista:** one column on a phone, two from `md`, three from `lg`.
+- **One container:** the header, the list, `/p/[code]`, `/panel` and `/admin` pages use `mx-auto max-w-5xl px-4`, so the logo and the account pill line up with the content.
+- **Map:** full width between the header and the bottom navigation on every screen below `lg`.
+- **Home `/` below `lg`:** header, map or list, bottom navigation (see "Bottom navigation"). The list is one column on a phone and two from `md`, inside the container.
+- **Home `/` from `lg` (Ivana's pick, ticket 32):** no tabs, no bottom bar. A white list sidebar on the left (400 px, 420 px from `xl`) with the heading „Sve prijave", three counts (Ukupno / Otvorene / Riješene, mono numbers on `ground` tiles), the 48 px „Prijavi problem" (`highlight`) across the sidebar, and the report cards on `ground` scrolling below; the map fills the rest of the screen with the legend top-left and the zoom buttons bottom-right. Hovering or focusing a card highlights its marker. The header spans the screen edges on this page only (`data-header="wide"`).
 - **`/p/[code]` from `lg`:** two columns, photo and description on the left (3fr), institution, supports and timeline on the right (2fr). On a phone it is the same single column as before.
-- **Single-task pages stay narrow and centred:** `/prijavi` is one `max-w-2xl` column with side borders from `md`; `/uloguj-se` (`max-w-md`) and `/privatnost` (`max-w-2xl`) are unchanged.
+- **Single-task pages stay narrow and centred:** `/prijavi` is one `max-w-2xl` column with side borders from `md`; `/uloguj-se` (`max-w-md`) and `/privatnost` (`max-w-2xl`).
 - **Long text never widens a page:** grid columns are `grid-cols-1` / `minmax(0, …)` with `min-w-0` children, detail pages carry `wrap-break-word`, and letters (`<pre>`, `whitespace-pre-wrap`) add `wrap-anywhere` so the map URL wraps.

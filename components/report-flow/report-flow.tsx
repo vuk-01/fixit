@@ -194,7 +194,7 @@ function Flow({ account, onNewReport }: { account: ReviewAccount; onNewReport: (
   return (
     // one centred column (max-w-2xl) with side borders on a tablet or laptop instead of a
     // stretched phone screen; on a phone it is the full width as before (#32)
-    <div className="mx-auto flex h-[calc(100svh-4rem-1px)] w-full max-w-2xl flex-col bg-muted/50 md:border-x">
+    <div className="mx-auto flex h-[calc(100svh-var(--header-height))] w-full max-w-2xl flex-col bg-muted/50 md:border-x">
       <div className="border-b bg-background px-4 py-3">
         <Progress value={((index + 1) / REPORT_FLOW_STEPS.length) * 100} aria-label={REPORT_FLOW_TEXT.pageTitle}>
           <div className="flex w-full items-baseline justify-between gap-2 text-sm">

@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useTransition } from "react"
 
 import { signOut } from "@/app/uloguj-se/actions"
-import { Button } from "@/components/ui/button"
+import { HEADER_PILL } from "@/components/header-styles"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,14 +17,15 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { HEADER_TEXT } from "@/lib/constants"
 
-// Shown only for a signed-in account, never for a guest or an anonymous session (PRD §8).
+// Shown only for a signed-in account, never for a guest or an anonymous session (PRD §8). The trigger is
+// the header pill, the same control as „Uloguj se" (UI.md "Header").
 export function UserMenu({ name, links }: { name: string; links?: { href: string; label: string }[] }) {
   const [pending, startTransition] = useTransition()
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="ghost" className="-mr-3 h-11 max-w-48 gap-2 px-3" />}>
-        <UserRound aria-hidden />
+      <DropdownMenuTrigger className={`${HEADER_PILL} max-w-48`}>
+        <UserRound aria-hidden className="size-[18px] shrink-0 text-highlight" strokeWidth={2.5} />
         <span className="truncate">{name}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-48">
