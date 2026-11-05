@@ -47,7 +47,8 @@ function ThemeHotkey() {
         return
       }
 
-      if (event.key.toLowerCase() !== "d") {
+      // Chrome's autofill (sign-in form) dispatches a keydown without `key`
+      if (typeof event.key !== "string" || event.key.toLowerCase() !== "d") {
         return
       }
 

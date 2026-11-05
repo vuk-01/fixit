@@ -4,6 +4,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 
 import { StatusForm } from "@/components/panel/status-form"
+import { REPORT_ACCENT_TITLE } from "@/components/report/report-list-styles"
 import { ReportTimeline } from "@/components/report/report-timeline"
 import { StatusBadge } from "@/components/report/status-badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -77,7 +78,7 @@ export default async function PanelReportPage({ params }: { params: Promise<{ id
 
           <Card>
             <CardHeader>
-              <CardTitle>{PANEL_TEXT.descriptionTitle}</CardTitle>
+              <CardTitle className={REPORT_ACCENT_TITLE}>{PANEL_TEXT.descriptionTitle}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="whitespace-pre-wrap">{report.description ?? PANEL_TEXT.noDescription}</p>
@@ -86,7 +87,7 @@ export default async function PanelReportPage({ params }: { params: Promise<{ id
 
           <Card>
             <CardHeader>
-              <CardTitle>{PANEL_TEXT.locationTitle}</CardTitle>
+              <CardTitle className={REPORT_ACCENT_TITLE}>{PANEL_TEXT.locationTitle}</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-2">
               <p>{report.address ?? PANEL_TEXT.noAddress}</p>
@@ -111,7 +112,7 @@ export default async function PanelReportPage({ params }: { params: Promise<{ id
 
           <Card>
             <CardHeader>
-              <CardTitle>{PANEL_TEXT.letterTitle}</CardTitle>
+              <CardTitle className={REPORT_ACCENT_TITLE}>{PANEL_TEXT.letterTitle}</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col gap-2">
               {report.letter ? (
@@ -135,7 +136,7 @@ export default async function PanelReportPage({ params }: { params: Promise<{ id
           {isOfficial && (
             <Card>
               <CardHeader>
-                <CardTitle>{PANEL_TEXT.statusTitle}</CardTitle>
+                <CardTitle className={REPORT_ACCENT_TITLE}>{PANEL_TEXT.statusTitle}</CardTitle>
               </CardHeader>
               <CardContent>
                 {/* key: a new status gives a fresh form with the newly allowed transitions */}
@@ -148,7 +149,7 @@ export default async function PanelReportPage({ params }: { params: Promise<{ id
 
           <Card>
             <CardHeader>
-              <CardTitle>{TIMELINE_TEXT.title}</CardTitle>
+              <CardTitle className={REPORT_ACCENT_TITLE}>{TIMELINE_TEXT.title}</CardTitle>
             </CardHeader>
             <CardContent>
               <ReportTimeline events={report.events} institutionNames={report.institutionNames} view="panel" />
@@ -167,7 +168,7 @@ function Details({ report }: { report: PanelReport }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{PANEL_TEXT.detailsTitle}</CardTitle>
+        <CardTitle className={REPORT_ACCENT_TITLE}>{PANEL_TEXT.detailsTitle}</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         {report.immediateDanger && (
@@ -210,7 +211,7 @@ function Photos({ report }: { report: PanelReport }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{PANEL_TEXT.photosTitle}</CardTitle>
+        <CardTitle className={REPORT_ACCENT_TITLE}>{PANEL_TEXT.photosTitle}</CardTitle>
       </CardHeader>
       <CardContent>
         {report.photos.length === 0 ? (

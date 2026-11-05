@@ -92,7 +92,12 @@ export function AssignForm({
             className="grid gap-2 md:grid-cols-2"
           >
             {institutions.map((institution) => (
-              <FieldLabel key={institution.id} htmlFor={`institution-${institution.id}`}>
+              <FieldLabel
+                key={institution.id}
+                htmlFor={`institution-${institution.id}`}
+                // the chosen institution in the blue accent (UI.md "Report lists in /admin and /panel")
+                className="has-data-checked:border-report-day has-data-checked:bg-report-day/5"
+              >
                 <Field orientation="horizontal" className="min-h-11">
                   <RadioGroupItem value={institution.id} id={`institution-${institution.id}`} />
                   <FieldTitle>{institution.name}</FieldTitle>

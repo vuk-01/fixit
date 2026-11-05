@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
+import { REPORT_ACCENT_TITLE } from "@/components/report/report-list-styles"
 import { AssignForm } from "@/components/admin/assign-form"
 import { ReportTimeline } from "@/components/report/report-timeline"
 import { StatusBadge } from "@/components/report/status-badge"
@@ -59,7 +60,7 @@ export default async function AdminReportPage({ params }: { params: Promise<{ id
           {routing ? (
             <Card>
               <CardHeader>
-                <CardTitle>{ADMIN_TEXT.assignTitle}</CardTitle>
+                <CardTitle className={REPORT_ACCENT_TITLE}>{ADMIN_TEXT.assignTitle}</CardTitle>
                 <CardDescription>{ADMIN_TEXT.assignDescription}</CardDescription>
               </CardHeader>
               <CardContent>
@@ -77,7 +78,7 @@ export default async function AdminReportPage({ params }: { params: Promise<{ id
 
           <Card>
             <CardHeader>
-              <CardTitle>{PANEL_TEXT.descriptionTitle}</CardTitle>
+              <CardTitle className={REPORT_ACCENT_TITLE}>{PANEL_TEXT.descriptionTitle}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="whitespace-pre-wrap">{report.description ?? PANEL_TEXT.noDescription}</p>
@@ -92,7 +93,7 @@ export default async function AdminReportPage({ params }: { params: Promise<{ id
 
           <Card>
             <CardHeader>
-              <CardTitle>{TIMELINE_TEXT.title}</CardTitle>
+              <CardTitle className={REPORT_ACCENT_TITLE}>{TIMELINE_TEXT.title}</CardTitle>
             </CardHeader>
             <CardContent>
               <ReportTimeline events={report.events} institutionNames={report.institutionNames} view="panel" />
@@ -109,7 +110,7 @@ function Assigned({ report }: { report: AdminReport }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{recipient ? ADMIN_TEXT.assignedTitle : ADMIN_TEXT.sentLetterTitle}</CardTitle>
+        <CardTitle className={REPORT_ACCENT_TITLE}>{recipient ? ADMIN_TEXT.assignedTitle : ADMIN_TEXT.sentLetterTitle}</CardTitle>
         {recipient && (
           <CardDescription>
             {ADMIN_TEXT.recipient}: {recipient}
@@ -139,7 +140,7 @@ function Details({ report }: { report: AdminReport }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{PANEL_TEXT.detailsTitle}</CardTitle>
+        <CardTitle className={REPORT_ACCENT_TITLE}>{PANEL_TEXT.detailsTitle}</CardTitle>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-3 text-sm">
@@ -177,7 +178,7 @@ function Photos({ report }: { report: AdminReport }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{PANEL_TEXT.photosTitle}</CardTitle>
+        <CardTitle className={REPORT_ACCENT_TITLE}>{PANEL_TEXT.photosTitle}</CardTitle>
       </CardHeader>
       <CardContent>
         {report.photos.length === 0 ? (

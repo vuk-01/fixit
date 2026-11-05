@@ -39,7 +39,7 @@ Chosen by Vuk from home-page prototypes (ticket 32; the prototype branch is `32-
 | `muted` / `muted-foreground` | `#e7eaee` / `#4b5563` | photo placeholders, stat tiles; secondary text (addresses, counts, inactive tab labels) | — |
 | `border`, `input` | `#d9dde3` | card rings, bar borders, inputs | — |
 | `status-*` | see "Status colours and icons" | status badges and markers only | for anything that is not a status |
-| `report-day` / `report-day-foreground` | dark navy blue `#1f3352` / off-white `#f1f5f9` | day column of a report card in the list (every status but `resolved`) | amber figures on it |
+| `report-day` / `report-day-foreground` | dark navy blue `#1f3352` / off-white `#f1f5f9` | day column of a report card in the list (every status but `resolved`); the blue accent of `/admin` and `/panel` (see "Report lists in `/admin` and `/panel`") | amber figures on it; strong blue backgrounds in `/admin` or `/panel` |
 | `report-resolved` / `report-resolved-day` | light green `#eef7f1` / `#d6ecdd` | a resolved report card: the whole card / its day column, figures in `foreground` | as a status colour (the badge stays `status-resolved`) |
 | `highlight-shade` | `#e09e00` | darker amber details on the sign-in scene's worker (hard hat ridge, vest seam) | for UI |
 | `scene-*` (`hole`, `stone`, `steel`, `skin`, `wood`, `straw`, `cardboard`, `check`) | see `app/globals.css` | the sign-in repair scene's drawing only (see "Sign-in page"), used as `var(--scene-…)` in its SVG | for UI; `scene-check` is the scene's ✓ and is not a status colour |
@@ -152,6 +152,26 @@ Chosen from prototypes (commit `f451db1` on `32-animacija-uloguj-se`; three plac
   - The layer is `aria-hidden`, `pointer-events: none`, under the content by z-index (`z-0` vs `relative z-10`).
   - `prefers-reduced-motion: reduce`: a static scene (the pothole already fixed, the worker beside it with the ✓), no movement and no flicker.
   - Colours are tokens only (`highlight-shade` and `scene-*`, see "Colour tokens"); the motion is CSS keyframes and transitions in `repair-scene.module.css`, timed by `repair-scene-plan.ts` (pure functions, with tests). No animation library.
+
+## Report lists in `/admin` and `/panel` (5. 11. 2026) [Danijela]
+
+„Prijave bez nadležnog" (`/admin`), „Prijave institucije" (`/panel`) and their report pages (`/admin/prijave/[id]`, `/panel/prijave/[id]`) keep their layout (header, title, one card for the list; cards in two columns on the report page). Both lists use the same phone list, `ReportStackList` and `ReportFlags` in `components/report/report-stack-list.tsx`, and the same classes from `components/report/report-list-styles.ts`.
+
+- **Phone, below `md` (768 px):** no table and no sideways scrolling. The same card holds the reports one under another, each one link to its page (one tab stop, the whole row a tap target, at least 44 px, no prefetch: opening a report in the panel acknowledges it, FR-22):
+  - number, type of problem, place;
+  - status (panel only), „Demo prijava", „Sakrivena sa javne stranice";
+  - the page's own line: „Razlog: …" on `/admin`, „Ozbiljnost: …" in the panel;
+  - the day counter and the supports (with `HeartHandshake`, 12 px apart, no „·": in Overpass the middle dot eats the space after it).
+
+  Long text wraps; nothing is cut off with „…".
+- **From `md`:** the table as before (every cell links to the report, `RowLinkCell`); supports from `lg`.
+- **Place without coordinates:** in both lists (phone and table) the address is `placeLabel(address)`, as on the home page. Coordinates stay only on the report pages.
+- **Blue accent, subtle:** the `report-day` token of the report cards, never as a strong background.
+  - the report number in `text-report-day`, semibold (`REPORT_CODE`, 12:1 on white);
+  - a 4 × 16 px `report-day` bar before card titles: „Ukupno: n" on both lists and every card title on both report pages (`REPORT_ACCENT_TITLE`);
+  - a report row under the pointer or with keyboard focus inside it: `bg-report-day/5` (`REPORT_ROW_TINT`), together with the focus ring;
+  - the chosen institution in the admin's assignment form: `report-day` border and `bg-report-day/5`.
+- **Words:** „dopis" is not shown here (GLOSSARY.md „Dopis", „Slanje dopisa"): the admin's button is „Proslijedi instituciji" (never „Pošalji prijavu", which is the citizen's submit button), the letter preview is „Tekst prijave". The panel shows a sent letter as „Prijava upućena instituciji".
 
 ## Light theme only (P0) [Claude, 4. 11. 2026]
 

@@ -8,18 +8,18 @@ Rječnik domena za Fixit: građanin fotografiše problem, sistem iz tabele pravi
 
 **Prijava** (`report`):
 Javni zapis o jednom problemu na jednom mjestu: fotografije, opis problema, lokacija, vrsta problema, nadležna institucija, status i podrške. Ostaje ista prijava i kad se preusmjeri drugoj instituciji.
-_Izbjegavaj_: zahtjev, tiket, slučaj; „prijava" u značenju formalnog teksta koji ide instituciji (to je dopis)
+_Izbjegavaj_: zahtjev, tiket, slučaj; „prijava" u značenju formalnog teksta koji ide instituciji u kodu i dokumentima (to je dopis; za UI vidi „Dopis")
 
 **Dopis** (`letter`):
-Formalni tekst koji Fixit šalje nadležnoj instituciji za jednu prijavu: fiksni šablon popunjen podacima prijave i opisom onoga što se vidi na fotografiji. Nije javan; prijava dobija novi dopis za svaku instituciju kojoj se upućuje. Građaninu se u UI-ju prikazuje kao „tekst prijave".
-_Izbjegavaj_: prijava, mejl, poruka (u ovom značenju)
+Formalni tekst koji Fixit šalje nadležnoj instituciji za jednu prijavu: fiksni šablon popunjen podacima prijave i opisom onoga što se vidi na fotografiji. Nije javan; prijava dobija novi dopis za svaku instituciju kojoj se upućuje. Riječ „dopis" ostaje u kodu i dokumentima; u UI-ju je niko ne vidi [Danijela, 5. 11. 2026]: sam tekst se prikazuje kao „tekst prijave", u panelu službenika kao „Prijava upućena instituciji" („Prijava nije dostupna."), a administratorovo slanje dopisa kao prosljeđivanje prijave (vidi „Slanje dopisa").
+_Izbjegavaj_: prijava (u kodu i dokumentima), mejl, poruka (u ovom značenju)
 
 **Slanje dopisa** (`dispatch`):
-Jedan pokušaj da se dopis isporuči instituciji mejlom, zajedno sa ishodom (uspjelo ili nije uspjelo). Neuspjelo slanje se može ponoviti.
+Jedan pokušaj da se dopis isporuči instituciji mejlom, zajedno sa ishodom (uspjelo ili nije uspjelo). Neuspjelo slanje se može ponoviti. Kad dopis šalje administrator na `/admin` (ručno raspoređivanje), UI to zove prosljeđivanje: dugme „Proslijedi instituciji", poruke „Prijava je proslijeđena…", „Prosljeđivanje prijave nije uspjelo…", „Prijava nema fotografiju, pa ne može biti proslijeđena.". Riječi „pošalji" i „slanje prijave" u UI-ju pripadaju samo građaninu (podnošenje prijave).
 _Izbjegavaj_: isporuka, mejl (kao naziv za pokušaj)
 
 **Podnošenje prijave** (`submit`):
-Trenutak kad prijava, nakon što građanin dodirne „Pošalji prijavu", prestaje da bude nacrt: dopis je uspješno poslat ili je prijava prešla u „Određuje se nadležni". Od tog trenutka prijava je javna i teče brojač dana, čak i ako dopis još nije poslat jer se nadležni tek određuje. Ako slanje dopisa ne uspije, prijava nije podnesena i ostaje nacrt.
+Trenutak kad prijava, nakon što građanin dodirne „Pošalji prijavu", prestaje da bude nacrt: dopis je uspješno poslat ili je prijava prešla u „Određuje se nadležni". Od tog trenutka prijava je javna i teče brojač dana, čak i ako dopis još nije poslat jer se nadležni tek određuje. Ako slanje dopisa ne uspije, prijava nije podnesena i ostaje nacrt. „Pošalji prijavu" je dugme samo građanina; administrator za već podnesenu prijavu ima „Proslijedi instituciji" (slanje dopisa, ne podnošenje).
 _Izbjegavaj_: slanje (to je slanje dopisa)
 
 **Broj prijave**:
