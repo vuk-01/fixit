@@ -55,7 +55,6 @@ Chosen by Vuk from home-page prototypes (ticket 32; the prototype branch is `32-
 | Role | Style |
 |---|---|
 | Header title „Fixit" | 26 px / 800 / 1, tracking −0.01em |
-| Header subtitle | 13.5 px / 400 / 1.25, `text-white/75`, 4 px under the title |
 | Page heading (laptop sidebar „Sve prijave") | 22 px / 800, tracking −0.01em |
 | Popup title (category) | 17 px / 700 / 1.375 |
 | Card title (category) | 15.5 px / 700 / 1.375, at most 2 lines |
@@ -73,8 +72,16 @@ Chosen by Vuk from home-page prototypes (ticket 32; the prototype branch is `32-
 ### Header (`components/site-header.tsx`, every page)
 
 - Navy (`bg-primary`), height `--header-height` = **4.75rem (76 px)**, no bottom border, sticky. Full-height screens use `h-[calc(100svh-var(--header-height))]`, never a hard-coded rem value.
-- Left: the logo (`/fixit-logo.svg`, 44 × 44, `alt=""`; the link carries „Fixit, početna"), 12 px gap, „Fixit" over „Prijave u Podgorici".
-- Right: **one pill control** (`HEADER_PILL` in `components/header-styles.ts`): 44 px tall, `rounded-full`, `bg-white/10` with a `white/25` inner ring, white 15 px / 700 label, an 18 px amber icon before it (`LogIn` for „Uloguj se", `UserRound` + the account's name for the account menu), `-mr-1`. The account menu is the same pill; the menu itself is the shadcn `DropdownMenu`.
+- Left: the logo (`/fixit-logo.svg`, 44 × 44, `alt=""`; the link carries „Fixit, početna"), 12 px gap, „Fixit", vertically centred on the logo. No subtitle [ticket 32, 5. 11. 2026: „Prijave u Podgorici" removed]. The logo block never shrinks (`shrink-0`).
+- Right: **one pill control** (`HEADER_PILL` in `components/header-styles.ts`): 44 px tall, `rounded-full`, `bg-white/10` with a `white/25` inner ring, white 15 px / 700 label, an 18 px amber icon before it (`LogIn` for „Uloguj se", `UserRound` + the account's role for the account menu), `-mr-1`. The account menu is the same pill; the menu itself is the shadcn `DropdownMenu`.
+- **Account menu** (`components/user-menu.tsx`) [ticket 32, 5. 11. 2026]:
+  - Trigger: the pill with `UserRound`, **the role only** („Građanin", „Službenik", „Administrator", `HEADER_TEXT.roles`) and a 16 px `ChevronDown` (`white/80`), 6 px gaps, padding 14 px left / 12 px right, `whitespace-nowrap`. No name and no institution in the header: the label is short and fixed, so it fits whole next to the logo at 360 px.
+  - **No `truncate` and no „…" anywhere in the header or the menu.** Long text in the menu wraps.
+  - Open state: `bg-white/20`, inner ring `white/50`, the chevron turns 180°.
+  - Menu: 288 px wide (at most `100vw − 24px`), under the pill (`align="end"`, 8 px gap), no inner padding, `rounded-2xl`. Top part navy (`bg-primary`, 16 px padding): a 48 px amber circle with the initials (navy, 17 px / 800), the title (16 px / 700, wraps, never cut) and the role as a small pill under it. The title (`accountTitle` in `lib/account-label.ts`): official → their institution (`institutions.name`), with the „Službenik" pill; administrator → „Administrator", without a second role pill; citizen → first and last name, or the sign-in mail when there is no name, with the „Građanin" pill. Initials are the first letters of the title's first and last word (one letter for a single word; for a mail, its local part), so „Dev Jedan" → DJ, „Administrator" → A.
+  - Links, by role (official: „Panel institucije" with `Building2`, admin: „Administracija" with `ShieldCheck`; a citizen has none): 56 px rows, a 40 px `bg-muted` icon square with a navy 20 px icon, 15.5 px / 600 label that wraps, `ChevronRight` at the end.
+  - „Odjavi se" stands apart at the bottom, after a full-width line: 48 px, centred, `LogOut` icon, a `border` coloured inner ring. Every account has it.
+  - Keyboard, Escape and a tap outside come from the Base UI menu; focus returns to the pill on close.
 - **„Uloguj se" is hidden on `/uloguj-se` itself** [ticket 32, 5. 11. 2026]: a link to the page you are on is noise, and the right side of the header stays empty there. The page marks its `<main>` with `data-page="sign-in"` and the pill carries `[body:has([data-page=sign-in])_&]:hidden` (the header is a Server Component in the shared layout and does not know the route). The account menu never shows on that page: a signed-in visitor is redirected away from it.
 - Container `max-w-5xl px-4`; on the laptop home page (`data-header="wide"`) it spans the screen.
 - The browser bar is navy too (`viewport.themeColor`).

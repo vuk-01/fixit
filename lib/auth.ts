@@ -12,6 +12,9 @@ export type Account = {
   lastName: string
   role: Database["public"]["Enums"]["user_role"]
   institutionId: string | null
+  // for the header's account menu: the sign-in mail and the official's institution (`institutions.name`)
+  email: string | null
+  institutionName: string | null
 }
 
 // A signed-in account with a profile; null for guests and anonymous sessions (GLOSSARY:
@@ -24,7 +27,7 @@ export async function getAccount(): Promise<Account | null> {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("first_name, last_name, role, institution_id")
+    .select("first_name, last_name, role, institution_id, institutions(name)")
     .eq("id", claims.sub)
     .maybeSingle()
   if (!profile) return null
@@ -35,6 +38,8 @@ export async function getAccount(): Promise<Account | null> {
     lastName: profile.last_name,
     role: profile.role,
     institutionId: profile.institution_id,
+    email: typeof claims.email === "string" ? claims.email : null,
+    institutionName: profile.institutions?.name ?? null,
   }
 }
 

@@ -268,14 +268,17 @@ export const APP_DESCRIPTION = "Prijave komunalnih problema u Podgorici"
 // header menu (PRD §8: "Odjavi se" for every signed-in account, never for an anonymous session)
 export const HEADER_TEXT = {
   home: "Fixit, početna",
-  subtitle: "Prijave u Podgorici",
   signIn: "Uloguj se",
   signOut: "Odjavi se",
   // officials only (ticket #14)
   panel: "Panel institucije",
   // admin only (ticket #15)
   admin: "Administracija",
+  // role badge in the account menu (GLOSSARY "Ljudi i uloge")
+  roles: { citizen: "Građanin", official: "Službenik", admin: "Administrator" } satisfies Record<UserRole, string>,
 } as const
+
+export type UserRole = Database["public"]["Enums"]["user_role"]
 
 // ---------------------------------------------------------------------------------------------
 // Sign-in and sign-up (/uloguj-se, FR-1)
