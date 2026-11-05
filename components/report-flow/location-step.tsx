@@ -1,11 +1,13 @@
 "use client"
 
+import { cn } from "cn"
 import { MapPin } from "lucide-react"
 import dynamic from "next/dynamic"
 import { useCallback, useEffect, useRef, useState } from "react"
 
 import type { MapView } from "@/components/map/location-picker"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 import {
   ERROR_MESSAGES,
   LOCATION_FALLBACK_ZOOM,
@@ -21,7 +23,8 @@ import { createClient } from "@/lib/supabase/client"
 
 import { AnalysisBanner, analysisBlocksFlow } from "./analysis-banner"
 import { locationHint, type ConfirmedPoint, type FlowPhoto, type FlowState } from "./flow-state"
-import { PhotoStrip } from "./photo-strip"
+import { FLOW_BAR, FLOW_CARD, FLOW_MAIN } from "./flow-styles"
+import { FlowSummary } from "./flow-summary"
 
 const LocationPicker = dynamic(() => import("@/components/map/location-picker").then((m) => m.LocationPicker), {
   ssr: false,
@@ -141,49 +144,61 @@ export function LocationStep({
           ? REPORT_FLOW_TEXT.locating
           : REPORT_FLOW_TEXT.locationDescription
 
+  // ticket 32, variant B: the report (photo + type) and the map as cards on the ground, the
+  // address and the hint under the map, „Potvrdi lokaciju" as the step's one highlight button
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex flex-col gap-2 border-b bg-background px-4 py-3">
-        <h1 className="font-heading text-xl font-semibold">{REPORT_FLOW_TEXT.locationTitle}</h1>
-        <p className="text-sm text-muted-foreground" role={hint ? "status" : undefined}>
-          {hintText}
-        </p>
-        <PhotoStrip photos={state.photos} onRetry={onRetryUpload} />
-        <AnalysisBanner analysis={state.analysis} onRetry={onRetryAnalysis} />
-        {state.notice && (
-          <p className="text-sm text-destructive" role="alert">
-            {state.notice}
-          </p>
-        )}
-      </div>
-
-      <div className="relative min-h-0 flex-1" role="region" aria-label={REPORT_FLOW_TEXT.mapLabel}>
-        {/* isolate: Leaflet's panes use z-index 400–1000; keep them below the header menu */}
-        <div className="absolute inset-0 isolate">
-          <LocationPicker initial={initial} target={target} onSettle={onSettle} onUserMove={onUserMove} />
+      <div className="flex min-h-0 flex-1 flex-col gap-2.5 p-4">
+        <h1 className="sr-only">{REPORT_FLOW_TEXT.locationTitle}</h1>
+        <div className="flex shrink-0 flex-col gap-2.5">
+          <FlowSummary
+            photos={state.photos}
+            analysis={state.analysis}
+            category={state.category}
+            onRetryUpload={onRetryUpload}
+          />
+          {state.analysis.status === "error" && <AnalysisBanner analysis={state.analysis} onRetry={onRetryAnalysis} />}
+          {state.notice && (
+            <p className="text-sm text-destructive" role="alert">
+              {state.notice}
+            </p>
+          )}
         </div>
-        {/* the pin's tip marks the map centre */}
-        <MapPin
-          aria-hidden
-          className="pointer-events-none absolute top-1/2 left-1/2 z-10 size-11 -translate-x-1/2 -translate-y-full fill-primary text-primary-foreground drop-shadow-md"
-          strokeWidth={1.5}
-        />
+
+        <Card className={cn(FLOW_CARD, "min-h-48 flex-1 gap-0 p-0")}>
+          <div className="relative min-h-0 flex-1" role="region" aria-label={REPORT_FLOW_TEXT.mapLabel}>
+            {/* isolate: Leaflet's panes use z-index 400–1000; keep them below the header menu */}
+            <div className="absolute inset-0 isolate">
+              <LocationPicker initial={initial} target={target} onSettle={onSettle} onUserMove={onUserMove} />
+            </div>
+            <CentrePin />
+          </div>
+          <div className="flex shrink-0 flex-col gap-1 border-t p-3">
+            <p className="flex min-h-6 items-start gap-2 text-[15px] font-semibold" aria-live="polite">
+              <MapPin aria-hidden className="mt-0.5 size-[18px] shrink-0" strokeWidth={2.25} />
+              <span data-testid="address">
+                {address.status === "loading"
+                  ? REPORT_FLOW_TEXT.addressLoading
+                  : (address.text ?? REPORT_FLOW_TEXT.addressUnavailable)}
+              </span>
+            </p>
+            <p className="text-[13px] text-muted-foreground" role={hint ? "status" : undefined}>
+              {hintText}
+            </p>
+          </div>
+        </Card>
       </div>
 
-      <div className="flex flex-col gap-2 border-t bg-background px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <p className="min-h-5 text-sm" aria-live="polite" data-testid="address">
-          {address.status === "loading"
-            ? REPORT_FLOW_TEXT.addressLoading
-            : (address.text ?? REPORT_FLOW_TEXT.addressUnavailable)}
-        </p>
+      <div className={FLOW_BAR}>
         {error && (
           <p className="text-sm text-destructive" role="alert">
             {error}
           </p>
         )}
         <Button
+          variant="highlight"
           size="lg"
-          className="h-12 w-full text-base"
+          className={FLOW_MAIN}
           disabled={confirming || analysisBlocksFlow(state.analysis)}
           onClick={() => void confirm()}
         >
@@ -192,5 +207,28 @@ export function LocationStep({
         {cancel}
       </div>
     </div>
+  )
+}
+
+// The pin in the map's centre, in the language of the report markers (UI.md "Map"): a navy chip
+// with an amber pin icon and a white ring, on a 3 × 16 px navy needle, and a soft shadow where it
+// enters the map. The needle's point is the map centre, the point that is saved.
+function CentrePin() {
+  return (
+    <>
+      <span
+        aria-hidden
+        className="pointer-events-none absolute top-1/2 left-1/2 z-10 h-1.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-[50%] bg-primary/35"
+      />
+      <span
+        aria-hidden
+        className="pointer-events-none absolute top-1/2 left-1/2 z-10 flex -translate-x-1/2 -translate-y-full flex-col items-center"
+      >
+        <span className="flex size-10 items-center justify-center rounded-xl bg-primary text-highlight shadow-[0_0_0_2px_white,0_3px_8px_rgb(23_33_47/0.35)]">
+          <MapPin className="size-[22px]" strokeWidth={2.5} />
+        </span>
+        <span className="h-4 w-[3px] rounded-b-sm bg-primary" />
+      </span>
+    </>
   )
 }

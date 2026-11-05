@@ -153,6 +153,17 @@ Chosen from prototypes (commit `f451db1` on `32-animacija-uloguj-se`; three plac
   - `prefers-reduced-motion: reduce`: a static scene (the pothole already fixed, the worker beside it with the ✓), no movement and no flicker.
   - Colours are tokens only (`highlight-shade` and `scene-*`, see "Colour tokens"); the motion is CSS keyframes and transitions in `repair-scene.module.css`, timed by `repair-scene-plan.ts` (pure functions, with tests). No animation library.
 
+## Report flow `/prijavi` (ticket 32, 5. 11. 2026) [Ivana]
+
+Variant B of three location-step prototypes („kartice na podlozi"; throwaway mock `.scratch/prototypes/lokacija-varijante.html`). Classes shared by the steps are in `components/report-flow/flow-styles.ts` (`FLOW_CARD`, `FLOW_BAR`, `FLOW_MAIN`).
+
+- **Ground and cards:** the whole flow sits on `bg-ground`; content is white cards (`FLOW_CARD`: `rounded-2xl`, `border` ring, soft shadow), 16 px padding, 10 px gaps.
+- **Steps bar** (`FlowSteps`, under the header on every step): three segments, navy for the steps done and the current one, `border` for the rest; the step names under them (12 px / 700), the current one in `foreground`, the others `muted-foreground`, a green ✓ before a finished step. „Korak 2 od 3" is `sr-only`, the current step has `aria-current="step"`. The step's own title (`h1`) is `sr-only`: the bar names the step.
+- **Summary card** (`FlowSummary`, steps 2 and 3 until the review opens): shaped like a report card in the list — the first photo on the left (80 px, square inner corners, a navy „+n" when there are more), then the analysis line (13 px, `muted-foreground`: spinner „Prepoznajem problem…", ✓ „Prepoznato", or the FR-7 failure text), the type of problem (15.5 px / 700) and the photos' upload state (spinner „Otpremam…", a „Pokušaj ponovo" button for each failed one). A failed analysis is the destructive `AnalysisBanner` under the card.
+- **Location step:** the map is a card filling the rest of the screen (`min-h-48`), with our navy zoom buttons at the right edge (`ZoomButtons`, `components/map/zoom-buttons.tsx`, shared with the home map) and the **centre pin in the language of the report markers**: a 40 px navy chip (`rounded-xl`, 2 px white ring) with an amber `MapPin`, a 3 × 16 px navy needle and a soft shadow where it enters the map; the needle's point is the map centre. Under the map, in the same card: the address with `MapPin` (15 px / 600) and the hint (13 px, `muted-foreground`).
+- **Preparing (step 3 until the first prepare is done):** the summary card, then one card with the confirmed address (15 px / 600, `MapPin`) over the agent's steps (`AgentSteps`: 36 px rows, 15 px, the running step semibold).
+- **Bottom bar** (`FLOW_BAR`, every step): white, `border-t`, safe-area padding; the step's one `highlight` button (`FLOW_MAIN`: 48 px, full width, shadow) — „Potvrdi lokaciju", „Pošalji prijavu" — and „Odustani" (ghost) under it, always visible without scrolling, also at 360 × 640.
+
 ## Report lists in `/admin` and `/panel` (5. 11. 2026) [Danijela]
 
 „Prijave bez nadležnog" (`/admin`), „Prijave institucije" (`/panel`) and their report pages (`/admin/prijave/[id]`, `/panel/prijave/[id]`) keep their layout (header, title, one card for the list; cards in two columns on the report page). Both lists use the same phone list, `ReportStackList` and `ReportFlags` in `components/report/report-stack-list.tsx`, and the same classes from `components/report/report-list-styles.ts`.
@@ -204,7 +215,7 @@ Ivana chose **direction v2 ("lista i kartice")** out of three prototypes ([.scra
 
 - **Home `/`:** the header, then **Mapa** (default tab) or **Lista**, switched in the bottom navigation; „Prijavi problem" raised in the middle of that bar. From `lg` the list sidebar + map described under "Page widths".
 - **Cards everywhere:** content sits in white cards on the `ground` colour.
-- **Report flow `/prijavi`:** a wizard with a progress bar and step titles (photo → location with live agent steps → „Pregled prijave"), matching the screen order and tap budget in PRD FR-5 and ticket 15. Each step is one screen with one main action at the bottom.
+- **Report flow `/prijavi`:** a wizard with a steps bar (see "Report flow `/prijavi`") (photo → location with live agent steps → „Pregled prijave"), matching the screen order and tap budget in PRD FR-5 and ticket 15. Each step is one screen with one main action at the bottom.
 - **Public report page `/p/[code]`:** stacked cards (photo, public description, category/status/institution, day counter, „Podržavam" with live count, timeline).
 
 ## Page widths (ticket 32, 4. 11. 2026; updated 5. 11. 2026) [Claude, Vuk]

@@ -4,12 +4,12 @@ import "leaflet/dist/leaflet.css"
 
 import { cn } from "cn"
 import L from "leaflet"
-import { Minus, Plus } from "lucide-react"
 import { useCallback, useState } from "react"
 import { createPortal } from "react-dom"
 import { MapContainer, Marker, Popup, TileLayer } from "react-leaflet"
 
 import { FitToContainer } from "@/components/map/fit-to-container"
+import { ZoomButtons } from "@/components/map/zoom-buttons"
 import { ReportPopupContent } from "@/components/report/report-summary"
 import {
   calendarDaysBetween,
@@ -23,8 +23,6 @@ import {
 import type { MapReport } from "@/lib/reports/public-map"
 
 export const MAP_TEXT = {
-  zoomIn: "Uvećaj mapu",
-  zoomOut: "Umanji mapu",
   // Leaflet's own label on the popup's close button is English ("Close popup")
   closePopup: "Zatvori pregled prijave",
 } as const
@@ -74,22 +72,6 @@ export function ReportMap({
         ))}
       </MapContainer>
       {map && <ZoomButtons map={map} className={zoomClassName} />}
-    </div>
-  )
-}
-
-// two navy 44 px squares, 4 px apart, above the map panes (Leaflet uses z-index 400–1000)
-function ZoomButtons({ map, className }: { map: L.Map; className: string }) {
-  const button =
-    "flex size-11 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-[0_2px_8px_rgb(0_0_0/0.25)] outline-none focus-visible:ring-[3px] focus-visible:ring-highlight active:bg-primary/90"
-  return (
-    <div className={cn("absolute z-[500] flex flex-col gap-1", className)}>
-      <button type="button" aria-label={MAP_TEXT.zoomIn} className={button} onClick={() => map.zoomIn()}>
-        <Plus aria-hidden className="size-5" strokeWidth={2.25} />
-      </button>
-      <button type="button" aria-label={MAP_TEXT.zoomOut} className={button} onClick={() => map.zoomOut()}>
-        <Minus aria-hidden className="size-5" strokeWidth={2.25} />
-      </button>
     </div>
   )
 }

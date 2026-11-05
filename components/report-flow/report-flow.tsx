@@ -4,8 +4,7 @@ import { useCallback, useEffect, useReducer, useRef, useState } from "react"
 
 import { addReportPhoto, type SendReportResult } from "@/app/prijavi/actions"
 
-import { Progress } from "@/components/ui/progress"
-import { GEOLOCATION_OPTIONS, REPORT_FLOW_STEPS, REPORT_FLOW_TEXT } from "@/lib/constants"
+import { GEOLOCATION_OPTIONS } from "@/lib/constants"
 import { createClient } from "@/lib/supabase/client"
 
 import {
@@ -31,6 +30,7 @@ import { CancelButton } from "./cancel-button"
 import { CategoryStep } from "./category-step"
 import { runClassification } from "./classify-client"
 import { DuplicateStep } from "./duplicate-step"
+import { FlowSteps } from "./flow-steps"
 import { LocationStep } from "./location-step"
 import { PhotoStep } from "./photo-step"
 import { runPrepare } from "./prepare-client"
@@ -194,17 +194,8 @@ function Flow({ account, onNewReport }: { account: ReviewAccount; onNewReport: (
   return (
     // one centred column (max-w-2xl) with side borders on a tablet or laptop instead of a
     // stretched phone screen; on a phone it is the full width as before (#32)
-    <div className="mx-auto flex h-[calc(100svh-var(--header-height))] w-full max-w-2xl flex-col bg-muted/50 md:border-x">
-      <div className="border-b bg-background px-4 py-3">
-        <Progress value={((index + 1) / REPORT_FLOW_STEPS.length) * 100} aria-label={REPORT_FLOW_TEXT.pageTitle}>
-          <div className="flex w-full items-baseline justify-between gap-2 text-sm">
-            <span className="font-medium">{REPORT_FLOW_STEPS[index]}</span>
-            <span className="text-muted-foreground">
-              {REPORT_FLOW_TEXT.stepOf(index + 1, REPORT_FLOW_STEPS.length)}
-            </span>
-          </div>
-        </Progress>
-      </div>
+    <div className="mx-auto flex h-[calc(100svh-var(--header-height))] w-full max-w-2xl flex-col bg-ground md:border-x">
+      <FlowSteps index={index} />
 
       {sent && <SentStep sent={sent} onNewReport={onNewReport} />}
       {!sent && state.step === "photos" && (

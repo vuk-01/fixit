@@ -10,6 +10,7 @@ import { MAX_PHOTOS_PER_REPORT, REPORT_FLOW_TEXT, REVIEW_TEXT, UNKNOWN_ERROR_MES
 
 import type { FlowPhoto } from "./flow-state"
 import { preparePhotos } from "./new-photos"
+import { FLOW_CARD } from "./flow-styles"
 
 // Photos on the review (FR-2, FR-11): "Dodaj fotografiju" ("Fotografiši" / "Iz galerije", the
 // same compression and upload as on the first step) while there are fewer than 3, and "Ukloni"
@@ -71,7 +72,7 @@ export function ReviewPhotos({
   const flaggedShown = photos.some((p) => flagged.includes(p.id))
 
   return (
-    <Card data-testid="review-photos">
+    <Card className={FLOW_CARD} data-testid="review-photos">
       <CardContent className="flex flex-col gap-3 text-sm">
         <h2 className="font-medium">{REVIEW_TEXT.photosTitle(photos.length)}</h2>
         <ul className="flex flex-wrap gap-3">

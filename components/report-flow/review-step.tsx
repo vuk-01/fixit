@@ -1,5 +1,6 @@
 "use client"
 
+import { cn } from "cn"
 import { CircleAlert, FileText, Landmark, MapPin, Send, TriangleAlert } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -9,7 +10,7 @@ import { sendReport, supportExistingReport, type SendReportResult } from "@/app/
 import { WhyInstitution } from "@/components/report/why-institution"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Button, buttonVariants } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
@@ -28,7 +29,8 @@ import {
 import { AgentSteps } from "./agent-steps"
 import { AnalysisBanner } from "./analysis-banner"
 import type { FlowPhoto, FlowState, Prepare, PrepareSteps } from "./flow-state"
-import { PhotoStrip } from "./photo-strip"
+import { FLOW_BAR, FLOW_CARD, FLOW_MAIN } from "./flow-styles"
+import { FlowSummary } from "./flow-summary"
 import { reviewLetter } from "./review-letter"
 import { ReviewPhotos } from "./review-photos"
 
@@ -84,33 +86,37 @@ export function ReviewStep({
   const reportId = result?.reportId ?? null
   const point = state.confirmed!
 
-  // until the first prepare is done (or failed), the live steps
+  // until the first prepare is done (or failed), the live steps (ticket 32, variant B): the report as
+  // the summary card, then one card with the confirmed place and the agent's steps
   if (!state.reviewOpened) {
     return (
       <div className="flex min-h-0 flex-1 flex-col">
-        <div className="relative flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4 *:shrink-0">
-          {!state.category && <AnalysisBanner analysis={state.analysis} onRetry={onRetryAnalysis} />}
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                <h1 className="font-heading text-xl">{REVIEW_TEXT.title}</h1>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3 text-sm">
-              <p className="flex items-start gap-2">
-                <MapPin aria-hidden className="mt-0.5 size-4 shrink-0 text-primary" />
-                <span data-testid="confirmed-address">{point.address ?? coordinates(point.lat, point.lng)}</span>
-              </p>
+        <div className="relative flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto p-4 *:shrink-0">
+          <h1 className="sr-only">{REVIEW_TEXT.title}</h1>
+          <FlowSummary
+            photos={state.photos}
+            analysis={state.analysis}
+            category={state.category}
+            onRetryUpload={onRetryUpload}
+          />
+          {!state.category && state.analysis.status === "error" && (
+            <AnalysisBanner analysis={state.analysis} onRetry={onRetryAnalysis} />
+          )}
+          <Card className={cn(FLOW_CARD, "gap-0 p-0")}>
+            <p className="flex items-start gap-2 border-b p-3 text-[15px] font-semibold">
+              <MapPin aria-hidden className="mt-0.5 size-[18px] shrink-0" strokeWidth={2.25} />
+              <span data-testid="confirmed-address">{point.address ?? coordinates(point.lat, point.lng)}</span>
+            </p>
+            <div className="p-3">
               <AgentSteps steps={steps} />
-              <PhotoStrip photos={state.photos} onRetry={onRetryUpload} />
-            </CardContent>
+            </div>
           </Card>
           {noDraft && <RetryAlert text={PREPARE_TEXT.noDraft} onRetry={onRetryAnalysis} />}
           {prepare?.status === "error" && (
             <RetryAlert text={prepareErrorText(prepare.code)} onRetry={() => dispatch({ type: "prepareRetry" })} />
           )}
         </div>
-        <div className="border-t bg-background px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">{cancel}</div>
+        <div className={FLOW_BAR}>{cancel}</div>
       </div>
     )
   }
@@ -147,8 +153,9 @@ export function ReviewStep({
       {/* scroll area: min-h-0 so it can shrink, children shrink-0 so cards never clip (#9), and
           relative so absolutely positioned children (sr-only inputs and labels) stay inside it
           instead of making the whole page scroll */}
-      <div className="relative flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4 *:shrink-0">
-        <h1 className="font-heading text-xl font-semibold">{REVIEW_TEXT.title}</h1>
+      <div className="relative flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto p-4 *:shrink-0">
+        {/* the step's name is in the steps bar above (FlowSteps) */}
+        <h1 className="sr-only">{REVIEW_TEXT.title}</h1>
 
         {danger && (
           <Alert variant="destructive" data-testid="danger">
@@ -157,7 +164,7 @@ export function ReviewStep({
           </Alert>
         )}
 
-        <Card data-testid="category-card">
+        <Card className={FLOW_CARD} data-testid="category-card">
           <CardContent className="flex flex-col gap-3 text-sm">
             <div className="flex items-center justify-between gap-2">
               <div className="flex min-w-0 flex-col gap-0.5">
@@ -195,7 +202,7 @@ export function ReviewStep({
           />
         )}
 
-        <Card>
+        <Card className={FLOW_CARD}>
           <CardContent className="flex flex-col gap-1 text-sm">
             <span className="text-muted-foreground">{REVIEW_TEXT.addressLabel}</span>
             <p className="flex items-start gap-2 font-medium">
@@ -210,7 +217,7 @@ export function ReviewStep({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={FLOW_CARD}>
           <CardContent className="flex flex-col gap-2 text-sm">
             <Label htmlFor="description" className="text-sm font-medium">
               {REVIEW_TEXT.descriptionLabel}
@@ -230,7 +237,7 @@ export function ReviewStep({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={FLOW_CARD}>
           <CardContent className="flex flex-col gap-2 text-sm">
             <div className="flex min-h-11 items-center justify-between gap-3">
               <Label htmlFor="share-contact" className="text-sm font-medium">
@@ -258,7 +265,7 @@ export function ReviewStep({
         )}
       </div>
 
-      <div className="flex flex-col gap-2 border-t bg-background px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <div className={FLOW_BAR}>
         <p className="text-xs text-muted-foreground">{REVIEW_TEXT.confirmNote}</p>
         {sendError && (
           <p className="text-sm text-destructive" role="alert" data-testid="send-error">
@@ -270,8 +277,14 @@ export function ReviewStep({
             {REVIEW_TEXT.waitingForPhotos}
           </p>
         )}
-        <Button size="lg" className="h-12 w-full text-base" disabled={!canSend || sending} onClick={() => void send()}>
-          <Send aria-hidden />
+        <Button
+          variant="highlight"
+          size="lg"
+          className={cn(FLOW_MAIN, "[&_svg]:size-[22px]")}
+          disabled={!canSend || sending}
+          onClick={() => void send()}
+        >
+          <Send aria-hidden strokeWidth={2.25} />
           {sending ? REVIEW_TEXT.sending : sendError ? SEND_TEXT.retry : REVIEW_TEXT.send}
         </Button>
         {cancel}
@@ -371,7 +384,7 @@ function DuplicateNotice({ duplicate, draftId }: { duplicate: DuplicateReport; d
 function LetterPreview({ text }: { text: { subject: string; bodyText: string } }) {
   const [open, setOpen] = useState(false)
   return (
-    <Card data-testid="letter">
+    <Card className={FLOW_CARD} data-testid="letter">
       <CardContent className="flex flex-col gap-2 text-sm">
         <Button
           variant="ghost"

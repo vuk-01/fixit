@@ -402,6 +402,8 @@ export const CLASSIFY_TEXT = {
   // FR-7, verbatim: the model did not answer in time or returned an error
   failed: "Prepoznavanje nije uspjelo. Vrstu ćete izabrati sami.",
   recognized: (label: string) => `Prepoznato: ${label}`,
+  // the summary card of the report flow (steps 2 and 3): this word over the recognised type
+  recognizedLabel: "Prepoznato",
   // FR-7, verbatim: not a municipal problem or confidence below the threshold
   unsureTitle: "Nismo sigurni šta je na fotografiji. Izaberite vrstu problema.",
   // manual flow and "Promijeni": the same picker without the "not sure" sentence
