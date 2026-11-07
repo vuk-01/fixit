@@ -124,7 +124,7 @@ export function ReportListCard({
   return (
     <Link
       href={`/p/${report.code}`}
-      className="group/report block h-full rounded-2xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
+      className="group/report relative block h-full rounded-2xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/40"
       onMouseEnter={onActiveChange && (() => onActiveChange(report.id))}
       onMouseLeave={onActiveChange && (() => onActiveChange(null))}
       onFocus={onActiveChange && (() => onActiveChange(report.id))}
