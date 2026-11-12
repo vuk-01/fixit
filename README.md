@@ -143,4 +143,4 @@ scripts/          seed i brisanje demo podataka
 
 ## Tim
 
-Fixit su na hakatonu napravili Ivana, Danijela i Vuk.
+Fixit su na hakatonu napravili Vuk, Ivana i Danijela.
